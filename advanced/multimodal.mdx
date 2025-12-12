@@ -1,0 +1,299 @@
+---
+title: Multimodal Content
+description: Work with images and documents in prompts
+---
+
+Moxn supports multimodal prompts with images, PDFs, and other files. This guide covers how to include and handle multimodal content.
+
+## Supported Content Types
+
+| Type | Providers | Use Cases |
+|------|-----------|-----------|
+| **Images** | All | Charts, screenshots, diagrams |
+| **PDFs** | Anthropic, Google | Documents, reports |
+| **Files** | Varies | Various document types |
+
+## Images in Messages
+
+### In the Web App
+
+Add images to messages:
+
+1. Click the image icon in the editor
+2. Upload an image or paste a URL
+3. Add alt text for accessibility
+
+### In Code
+
+Images appear as content blocks:
+
+```python
+# When you fetch a prompt with images
+prompt = await client.get_prompt("...", branch_name="main")
+
+for message in prompt.messages:
+    for block_group in message.blocks:
+        for block in block_group:
+            if block.block_type == "image_from_source":
+                print(f"Image: {block.url}")
+                print(f"Alt: {block.alt}")
+```
+
+### Provider Conversion
+
+Images are automatically converted to provider format:
+
+```python
+# Anthropic format (base64)
+{
+    "type": "image",
+    "source": {
+        "type": "base64",
+        "media_type": "image/png",
+        "data": "iVBORw0KGgo..."
+    }
+}
+
+# OpenAI format (data URI)
+{
+    "type": "image_url",
+    "image_url": {
+        "url": "data:image/png;base64,iVBORw0KGgo..."
+    }
+}
+
+# Google format (Part with blob)
+Part(inline_data=Blob(
+    mime_type="image/png",
+    data=bytes(...)
+))
+```
+
+## PDFs in Messages
+
+### Adding PDFs
+
+In the web app:
+1. Click the file icon
+2. Upload a PDF
+3. It appears inline in the message
+
+### PDF Block Types
+
+```python
+# Standard PDF
+PDFContentFromSource(
+    url="https://...",
+    name="document.pdf",
+    mime_type="application/pdf"
+)
+
+# Signed URL PDF (from cloud storage)
+SignedURLPDFContent(
+    signed_url="https://s3.../document.pdf?signature=...",
+    file_path="documents/report.pdf",
+    expiration=datetime(2024, 1, 15, 12, 0, 0),
+    name="document.pdf"
+)
+```
+
+## Signed URLs
+
+For content stored in cloud storage (S3, GCS, etc.), Moxn uses signed URLs with automatic refresh.
+
+### How It Works
+
+```
+1. You upload content → stored in cloud storage
+2. Prompt fetched → signed URLs generated (short expiry)
+3. SDK registers content → tracks expiration
+4. Before expiry → auto-refreshes URLs
+5. Provider conversion → fresh URLs used
+```
+
+### Automatic Refresh
+
+The SDK handles refresh automatically:
+
+```python
+async with MoxnClient() as client:
+    # Signed URLs are registered when fetching
+    prompt = await client.get_prompt("...", branch_name="main")
+
+    # Later, when converting (URLs refreshed if needed)
+    session = PromptSession.from_prompt_template(prompt, session_data)
+    payload = session.to_anthropic_invocation()
+    # ^ URLs are fresh at this point
+```
+
+### Manual Registration
+
+For prompts with signed content:
+
+```python
+# Already handled by get_prompt(), but if you need manual control:
+for message in prompt.messages:
+    for block_group in message.blocks:
+        for block in block_group:
+            if isinstance(block, SignedURLContent):
+                await client.content_client.register_content(block)
+```
+
+## Image Variables
+
+Use variables for dynamic images:
+
+### In the Web App
+
+1. Insert a variable with type "image"
+2. At runtime, provide the image URL or data
+
+### In Code
+
+```python
+class InputWithImage(RenderableModel):
+    query: str
+    screenshot: str  # URL or base64
+
+    def render(self, **kwargs) -> dict[str, str]:
+        return {
+            "query": self.query,
+            "screenshot": self.screenshot  # Handled as image
+        }
+```
+
+## Provider-Specific Handling
+
+### Anthropic
+
+Anthropic supports:
+- Images (PNG, JPEG, GIF, WebP)
+- PDFs with citations
+- Prompt caching for large content
+
+```python
+# Prompt caching for images (handled automatically when configured)
+session.to_anthropic_invocation()
+```
+
+### OpenAI
+
+OpenAI supports:
+- Images via data URIs or URLs
+- Limited PDF support (converted to images)
+
+```python
+session.to_openai_chat_invocation()
+```
+
+### Google
+
+Google supports:
+- Images (various formats)
+- PDFs natively
+- Inline data blobs
+
+```python
+session.to_google_gemini_invocation()
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Compress images">
+    Large images increase latency and cost. Resize when possible.
+  </Accordion>
+  <Accordion title="Use appropriate formats">
+    - PNG for screenshots, diagrams
+    - JPEG for photos
+    - PDF for documents with complex layouts
+  </Accordion>
+  <Accordion title="Add alt text">
+    Always add descriptive alt text for accessibility and better LLM understanding.
+  </Accordion>
+  <Accordion title="Consider token limits">
+    Images consume tokens. Account for this in your max_tokens budget.
+  </Accordion>
+  <Accordion title="Test across providers">
+    Multimodal support varies. Test with each provider you support.
+  </Accordion>
+</AccordionGroup>
+
+## Error Handling
+
+Handle multimodal-specific errors:
+
+```python
+try:
+    response = anthropic.messages.create(
+        **session.to_anthropic_invocation()
+    )
+except anthropic.BadRequestError as e:
+    if "image" in str(e).lower():
+        # Image format or size issue
+        print(f"Image error: {e}")
+    raise
+```
+
+## Token Estimation
+
+Images consume varying tokens by provider:
+
+| Provider | Image Token Cost |
+|----------|-----------------|
+| Anthropic | ~1600 tokens per image (varies by size) |
+| OpenAI | 85-170 tokens (low/high detail) |
+| Google | Varies by resolution |
+
+Check your provider's documentation for exact calculations.
+
+## Complete Example
+
+```python
+from moxn import MoxnClient
+from moxn_types.content import Provider
+from anthropic import Anthropic
+
+async def analyze_screenshot(image_url: str, question: str):
+    async with MoxnClient() as client:
+        session = await client.create_prompt_session(
+            prompt_id="image-analysis-prompt",
+            session_data=ImageAnalysisInput(
+                image_url=image_url,
+                question=question
+            )
+        )
+
+        async with client.span(
+            session,
+            name="analyze_image",
+            metadata={"has_image": True}
+        ) as span:
+            anthropic = Anthropic()
+            response = anthropic.messages.create(
+                **session.to_anthropic_invocation()
+            )
+
+            await client.log_telemetry_event_from_response(
+                session, response, Provider.ANTHROPIC
+            )
+
+            return response.content[0].text
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Structured Outputs" icon="brackets-curly" href="/advanced/structured-outputs">
+    Parse structured responses
+  </Card>
+  <Card title="Provider Integration" icon="plug" href="/guides/providers">
+    Provider-specific handling
+  </Card>
+  <Card title="Data Extraction" icon="file-export" href="/examples/extraction">
+    Extract data from documents
+  </Card>
+  <Card title="Logging Events" icon="list" href="/telemetry/logging">
+    Log multimodal interactions
+  </Card>
+</CardGroup>

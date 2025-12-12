@@ -1,0 +1,309 @@
+---
+title: Reviewing Telemetry
+description: View and analyze traces in the Moxn web app
+---
+
+After logging telemetry, you can review it in the Moxn web app. This guide shows you how to find and analyze your traces.
+
+## Accessing Traces
+
+Navigate to your task in the Moxn web app and open the **Traces** tab.
+
+You'll see a list of all traces for that task, showing:
+- Timestamp
+- Prompt name
+- Duration
+- Token count
+- Status
+
+## Traces Tab
+
+<Frame>
+  <img src="/images/12-traces-list.png" alt="Traces list view" />
+</Frame>
+
+The Traces tab shows all executions for your task with filtering controls at the top.
+
+## Trace List View
+
+The trace list provides a high-level overview:
+
+| Column | Description |
+|--------|-------------|
+| **Time** | When the trace started |
+| **Prompt** | Which prompt was used |
+| **Duration** | Total time for the trace |
+| **Tokens** | Input + output tokens |
+| **Cost** | Estimated cost (based on model pricing) |
+| **Status** | Success, error, or warning |
+
+### Filtering
+
+Filter traces by:
+- **Date range**: Today, last 7 days, custom range
+- **Prompt**: Filter to specific prompts
+- **Status**: Success, error
+- **Branch/Commit**: See traces from specific versions
+
+### Sorting
+
+Sort by:
+- Newest/oldest
+- Duration (slowest first)
+- Token count (highest first)
+- Cost (highest first)
+
+## Trace Detail View
+
+Click a trace to see the full details:
+
+<Frame>
+  <img src="/images/13-trace-detail-spans.png" alt="Trace detail with span hierarchy" />
+</Frame>
+
+### Trace Header
+
+The header shows:
+- Trace name
+- Summary stats (completions, tool calls, token counts)
+- Show details button
+
+### Span Hierarchy
+
+See the tree structure of spans:
+
+- **customer_support_request** (root) - 2.5s
+  - classify_query - 0.8s
+  - search_documents - 0.3s
+  - generate_response - 1.4s
+    - LLM Call
+
+Click any span to see its details.
+
+### Span Details
+
+For each span, you can see:
+
+**Timing**
+- Start time
+- Duration
+- Percentage of total trace time
+
+**Attributes**
+- Custom metadata you added
+- System attributes (prompt_id, task_id, etc.)
+
+**Events**
+- LLM calls made within the span
+- Token counts per event
+- Response types
+
+## Span Detail Modal
+
+Click any span to view detailed information:
+
+<Frame>
+  <img src="/images/14-span-detail-modal.png" alt="Span detail modal" />
+</Frame>
+
+### Modal Tabs
+
+| Tab | Content |
+|-----|---------|
+| **Conversation Flow** | Visual message sequence with role indicators |
+| **Variables** | Input variable values used in this call |
+| **Metrics** | Latency, token usage, estimated costs |
+| **Raw Message Content** | Full message content |
+| **Raw Data** | Complete span data as JSON |
+
+### Navigation
+
+- **Previous/Next**: Navigate between spans
+- **Keyboard shortcuts**: Arrow keys, J/K, Esc to close
+- **Create Observation**: Save span for test cases
+
+## LLM Event Details
+
+Click an LLM event to see the complete interaction:
+
+### Input Tab
+
+**Session Data**: Your original typed input
+
+```json
+{
+  "query": "How do I reset my password?",
+  "customer_name": "Alice",
+  "documents": [
+    {"title": "FAQ", "content": "..."}
+  ]
+}
+```
+
+**Rendered Input**: The flattened values used for substitution
+
+```json
+{
+  "query": "How do I reset my password?",
+  "customer_name": "Alice",
+  "documents": "[{\"title\": \"FAQ\", ...}]"
+}
+```
+
+**Messages**: The complete prompt sent to the LLM
+
+Shows each message with:
+- Role (system/user/assistant)
+- Content (with variables substituted)
+- Any images or files included
+
+### Output Tab
+
+**Response Content**: What the LLM returned
+
+For text responses:
+```
+To reset your password, follow these steps:
+1. Go to the login page...
+```
+
+For tool calls:
+```json
+{
+  "tool": "search_knowledge_base",
+  "input": {"query": "password reset"}
+}
+```
+
+For structured output:
+```json
+{
+  "category": "account",
+  "subcategory": "password",
+  "confidence": 0.95
+}
+```
+
+**Raw Response**: The complete provider response (expandable)
+
+### Metrics Tab
+
+- **Model**: Which model was used
+- **Provider**: Anthropic, OpenAI, etc.
+- **Input tokens**: Prompt token count
+- **Output tokens**: Completion token count
+- **Total tokens**: Combined count
+- **Estimated cost**: Based on model pricing
+- **Latency**: Time to first token, total time
+- **Stop reason**: Why the model stopped
+
+### Version Tab
+
+- **Prompt ID**: UUID of the prompt
+- **Prompt name**: Human-readable name
+- **Branch**: If fetched by branch
+- **Commit**: If fetched by commit
+- **Uncommitted**: Whether working state was used
+
+## Use Cases
+
+### Debugging Issues
+
+When something goes wrong:
+
+1. Filter to the timeframe when the issue occurred
+2. Find traces with errors
+3. Click to see the full input/output
+4. Check if:
+   - Input data was correct
+   - Prompt content was expected
+   - Response was malformed
+
+### Performance Analysis
+
+To identify slow traces:
+
+1. Sort by duration (slowest first)
+2. Look for patterns:
+   - Long input (too many tokens?)
+   - Slow model (use a faster one?)
+   - Sequential calls (could parallelize?)
+3. Check span hierarchy for bottlenecks
+
+### Cost Optimization
+
+To reduce costs:
+
+1. Sort by cost (highest first)
+2. Identify expensive prompts
+3. Look for:
+   - Unnecessarily long context
+   - Verbose system prompts
+   - Large documents that could be summarized
+
+### A/B Testing
+
+To compare versions:
+
+1. Run both versions and log with different metadata
+2. Filter by your A/B test attribute
+3. Compare:
+   - Success rates
+   - Average latency
+   - Output quality (manual review)
+
+## Exporting Data
+
+Export trace data for external analysis:
+
+- **CSV**: Basic metrics
+- **JSON**: Full trace data
+
+Use exports for:
+- Building dashboards
+- Long-term storage
+- Compliance records
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Add meaningful metadata">
+    Use custom attributes to make traces searchable:
+    ```python
+    metadata={"customer_id": "123", "feature": "password_reset"}
+    ```
+  </Accordion>
+  <Accordion title="Name spans descriptively">
+    Use names that describe what the span does:
+    ```python
+    name="classify_customer_query"  # Good
+    name="step_1"                    # Bad
+    ```
+  </Accordion>
+  <Accordion title="Review regularly">
+    Check traces periodically, not just when issues arise.
+  </Accordion>
+  <Accordion title="Set up alerts">
+    Use exports to build alerts for:
+    - Error rate spikes
+    - Latency increases
+    - Cost anomalies
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Spans & Tracing" icon="timeline" href="/telemetry/spans">
+    Create better trace hierarchies
+  </Card>
+  <Card title="Logging Events" icon="list" href="/telemetry/logging">
+    Log more detailed events
+  </Card>
+  <Card title="Multi-Agent Example" icon="users" href="/examples/multi-agent">
+    See complex traces
+  </Card>
+  <Card title="Web App: Creating" icon="browser" href="/webapp/creating">
+    Create prompts to trace
+  </Card>
+</CardGroup>

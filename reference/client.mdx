@@ -1,0 +1,413 @@
+---
+title: MoxnClient
+description: API reference for the MoxnClient class
+---
+
+The `MoxnClient` is your main entry point for interacting with the Moxn platform. It handles authentication, fetching prompts, creating sessions, managing telemetry, and code generation.
+
+## Usage
+
+```python
+from moxn import MoxnClient
+
+async with MoxnClient() as client:
+    session = await client.create_prompt_session(
+        prompt_id="your-prompt-id",
+        branch_name="main"
+    )
+```
+
+The client automatically uses `MOXN_API_KEY` from your environment.
+
+## Fetching Content
+
+### get_prompt
+
+Fetch a prompt template with optional caching.
+
+```python
+async def get_prompt(
+    prompt_id: UUID | str,
+    branch_name: str | None = None,
+    commit_id: str | None = None,
+) -> PromptTemplate
+```
+
+**Parameters:**
+| Name | Type | Description |
+|------|------|-------------|
+| `prompt_id` | `UUID \| str` | The prompt's anchor ID |
+| `branch_name` | `str \| None` | Branch name (mutually exclusive with commit_id) |
+| `commit_id` | `str \| None` | Commit ID for immutable access (mutually exclusive with branch_name) |
+
+**Returns:** `PromptTemplate`
+
+**Caching Behavior:**
+- **Commit access**: Cached indefinitely (immutable)
+- **Branch access**: Always fetches latest (mutable)
+
+```python
+# Development: get latest from branch
+prompt = await client.get_prompt("prompt-id", branch_name="main")
+
+# Production: pin to specific commit
+prompt = await client.get_prompt("prompt-id", commit_id="abc123")
+```
+
+### get_task
+
+Fetch an entire task with all its prompts and schemas.
+
+```python
+async def get_task(
+    task_id: str,
+    branch_name: str | None = None,
+    commit_id: str | None = None,
+) -> Task
+```
+
+**Parameters:**
+| Name | Type | Description |
+|------|------|-------------|
+| `task_id` | `str` | The task's anchor ID |
+| `branch_name` | `str \| None` | Branch name |
+| `commit_id` | `str \| None` | Commit ID |
+
+**Returns:** `Task`
+
+```python
+task = await client.get_task("task-id", branch_name="main")
+for prompt in task.prompts:
+    print(f"Prompt: {prompt.name}")
+```
+
+### get_branch_head
+
+Get the head commit for a branch. Useful for determining deployment versions.
+
+```python
+async def get_branch_head(
+    task_id: str,
+    branch_name: str = "main"
+) -> BranchHeadResponse
+```
+
+**Returns:** `BranchHeadResponse` with:
+- `effective_commit_id`: The commit ID to use
+- `has_uncommitted_changes`: Whether there are pending changes
+- `last_committed_at`: Timestamp of last commit
+
+---
+
+## Creating Sessions
+
+### create_prompt_session
+
+Create a new prompt session by fetching a prompt and combining it with session data.
+
+```python
+async def create_prompt_session(
+    prompt_id: str,
+    branch_name: str | None = None,
+    commit_id: str | None = None,
+    session_data: RenderableModel | None = None,
+) -> PromptSession
+```
+
+**Parameters:**
+| Name | Type | Description |
+|------|------|-------------|
+| `prompt_id` | `str` | The prompt's anchor ID |
+| `branch_name` | `str \| None` | Branch name |
+| `commit_id` | `str \| None` | Commit ID |
+| `session_data` | `RenderableModel \| None` | Pydantic model for variable substitution |
+
+**Returns:** `PromptSession`
+
+```python
+from models.my_task_models import QueryInput
+
+session = await client.create_prompt_session(
+    prompt_id="prompt-id",
+    branch_name="main",
+    session_data=QueryInput(
+        query="What is the weather?",
+        user_name="Alice"
+    )
+)
+```
+
+### prompt_session_from_session_data
+
+Create a session using the prompt ID embedded in the session data's metadata.
+
+```python
+async def prompt_session_from_session_data(
+    session_data: RenderableModel,
+    branch_name: str | None = None,
+    commit_id: str | None = None,
+) -> PromptSession
+```
+
+This method reads the `prompt_id` from `session_data.moxn_schema_metadata`, so you don't need to specify it separately.
+
+```python
+# Session data knows which prompt it belongs to
+session = await client.prompt_session_from_session_data(
+    session_data=QueryInput(query="Hello"),
+    branch_name="main"
+)
+```
+
+---
+
+## Telemetry & Spans
+
+### span
+
+Create a span for tracing and observability.
+
+```python
+@asynccontextmanager
+async def span(
+    prompt_session: PromptSession,
+    name: str | None = None,
+    metadata: dict[str, Any] | None = None,
+    *,
+    parent_context: SpanContext | None = None,
+    trace_context: TraceContext | None = None,
+) -> AsyncGenerator[Span, None]
+```
+
+**Parameters:**
+| Name | Type | Description |
+|------|------|-------------|
+| `prompt_session` | `PromptSession` | The session for this span |
+| `name` | `str \| None` | Span name (defaults to prompt name) |
+| `metadata` | `dict \| None` | Searchable attributes (customer_id, request_id, etc.) |
+| `parent_context` | `SpanContext \| None` | Explicit parent for async patterns |
+| `trace_context` | `TraceContext \| None` | For distributed tracing |
+
+**Returns:** `AsyncGenerator[Span, None]`
+
+```python
+async with client.span(
+    session,
+    name="process_query",
+    metadata={"customer_id": "cust_123"}
+) as span:
+    span.set_attribute("status", "processing")
+    response = anthropic.messages.create(**session.to_anthropic_invocation())
+    await client.log_telemetry_event_from_response(session, response, Provider.ANTHROPIC)
+```
+
+### span_from_carrier
+
+Create a span from a trace carrier for distributed tracing.
+
+```python
+@asynccontextmanager
+async def span_from_carrier(
+    carrier: MoxnTraceCarrier,
+    name: str | None = None,
+    metadata: dict[str, Any] | None = None,
+) -> AsyncGenerator[Span, None]
+```
+
+Use this in queue workers or callback handlers to continue a trace.
+
+```python
+# In a queue worker
+carrier = MoxnTraceCarrier.model_validate(message["carrier"])
+async with client.span_from_carrier(carrier, name="process_item") as span:
+    await process(message["data"])
+```
+
+### extract_context
+
+Extract the current span context for propagation across services.
+
+```python
+def extract_context() -> MoxnTraceCarrier | None
+```
+
+**Returns:** `MoxnTraceCarrier` if there's an active span, `None` otherwise.
+
+```python
+async with client.span(session) as span:
+    carrier = client.extract_context()
+    if carrier:
+        await queue.put({
+            "carrier": carrier.model_dump(mode="json"),
+            "data": payload
+        })
+```
+
+### log_telemetry_event
+
+Log an LLM event to the current span.
+
+```python
+async def log_telemetry_event(event: LLMEvent) -> None
+```
+
+```python
+event = session.create_llm_event_from_parsed_response(parsed_response)
+await client.log_telemetry_event(event)
+```
+
+### log_telemetry_event_from_response
+
+Convenience method to parse a provider response and log it in one call.
+
+```python
+async def log_telemetry_event_from_response(
+    prompt_session: PromptSession,
+    response: AnthropicMessage | OpenAIChatCompletion | GoogleGenerateContentResponse,
+    provider: Provider,
+) -> None
+```
+
+**Parameters:**
+| Name | Type | Description |
+|------|------|-------------|
+| `prompt_session` | `PromptSession` | The session used for the request |
+| `response` | Provider response | Raw response from the LLM provider |
+| `provider` | `Provider` | The provider enum value |
+
+```python
+response = anthropic.messages.create(**session.to_anthropic_invocation())
+await client.log_telemetry_event_from_response(session, response, Provider.ANTHROPIC)
+```
+
+### flush
+
+Await in-flight telemetry logs. Call this at process exit or Lambda return.
+
+```python
+async def flush(timeout: float | None = None) -> None
+```
+
+```python
+# At shutdown
+await client.flush(timeout=5.0)
+```
+
+---
+
+## Code Generation
+
+### generate_task_models
+
+Generate Pydantic models from all schemas in a task.
+
+```python
+async def generate_task_models(
+    task_id: str | UUID,
+    branch_name: str | None = None,
+    commit_id: str | None = None,
+    output_dir: Path | str | None = None,
+) -> DatamodelCodegenResponse
+```
+
+**Parameters:**
+| Name | Type | Description |
+|------|------|-------------|
+| `task_id` | `str \| UUID` | The task ID |
+| `branch_name` | `str \| None` | Branch name (defaults to "main") |
+| `commit_id` | `str \| None` | Commit ID |
+| `output_dir` | `Path \| str \| None` | Directory to write generated code |
+
+**Returns:** `DatamodelCodegenResponse` with generated code
+
+```python
+# Generate and save models
+response = await client.generate_task_models(
+    task_id="task-id",
+    branch_name="main",
+    output_dir="./models"
+)
+print(f"Generated: {response.filename}")
+```
+
+---
+
+## Task & Prompt Creation
+
+### create_task
+
+Create a new task programmatically.
+
+```python
+async def create_task(
+    name: str,
+    description: str | None = None,
+    branch_name: str = "main",
+) -> Task
+```
+
+```python
+task = await client.create_task(
+    name="Customer Support Bot",
+    description="Handles customer inquiries"
+)
+```
+
+### create_prompt
+
+Create a new prompt with messages.
+
+```python
+async def create_prompt(
+    task_id: str | UUID,
+    name: str,
+    messages: list[MessageData | dict],
+    description: str | None = None,
+    branch_name: str = "main",
+) -> PromptTemplate
+```
+
+```python
+from moxn_types.requests import MessageData
+from moxn_types.content import MessageRole
+from moxn_types.blocks.text import TextContentModel
+
+messages = [
+    MessageData(
+        name="System",
+        role=MessageRole.SYSTEM,
+        blocks=[[TextContentModel(text="You are helpful.")]]
+    )
+]
+
+prompt = await client.create_prompt(
+    task_id=task.id,
+    name="Q&A Prompt",
+    messages=messages
+)
+```
+
+---
+
+## Lifecycle Methods
+
+### close
+
+Close the underlying HTTP client.
+
+```python
+async def close() -> None
+```
+
+### verify_access
+
+Verify API key and return identity information.
+
+```python
+async def verify_access() -> dict
+```
+
+```python
+info = await client.verify_access()
+print(f"Tenant: {info['tenant_id']}")
+```

@@ -1,11 +1,11 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
-  "name": "Mint Starter Kit",
+  "name": "Moxn SDK",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#3b82f6",
+    "light": "#a855f7",
+    "dark": "#121930"
   },
   "favicon": "/favicon.svg",
   "navigation": {
@@ -14,55 +14,78 @@
         "tab": "Guides",
         "groups": [
           {
-            "group": "Getting started",
+            "group": "Getting Started",
             "pages": [
               "index",
-              "quickstart",
-              "development"
+              "quickstart"
             ]
           },
           {
-            "group": "Customization",
+            "group": "Core Workflow",
             "pages": [
-              "essentials/settings",
-              "essentials/navigation"
+              "guides/workflow",
+              "guides/prompts",
+              "guides/sessions",
+              "guides/providers",
+              "guides/codegen"
             ]
           },
           {
-            "group": "Writing content",
+            "group": "Concepts",
             "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
+              "concepts/entities",
+              "concepts/versioning",
+              "concepts/variables"
             ]
           },
           {
-            "group": "AI tools",
+            "group": "Telemetry",
             "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
+              "telemetry/spans",
+              "telemetry/logging",
+              "telemetry/reviewing"
+            ]
+          },
+          {
+            "group": "Web App",
+            "pages": [
+              "webapp/creating",
+              "webapp/variables",
+              "webapp/versioning",
+              "webapp/studio"
+            ]
+          },
+          {
+            "group": "Advanced",
+            "pages": [
+              "advanced/multimodal",
+              "advanced/structured-outputs"
             ]
           }
         ]
       },
       {
-        "tab": "API reference",
+        "tab": "Examples",
         "groups": [
           {
-            "group": "API documentation",
+            "group": "Complete Examples",
             "pages": [
-              "api-reference/introduction"
+              "examples/rag",
+              "examples/extraction",
+              "examples/multi-agent"
             ]
-          },
+          }
+        ]
+      },
+      {
+        "tab": "Reference",
+        "groups": [
           {
-            "group": "Endpoint examples",
+            "group": "SDK Reference",
             "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+              "reference/client",
+              "reference/session",
+              "reference/types"
             ]
           }
         ]
@@ -71,14 +94,14 @@
     "global": {
       "anchors": [
         {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
+          "anchor": "App",
+          "href": "https://moxn.dev",
+          "icon": "browser"
         },
         {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
+          "anchor": "GitHub",
+          "href": "https://github.com/moxn-ai",
+          "icon": "github"
         }
       ]
     }
@@ -91,32 +114,29 @@
     "links": [
       {
         "label": "Support",
-        "href": "mailto:hi@mintlify.com"
+        "href": "mailto:support@moxn.dev"
       }
     ],
     "primary": {
       "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
+      "label": "Get Started",
+      "href": "https://moxn.dev"
     }
   },
   "contextual": {
     "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
+      "copy",
+      "view",
+      "chatgpt",
+      "claude",
+      "perplexity",
+      "cursor",
+      "vscode"
+    ]
   },
   "footer": {
     "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
+      "github": "https://github.com/moxn-ai"
     }
   }
 }

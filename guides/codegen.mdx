@@ -1,0 +1,374 @@
+---
+title: Code Generation
+description: Generate type-safe Pydantic models from your prompts
+---
+
+Moxn can generate Pydantic models from your prompt schemas, giving you type-safe interfaces for your LLM applications. This guide covers how code generation works and how to use the generated models.
+
+## Why Code Generation?
+
+Without codegen, you'd write:
+
+```python
+# No type safety, easy to make mistakes
+session = await client.create_prompt_session(
+    prompt_id="...",
+    session_data={"qurey": "typo here", "user_id": 123}  # Oops!
+)
+```
+
+With codegen:
+
+```python
+# Type-safe, IDE autocomplete, validation
+from generated_models import ProductHelpInput
+
+session = await client.create_prompt_session(
+    prompt_id="...",
+    session_data=ProductHelpInput(
+        query="How do I reset my password?",  # Autocomplete!
+        user_id="user_123"  # Type checked!
+    )
+)
+```
+
+## Generating Models
+
+### Using MoxnClient
+
+Generate models for all prompts in a task:
+
+```python
+from moxn import MoxnClient
+
+async with MoxnClient() as client:
+    result = await client.generate_task_models(
+        task_id="your-task-id",
+        branch_name="main",        # or commit_id="..."
+        output_dir="./generated"   # Where to save the file
+    )
+
+    print(f"Generated: {result.filename}")
+    print(f"Code:\n{result.generated_code}")
+```
+
+**Parameters:**
+- `task_id`: The task containing your prompts
+- `branch_name` or `commit_id`: Which version to generate from
+- `output_dir`: Directory to write the generated file (optional)
+
+**Returns:** `DatamodelCodegenResponse` with:
+- `filename`: The generated file name
+- `generated_code`: The Python code
+
+### Output File
+
+The generated file is named after your task:
+
+- generated/
+  - customer_support_bot_models.py
+
+## What Gets Generated
+
+For each prompt with an input schema, you get:
+
+### 1. A Pydantic Model
+
+```python
+from pydantic import Field
+from moxn_types.base import RenderableModel, MoxnSchemaMetadata
+
+class ProductHelpInput(RenderableModel):
+    """Input schema for Product Help prompt."""
+
+    query: str = Field(..., description="The user's question")
+    user_id: str = Field(..., description="User identifier")
+    documents: list[Document] = Field(
+        default_factory=list,
+        description="Relevant documents from search"
+    )
+
+    @classmethod
+    @property
+    def moxn_schema_metadata(cls) -> MoxnSchemaMetadata:
+        return MoxnSchemaMetadata(
+            schema_id="...",
+            prompt_id="...",
+            task_id="..."
+        )
+
+    def render(self, **kwargs) -> dict[str, str]:
+        return {
+            "query": self.query,
+            "user_id": self.user_id,
+            "documents": json.dumps([d.model_dump() for d in self.documents]),
+        }
+```
+
+### 2. A TypedDict for Rendered Output
+
+```python
+class ProductHelpInputRendered(TypedDict):
+    """Rendered (string-valued) version of ProductHelpInput."""
+    query: str
+    user_id: str
+    documents: str  # JSON string
+```
+
+### 3. Nested Types
+
+Complex schemas generate nested models:
+
+```python
+class Document(RenderableModel):
+    """A search result document."""
+    id: str
+    title: str
+    content: str
+    score: float
+
+class ProductHelpInput(RenderableModel):
+    documents: list[Document]
+```
+
+## The Two Representations
+
+Code generation produces **two related types** for each schema:
+
+| Type | Purpose | Values |
+|------|---------|--------|
+| Pydantic Model | Input validation, IDE support | Typed (str, int, list[T]) |
+| TypedDict | What gets injected into prompts | All strings |
+
+This separation exists because:
+
+1. **Your code** works with typed data (lists, numbers, nested objects)
+2. **Prompts** receive string values (JSON, markdown, custom formats)
+
+The `render()` method bridges these two:
+
+```python
+# Input: typed data
+input = ProductHelpInput(
+    query="How do I...",
+    documents=[Document(id="1", title="FAQ", content="...", score=0.95)]
+)
+
+# Output: flat string dict
+rendered = input.render()
+# {"query": "How do I...", "documents": "[{\"id\": \"1\", ...}]"}
+```
+
+## Customizing render()
+
+The generated `render()` method provides a default implementation, but you can override it:
+
+### Default behavior
+
+```python
+def render(self, **kwargs) -> dict[str, str]:
+    return {
+        "query": self.query,
+        "documents": json.dumps([d.model_dump() for d in self.documents])
+    }
+```
+
+### Custom markdown formatting
+
+```python
+class ProductHelpInput(RenderableModel):
+    documents: list[Document]
+
+    def render(self, **kwargs) -> dict[str, str]:
+        # Format documents as markdown
+        docs_md = "\n\n".join([
+            f"## {doc.title}\n\n{doc.content}\n\n*Relevance: {doc.score:.0%}*"
+            for doc in self.documents
+        ])
+        return {
+            "query": self.query,
+            "documents": docs_md
+        }
+```
+
+### Custom XML formatting
+
+```python
+def render(self, **kwargs) -> dict[str, str]:
+    docs_xml = "\n".join([
+        f'<document id="{doc.id}" score="{doc.score}">\n'
+        f'  <title>{doc.title}</title>\n'
+        f'  <content>{doc.content}</content>\n'
+        f'</document>'
+        for doc in self.documents
+    ])
+    return {
+        "query": self.query,
+        "documents": f"<documents>\n{docs_xml}\n</documents>"
+    }
+```
+
+### Using kwargs
+
+Pass extra parameters to `render()`:
+
+```python
+def render(self, **kwargs) -> dict[str, str]:
+    format_type = kwargs.get("format", "json")
+
+    if format_type == "markdown":
+        docs = self._format_markdown()
+    elif format_type == "xml":
+        docs = self._format_xml()
+    else:
+        docs = json.dumps([d.model_dump() for d in self.documents])
+
+    return {"query": self.query, "documents": docs}
+
+# Usage
+session = PromptSession.from_prompt_template(
+    prompt=prompt,
+    session_data=input_data,
+    render_kwargs={"format": "markdown"}
+)
+```
+
+## Schema Metadata
+
+Generated models include metadata linking them to their source:
+
+```python
+@classmethod
+@property
+def moxn_schema_metadata(cls) -> MoxnSchemaMetadata:
+    return MoxnSchemaMetadata(
+        schema_id="550e8400-e29b-41d4-a716-446655440000",
+        schema_version_id="version-uuid-if-from-commit",
+        prompt_id="prompt-uuid",
+        prompt_version_id="prompt-version-uuid",
+        task_id="task-uuid",
+        branch_id="branch-uuid-if-from-branch",
+        commit_id="commit-id-if-from-commit"
+    )
+```
+
+This enables:
+- Creating sessions directly from session data
+- Tracking which schema version was used in telemetry
+- Validating that session data matches the expected prompt
+
+## When to Regenerate
+
+Regenerate models when:
+
+- You add or modify variables in your prompts
+- You change property types
+- You add new prompts to your task
+- You want to capture a new commit version
+
+### Workflow suggestion
+
+Run codegen as part of your development workflow:
+
+```bash
+# In your project's Makefile or scripts
+generate-models:
+    python -c "
+import asyncio
+from moxn import MoxnClient
+
+async def main():
+    async with MoxnClient() as client:
+        await client.generate_task_models(
+            task_id='your-task-id',
+            branch_name='main',
+            output_dir='./src/generated'
+        )
+
+asyncio.run(main())
+"
+```
+
+Or add to CI/CD:
+
+```yaml
+# GitHub Actions example
+- name: Generate Moxn models
+  run: |
+    python scripts/generate_models.py
+    git diff --exit-code src/generated/
+```
+
+## Without Code Generation
+
+You don't have to use codegen. You can create your own models:
+
+```python
+from pydantic import BaseModel
+from moxn_types.base import RenderableModel
+
+class MyInput(RenderableModel):
+    query: str
+    context: list[str]
+
+    def render(self, **kwargs) -> dict[str, str]:
+        return {
+            "query": self.query,
+            "context": "\n".join(self.context)
+        }
+
+# Use directly
+session = await client.create_prompt_session(
+    prompt_id="...",
+    session_data=MyInput(query="...", context=["..."])
+)
+```
+
+The key requirement is implementing the `RenderableModel` protocol:
+
+```python
+class RenderableModel(Protocol):
+    def render(self, **kwargs) -> dict[str, str]:
+        """Return flat string dict for variable substitution."""
+        ...
+
+    @classmethod
+    @property
+    def moxn_schema_metadata(cls) -> MoxnSchemaMetadata | None:
+        """Optional metadata linking to Moxn schema."""
+        ...
+```
+
+## Type Mappings
+
+JSON Schema types map to Python types:
+
+| JSON Schema | Python Type |
+|-------------|-------------|
+| `string` | `str` |
+| `integer` | `int` |
+| `number` | `float` |
+| `boolean` | `bool` |
+| `array` | `list[T]` |
+| `object` | nested model or `dict` |
+| `string` + `format: date` | `date` |
+| `string` + `format: date-time` | `datetime` |
+| `string` + `format: email` | `str` (with validation) |
+| `string` + `format: uri` | `str` (with validation) |
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Prompt Sessions" icon="layer-group" href="/guides/sessions">
+    Use generated models with sessions
+  </Card>
+  <Card title="Variables & Schemas" icon="brackets-curly" href="/concepts/variables">
+    Understand how schemas work
+  </Card>
+  <Card title="RAG Example" icon="magnifying-glass" href="/examples/rag">
+    See codegen in a complete example
+  </Card>
+  <Card title="Web App: Variables" icon="browser" href="/webapp/variables">
+    Define variables in the web app
+  </Card>
+</CardGroup>

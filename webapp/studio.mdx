@@ -1,0 +1,213 @@
+---
+title: Prompt Studio
+description: Test and iterate on prompts in real-time
+---
+
+The Prompt Studio is an interactive environment for testing and iterating on your prompts before using them in production.
+
+<Frame>
+  <img src="/images/11-studio-interface-full.png" alt="Prompt Studio interface" />
+</Frame>
+
+## Accessing the Studio
+
+Access the Studio from multiple places:
+
+1. **From the Dashboard**: Click **Studio** in the sidebar
+2. **From a Task**: Click the **Studio** button in the task header
+3. **From a Prompt**: Click **Open in Studio** on any prompt
+
+## Studio Interface
+
+### Header Controls
+
+<Frame>
+  <img src="/images/10-studio-prompt-selector.png" alt="Studio prompt selector" />
+</Frame>
+
+The header contains:
+
+| Control | Description |
+|---------|-------------|
+| **Prompt Selector** | Choose which prompt to test |
+| **Go to** | Navigate to the prompt's detail page |
+| **Branch Selector** | Choose which branch to use |
+| **Commit Selector** | Test specific versions |
+| **Model Settings** | Configure provider, model, temperature |
+| **Execute** | Run the prompt |
+
+### Prompt Template Panel
+
+The main editing area shows all messages in your prompt:
+
+- **System messages** (blue background)
+- **User messages** (gray background)
+- **Assistant messages** (white background)
+
+Edit messages directly in the Studio—changes auto-save to your working state.
+
+### Variables Panel
+
+On the right side, you'll see input variables:
+
+- Each variable from your prompt's input schema appears here
+- Fill in values to test different scenarios
+- Supports text, objects, arrays, and media types
+
+## Testing Prompts
+
+### Basic Testing
+
+<Steps>
+  <Step title="Select a prompt">
+    Use the prompt selector dropdown to choose a prompt.
+  </Step>
+  <Step title="Fill in variables">
+    Enter values for each input variable.
+  </Step>
+  <Step title="Configure model settings">
+    Choose provider, model, temperature, and max tokens.
+  </Step>
+  <Step title="Click Execute">
+    Run the prompt and see the response.
+  </Step>
+</Steps>
+
+### Variable Types
+
+| Type | How to Enter |
+|------|--------------|
+| **String** | Plain text in the input field |
+| **Number** | Numeric value |
+| **Boolean** | Toggle switch |
+| **Object** | JSON in code editor |
+| **Array** | JSON array in code editor |
+| **Image** | Upload or paste URL |
+| **File** | Upload file |
+
+### Viewing Results
+
+After execution, you'll see:
+
+- **Response content**: The LLM's output
+- **Token usage**: Input and output token counts
+- **Latency**: Time to generate response
+- **Cost estimate**: Based on model pricing
+
+Results are automatically logged for observability (visible in the Traces tab).
+
+## Import from Logs
+
+Replay previous executions by importing variable values from traces:
+
+<Steps>
+  <Step title="Click Import from Logs">
+    Open the import dialog.
+  </Step>
+  <Step title="Select a trace">
+    Browse recent traces or search by metadata.
+  </Step>
+  <Step title="Import">
+    Variable values are populated from that execution.
+  </Step>
+  <Step title="Modify and re-run">
+    Tweak values and execute again to compare.
+  </Step>
+</Steps>
+
+This is useful for:
+- Debugging production issues
+- Testing edge cases from real data
+- Building test cases from actual usage
+
+## Test Cases
+
+Create and manage test cases for systematic testing:
+
+### Creating Test Cases
+
+<Steps>
+  <Step title="Set up variables">
+    Fill in variable values for a test scenario.
+  </Step>
+  <Step title="Click Save as Test Case">
+    Name your test case (e.g., "Password reset request").
+  </Step>
+  <Step title="Add expected behavior">
+    Optionally add notes about expected output.
+  </Step>
+</Steps>
+
+### Running Test Cases
+
+1. Click **Test Cases** to see saved cases
+2. Select one to load its variable values
+3. Execute and compare results
+4. Create observations for regression testing
+
+## Multi-Turn Conversations
+
+Test conversational prompts with multiple turns:
+
+<Steps>
+  <Step title="Execute initial prompt">
+    Run with user's first message.
+  </Step>
+  <Step title="Click Add Turn">
+    Add the assistant response and a new user message.
+  </Step>
+  <Step title="Execute again">
+    Continue the conversation.
+  </Step>
+</Steps>
+
+Useful for testing:
+- Follow-up question handling
+- Context retention
+- Conversation flow
+
+## Tool Calling
+
+Test prompts with tools (function calling):
+
+1. **Configure tools**: Attach schemas to your prompt
+2. **Execute**: The model may return tool calls
+3. **Provide results**: Enter mock tool results
+4. **Continue**: See how the model uses the results
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Test edge cases">
+    Try empty inputs, very long inputs, and unusual characters.
+  </Accordion>
+  <Accordion title="Compare models">
+    Test the same prompt with different models to compare quality and cost.
+  </Accordion>
+  <Accordion title="Save test cases">
+    Build a library of test cases for regression testing.
+  </Accordion>
+  <Accordion title="Test before committing">
+    Always test prompt changes in Studio before committing.
+  </Accordion>
+  <Accordion title="Use real data">
+    Import from logs to test with production-like inputs.
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Creating Tasks & Prompts" icon="folder-plus" href="/webapp/creating">
+    Create content to test
+  </Card>
+  <Card title="Variables & Properties" icon="brackets-curly" href="/webapp/variables">
+    Define input variables
+  </Card>
+  <Card title="Reviewing Telemetry" icon="chart-line" href="/telemetry/reviewing">
+    Analyze test results
+  </Card>
+  <Card title="Branching & Committing" icon="code-branch" href="/webapp/versioning">
+    Save tested changes
+  </Card>
+</CardGroup>

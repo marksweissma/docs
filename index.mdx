@@ -1,97 +1,105 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: Introduction
+description: Versioned prompt management for production AI systems
 ---
 
-## Setting up
+# Moxn SDK
 
-Get your documentation site up and running in minutes.
+Moxn is a Git-inspired content management system for AI engineering teams. It brings version control semantics to prompt management, enabling teams to collaborate on prompts with branching, merging, and rollback capabilities—just like code.
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
+## The Problem
 
-## Make it yours
+Prompts are code, but they don't have the tooling.
 
-Design a docs site that looks great and empowers your users.
+When building AI applications, you face a familiar set of challenges:
 
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
+- **No version control**: Prompts live in code comments, config files, or databases with no history
+- **No type safety**: Input variables are stringly-typed, leading to runtime errors
+- **No observability**: You can't see what prompts actually ran in production
+- **No collaboration**: No shared workflows for reviewing prompts or debugging production traces
+
+Moxn solves these problems by treating prompts as first-class versioned entities with type-safe interfaces and full observability.
+
+## How Moxn Works
+
+<Steps>
+  <Step title="Create prompts in the web app">
+    Design prompts with images, PDFs, and variables. Define variables using your backend types—Moxn provides render hooks to transform rich data into LLM-optimized formats.
+  </Step>
+  <Step title="Generate type-safe models">
+    Run codegen to create Pydantic models for your prompts. Get autocomplete and validation.
+  </Step>
+  <Step title="Use in your code">
+    Fetch prompts, create sessions with your data, and send to any LLM provider. Or push existing prompts from your codebase to Moxn.
+  </Step>
+  <Step title="Log telemetry">
+    Log LLM calls with full context—input, output, and trace hierarchy. You control what gets logged.
+  </Step>
+</Steps>
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Git-Like Versioning" icon="code-branch">
+    Branch, commit, and rollback prompts. Pin production to specific commits.
   </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
+  <Card title="Type-Safe Interfaces" icon="shield-check">
+    Auto-generated Pydantic models ensure type safety from editor to runtime.
   </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
+  <Card title="Multi-Provider Support" icon="server">
+    Convert prompts to Anthropic, OpenAI, Google, or any provider format.
   </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
+  <Card title="Full Observability" icon="chart-line">
+    W3C Trace Context compatible spans with complete LLM event logging.
   </Card>
-</Columns>
+</CardGroup>
 
-## Create beautiful pages
+## Quick Example
 
-Everything you need to create world-class documentation.
+```python
+from moxn import MoxnClient
+from moxn_types.content import Provider
+from anthropic import Anthropic
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
+# Define your session data (generated via codegen)
+session_data = YourInputModel(
+    query="How do I reset my password?",
+    user_id="user_123"
+)
 
-## Need inspiration?
+# Fetch a prompt and create a session
+async with MoxnClient() as client:
+    session = await client.create_prompt_session(
+        prompt_id="your-prompt-id",
+        session_data=session_data
+    )
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+    # Convert to Anthropic format and send
+    anthropic = Anthropic()
+    response = anthropic.messages.create(
+        **session.to_anthropic_invocation()
+    )
+
+    # Log the interaction
+    async with client.span(session) as span:
+        await client.log_telemetry_event_from_response(
+            session, response, Provider.ANTHROPIC
+        )
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Get up and running in 5 minutes
+  </Card>
+  <Card title="The Moxn Workflow" icon="arrows-rotate" href="/guides/workflow">
+    Understand the end-to-end workflow
+  </Card>
+  <Card title="Core Concepts" icon="book" href="/concepts/entities">
+    Learn about Tasks, Prompts, and Messages
+  </Card>
+  <Card title="Examples" icon="code" href="/examples/rag">
+    See complete working examples
+  </Card>
+</CardGroup>

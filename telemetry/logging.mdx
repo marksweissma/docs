@@ -1,0 +1,395 @@
+---
+title: Logging Events
+description: Log LLM interactions with full context
+---
+
+Every LLM call should be logged for debugging, analysis, and compliance. This guide covers how to log telemetry events with Moxn.
+
+## Basic Logging
+
+The simplest way to log an LLM call:
+
+```python
+async with client.span(session) as span:
+    response = anthropic.messages.create(
+        **session.to_anthropic_invocation()
+    )
+
+    # Log with provider type
+    await client.log_telemetry_event_from_response(
+        session, response, Provider.ANTHROPIC
+    )
+```
+
+This logs:
+- The complete prompt (all messages)
+- Your session data and rendered input
+- The raw LLM response
+- Token counts and model info
+- Span context for tracing
+
+## What Gets Logged
+
+Each telemetry event captures:
+
+### Session Data
+
+Your original typed input:
+
+```python
+{
+    "query": "How do I reset my password?",
+    "customer_name": "Alice",
+    "documents": [...]  # Original Pydantic objects
+}
+```
+
+### Rendered Input
+
+The flattened strings injected into the prompt:
+
+```python
+{
+    "query": "How do I reset my password?",
+    "customer_name": "Alice",
+    "documents": "[{\"title\": \"FAQ\", ...}]"  # Serialized
+}
+```
+
+### Messages
+
+The complete prompt sent to the LLM:
+
+```python
+[
+    {"role": "system", "content": "You are a helpful assistant..."},
+    {"role": "user", "content": "Customer Alice asks: How do I..."}
+]
+```
+
+### Response
+
+The raw LLM response plus parsed content:
+
+```python
+{
+    "raw_response": {...},  # Original provider response
+    "parsed_response": {
+        "candidates": [...],
+        "input_tokens": 150,
+        "output_tokens": 200,
+        "model": "claude-sonnet-4-20250514",
+        "stop_reason": "end_turn"
+    }
+}
+```
+
+### Metadata
+
+Context about the call:
+
+```python
+{
+    "prompt_id": "uuid",
+    "prompt_name": "Product Help",
+    "task_id": "uuid",
+    "branch_id": "uuid",      # If branch access
+    "commit_id": "abc123",     # If commit access
+    "provider": "anthropic",
+    "is_uncommitted": false
+}
+```
+
+## Logging Methods
+
+### log_telemetry_event_from_response()
+
+The recommended method—handles parsing automatically:
+
+```python
+# Anthropic
+await client.log_telemetry_event_from_response(
+    session, response, Provider.ANTHROPIC
+)
+
+# OpenAI
+await client.log_telemetry_event_from_response(
+    session, response, Provider.OPENAI_CHAT
+)
+
+# Google
+await client.log_telemetry_event_from_response(
+    session, response, Provider.GOOGLE_GEMINI
+)
+```
+
+### log_telemetry_event()
+
+For manual event creation with more control:
+
+```python
+# Create event manually
+event = session.create_llm_event_from_response(
+    response=response,
+    provider=Provider.ANTHROPIC
+)
+
+# Or from parsed response with extra data
+parsed = session.parse_provider_response(response, Provider.ANTHROPIC)
+event = session.create_llm_event_from_parsed_response(
+    parsed_response=parsed,
+    request_config=config,          # Optional
+    schema_definition=schema,       # Optional
+    attributes={"custom": "data"},  # Optional
+    validation_errors=["field missing"]  # Optional
+)
+
+# Log it
+await client.log_telemetry_event(event)
+```
+
+## LLMEvent Structure
+
+The `LLMEvent` contains all logged data:
+
+```python
+event = session.create_llm_event_from_response(response, Provider.ANTHROPIC)
+
+# Prompt context
+event.promptId           # UUID
+event.promptName         # str
+event.taskId             # UUID
+event.branchId           # UUID | None
+event.commitId           # UUID | None
+event.isUncommitted      # bool
+
+# Input
+event.messages           # list[Message] - the prompt
+event.sessionData        # RenderableModel | None
+event.renderedInput      # dict[str, str] | None
+
+# Output
+event.provider           # Provider enum
+event.rawResponse        # dict
+event.parsedResponse     # ParsedResponse
+
+# Enhanced telemetry
+event.responseType       # str - "text", "tool_call", etc.
+event.requestConfig      # RequestConfig | None
+event.schemaDefinition   # SchemaDefinition | None
+event.toolCallsCount     # int
+event.validationErrors   # list[str] | None
+
+# Custom data
+event.attributes         # dict | None
+```
+
+## Custom Attributes
+
+Add custom data to events:
+
+```python
+# Method 1: In create_llm_event_from_parsed_response
+event = session.create_llm_event_from_parsed_response(
+    parsed_response=parsed,
+    attributes={
+        "query_type": "password_reset",
+        "customer_tier": "premium",
+        "ab_test_variant": "B"
+    }
+)
+
+# Method 2: On the span (affects all events in span)
+async with client.span(session, metadata={"customer_id": "123"}) as span:
+    span.set_attribute("query_type", "password_reset")
+    ...
+```
+
+## Validation Logging
+
+Log validation results for structured outputs:
+
+```python
+from pydantic import ValidationError
+
+response = anthropic.messages.create(
+    **session.to_anthropic_invocation()
+)
+
+parsed = session.parse_provider_response(response, Provider.ANTHROPIC)
+
+# Attempt to validate structured output
+validation_errors = []
+try:
+    result = YourOutputModel.model_validate_json(
+        parsed.candidates[0].content[0].text
+    )
+except ValidationError as e:
+    validation_errors = [str(err) for err in e.errors()]
+
+# Log with validation status
+event = session.create_llm_event_from_parsed_response(
+    parsed_response=parsed,
+    validation_errors=validation_errors if validation_errors else None
+)
+await client.log_telemetry_event(event)
+```
+
+## Event Types
+
+Events are categorized by type:
+
+| Type | Description |
+|------|-------------|
+| `text` | Standard text response |
+| `tool_call` | Response includes tool calls |
+| `structured_output` | JSON structured output |
+| `thinking` | Extended thinking response |
+| `mixed` | Multiple content types |
+
+The SDK detects the type automatically:
+
+```python
+event = session.create_llm_event_from_response(response, Provider.ANTHROPIC)
+print(event.responseType)  # "text", "tool_call", etc.
+```
+
+## Logging Without Spans
+
+You can log events without a span context, but it's not recommended:
+
+```python
+# Works but loses trace hierarchy
+response = anthropic.messages.create(...)
+await client.log_telemetry_event_from_response(
+    session, response, Provider.ANTHROPIC
+)
+```
+
+The event will still be logged, but won't be part of a trace hierarchy.
+
+## Batch Processing
+
+For batch operations, log each item individually:
+
+```python
+async with client.span(session, name="batch_process") as root_span:
+    for i, item in enumerate(items):
+        async with client.span(
+            session,
+            name=f"process_item_{i}",
+            metadata={"item_id": item.id}
+        ) as span:
+            response = await process_item(item)
+            await client.log_telemetry_event_from_response(
+                session, response, Provider.ANTHROPIC
+            )
+```
+
+## Error Logging
+
+Log errors alongside successful calls:
+
+```python
+async with client.span(session) as span:
+    try:
+        response = anthropic.messages.create(
+            **session.to_anthropic_invocation()
+        )
+        await client.log_telemetry_event_from_response(
+            session, response, Provider.ANTHROPIC
+        )
+    except anthropic.RateLimitError as e:
+        span.set_attribute("error", "rate_limit")
+        span.set_attribute("error_message", str(e))
+        # Event not logged, but span captures the error
+        raise
+```
+
+## Token Tracking
+
+Token counts are extracted automatically:
+
+```python
+event = session.create_llm_event_from_response(response, Provider.ANTHROPIC)
+
+print(event.parsedResponse.input_tokens)   # Prompt tokens
+print(event.parsedResponse.output_tokens)  # Completion tokens
+```
+
+These appear in the web app for cost analysis.
+
+## Complete Example
+
+```python
+from moxn import MoxnClient
+from moxn_types.content import Provider
+from anthropic import Anthropic
+from pydantic import ValidationError
+
+async def analyze_with_logging(query: str):
+    async with MoxnClient() as client:
+        session = await client.create_prompt_session(
+            prompt_id="analysis-prompt",
+            session_data=AnalysisInput(query=query)
+        )
+
+        async with client.span(
+            session,
+            name="structured_analysis",
+            metadata={"query_length": len(query)}
+        ) as span:
+
+            # Make the LLM call
+            anthropic = Anthropic()
+            response = anthropic.messages.create(
+                **session.to_anthropic_invocation()
+            )
+
+            # Parse response
+            parsed = session.parse_provider_response(
+                response, Provider.ANTHROPIC
+            )
+
+            # Validate structured output
+            validation_errors = []
+            try:
+                result = AnalysisOutput.model_validate_json(
+                    parsed.candidates[0].content[0].text
+                )
+                span.set_attribute("output_valid", True)
+            except ValidationError as e:
+                validation_errors = [str(err) for err in e.errors()]
+                span.set_attribute("output_valid", False)
+                result = None
+
+            # Log the complete event
+            event = session.create_llm_event_from_parsed_response(
+                parsed_response=parsed,
+                validation_errors=validation_errors or None,
+                attributes={
+                    "query_category": classify_query(query),
+                    "result_confidence": result.confidence if result else None
+                }
+            )
+            await client.log_telemetry_event(event)
+
+            return result
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Reviewing Telemetry" icon="magnifying-glass" href="/telemetry/reviewing">
+    View logs in the web app
+  </Card>
+  <Card title="Spans & Tracing" icon="timeline" href="/telemetry/spans">
+    Create trace hierarchies
+  </Card>
+  <Card title="PromptSession Reference" icon="book" href="/reference/session">
+    Event creation methods
+  </Card>
+  <Card title="Examples" icon="code" href="/examples/rag">
+    See logging in context
+  </Card>
+</CardGroup>

@@ -1,0 +1,335 @@
+---
+title: Variables & Properties
+description: Add dynamic content to your prompts
+---
+
+Variables let you inject runtime data into your prompts. This guide covers how to add variables and define their types.
+
+## Adding Variables
+
+Variables are placeholders in messages that get replaced at runtime:
+
+```
+"Customer {{customer_name}} asks: {{query}}"
+```
+
+Becomes:
+
+```
+"Customer Alice asks: How do I reset my password?"
+```
+
+### Insert a Variable
+
+<Steps>
+  <Step title="Open message editor">
+    Click on the message you want to edit.
+  </Step>
+  <Step title="Type /variable">
+    In the editor, type `/variable` to open the variable menu.
+  </Step>
+  <Step title="Select or create">
+    - Select an existing property
+    - Or create a new one
+  </Step>
+  <Step title="Configure">
+    Set the variable format:
+    - **Inline**: Embedded in text
+    - **Block**: On its own line
+  </Step>
+</Steps>
+
+### Message Editor
+
+The TipTap editor provides a rich editing experience:
+
+<Frame>
+  <img src="/images/05-message-editor-tiptap.png" alt="Message editor with TipTap" />
+</Frame>
+
+Features:
+- Rich text formatting
+- Variable insertion via `/variable` command
+- Auto-save as you edit
+- Visual distinction between text and variables
+
+### Variable Syntax
+
+Variables appear as `{{variable_name}}` in the editor:
+
+```
+System: You are a support agent for {{company_name}}.
+
+User: Customer: {{customer_name}}
+Query: {{query}}
+
+Relevant documents:
+{{search_results}}
+```
+
+## Properties
+
+A **Property** defines a variable's type and metadata.
+
+### Creating Properties
+
+<Steps>
+  <Step title="Open Properties">
+    In your task, click **Properties** in the sidebar.
+  </Step>
+  <Step title="Create Property">
+    Click **Create Property**.
+  </Step>
+  <Step title="Define the type">
+    Configure the property:
+    - **Name**: Variable name (e.g., `query`)
+    - **Type**: string, number, object, array, etc.
+    - **Description**: What this variable represents
+    - **Required**: Whether it must be provided
+  </Step>
+</Steps>
+
+### Property Types
+
+| Type | Use Case | Example |
+|------|----------|---------|
+| `string` | Text values | User queries, names |
+| `integer` | Whole numbers | Counts, IDs |
+| `number` | Decimals | Scores, prices |
+| `boolean` | True/false | Flags |
+| `object` | Structured data | User profiles |
+| `array` | Lists | Search results |
+
+### String Formats
+
+Strings can have special formats:
+
+```json
+{
+  "type": "string",
+  "format": "date"
+}
+```
+
+Available formats:
+- `date`: "2024-01-15"
+- `date-time`: "2024-01-15T10:30:00Z"
+- `email`: "user@example.com"
+- `uri`: "https://example.com"
+- `uuid`: "550e8400-e29b-..."
+
+### Complex Types
+
+#### Objects
+
+Define nested structures:
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "id": {"type": "string"},
+    "name": {"type": "string"},
+    "email": {"type": "string", "format": "email"}
+  },
+  "required": ["id", "name"]
+}
+```
+
+In the editor:
+
+```
+User profile: {{user}}
+```
+
+In code:
+
+```python
+session_data = Input(
+    user=User(id="123", name="Alice", email="alice@example.com")
+)
+```
+
+#### Arrays
+
+Define lists:
+
+```json
+{
+  "type": "array",
+  "items": {
+    "type": "object",
+    "properties": {
+      "title": {"type": "string"},
+      "content": {"type": "string"}
+    }
+  }
+}
+```
+
+In the editor:
+
+```
+Search results:
+{{documents}}
+```
+
+In code:
+
+```python
+session_data = Input(
+    documents=[
+        Document(title="FAQ", content="..."),
+        Document(title="Guide", content="...")
+    ]
+)
+```
+
+## Input Schema Auto-Sync
+
+When you add variables to messages, the prompt's **input schema** updates automatically.
+
+### How It Works
+
+```
+1. You add {{query}} to a message
+   ↓
+2. System detects the variable
+   ↓
+3. Links to property "query"
+   ↓
+4. Adds "query" to input schema
+   ↓
+5. Codegen produces typed model with "query" field
+```
+
+### Viewing the Input Schema
+
+1. Open your prompt
+2. Click **Schema** tab
+3. See all variables and their types
+
+### Schemas Tab
+
+View all schemas in the **Schemas** tab:
+
+<Frame>
+  <img src="/images/06-schemas-tab-overview.png" alt="Schemas tab overview" />
+</Frame>
+
+The tab shows:
+- **Input Schemas**: Auto-generated from prompt variables
+- **User-Defined Schemas**: Custom schemas for tools and structured output
+
+## Variable Formatting
+
+### Inline Variables
+
+Embedded within text:
+
+```
+"Hello {{customer_name}}, how can I help?"
+```
+
+### Block Variables
+
+On their own line, typically for larger content:
+
+```
+Context from search:
+{{search_results}}
+```
+
+### Choosing Format
+
+| Use Inline When | Use Block When |
+|-----------------|----------------|
+| Short values | Long content |
+| Part of a sentence | Standalone section |
+| Names, IDs | JSON, documents |
+
+## Referencing the Same Property
+
+You can use the same property multiple times:
+
+```
+System: You help customers of {{company_name}}.
+
+User: {{company_name}} customer {{customer_name}} asks:
+{{query}}
+```
+
+The same value is substituted everywhere.
+
+## Required vs Optional
+
+Mark properties as required or optional:
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "query": {"type": "string"},           // Required
+    "context": {"type": "string"}          // Optional
+  },
+  "required": ["query"]
+}
+```
+
+In code:
+
+```python
+class Input(RenderableModel):
+    query: str                    # Required
+    context: str | None = None    # Optional
+```
+
+## Default Values
+
+Properties can have default values:
+
+```json
+{
+  "type": "string",
+  "default": "You are a helpful assistant."
+}
+```
+
+If not provided at runtime, the default is used.
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Use descriptive names">
+    `customer_query` is better than `q` or `input1`.
+  </Accordion>
+  <Accordion title="Add descriptions">
+    Descriptions help teammates understand what each variable is for.
+  </Accordion>
+  <Accordion title="Choose appropriate types">
+    Use specific types (integer, date) rather than just string when possible.
+  </Accordion>
+  <Accordion title="Group related data">
+    Use objects to group related fields (user info, search context).
+  </Accordion>
+  <Accordion title="Keep schemas focused">
+    Each prompt should only have the variables it actually uses.
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Branching & Committing" icon="code-branch" href="/webapp/versioning">
+    Save your changes
+  </Card>
+  <Card title="Code Generation" icon="wand-magic-sparkles" href="/guides/codegen">
+    Generate typed models
+  </Card>
+  <Card title="Variables Concept" icon="brackets-curly" href="/concepts/variables">
+    Deep dive into the variable system
+  </Card>
+  <Card title="Prompt Sessions" icon="layer-group" href="/guides/sessions">
+    Use variables at runtime
+  </Card>
+</CardGroup>

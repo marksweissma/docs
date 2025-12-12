@@ -1,0 +1,279 @@
+---
+title: Working with Prompts
+description: Fetching and managing prompts with MoxnClient
+---
+
+This guide covers how to fetch prompts and tasks from Moxn, including caching behavior and access patterns.
+
+## MoxnClient
+
+The `MoxnClient` is your primary interface to the Moxn API. Always use it as an async context manager:
+
+```python
+from moxn import MoxnClient
+
+async with MoxnClient() as client:
+    # Your code here
+    prompt = await client.get_prompt(...)
+```
+
+The context manager:
+- Creates and manages HTTP connections
+- Starts the telemetry dispatcher
+- Ensures proper cleanup on exit
+- Flushes pending telemetry events
+
+### Configuration
+
+The client reads configuration from environment variables:
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `MOXN_API_KEY` | Your API key (required) | - |
+| `MOXN_BASE_URL` | API base URL | `https://api.moxn.dev` |
+| `MOXN_TIMEOUT` | Request timeout (seconds) | 30 |
+
+## Fetching Prompts
+
+### get_prompt()
+
+Fetch a single prompt by ID:
+
+```python
+# By branch (development)
+prompt = await client.get_prompt(
+    prompt_id="550e8400-e29b-41d4-a716-446655440000",
+    branch_name="main"
+)
+
+# By commit (production)
+prompt = await client.get_prompt(
+    prompt_id="550e8400-e29b-41d4-a716-446655440000",
+    commit_id="abc123def456"
+)
+```
+
+**Parameters:**
+- `prompt_id`: UUID or string ID of the prompt
+- `branch_name`: Branch to fetch from (mutually exclusive with `commit_id`)
+- `commit_id`: Specific commit to fetch (mutually exclusive with `branch_name`)
+
+**Returns:** `PromptTemplate` object
+
+### get_task()
+
+Fetch an entire task with all its prompts:
+
+```python
+task = await client.get_task(
+    task_id="task-uuid",
+    branch_name="main"
+)
+
+# Access prompts
+for prompt in task.prompts:
+    print(f"{prompt.name}: {len(prompt.messages)} messages")
+
+# Access schema definitions
+for name, schema in task.definitions.items():
+    print(f"Schema: {name}")
+```
+
+**Parameters:**
+- `task_id`: UUID or string ID of the task
+- `branch_name`: Branch to fetch from
+- `commit_id`: Specific commit to fetch
+
+**Returns:** `Task` object containing all prompts and schemas
+
+## Access Patterns
+
+### Branch Access (Development)
+
+Use `branch_name` during development to always get the latest version:
+
+```python
+# Always fetches fresh data from the API
+prompt = await client.get_prompt(
+    prompt_id="...",
+    branch_name="main"
+)
+```
+
+**Characteristics:**
+- Returns the latest state including uncommitted changes
+- Not cached (always fetches fresh)
+- May change between calls
+- Includes working state modifications
+
+### Commit Access (Production)
+
+Use `commit_id` in production for immutable, reproducible prompts:
+
+```python
+# Cached after first fetch
+prompt = await client.get_prompt(
+    prompt_id="...",
+    commit_id="abc123def456"
+)
+```
+
+**Characteristics:**
+- Returns an immutable snapshot
+- Cached indefinitely (commits never change)
+- Guaranteed reproducibility
+- No working state, only committed data
+
+### Getting the Latest Commit
+
+To get the latest committed state (without uncommitted changes), use a two-step pattern:
+
+```python
+# Step 1: Get the branch head commit
+head = await client.get_branch_head(
+    task_id="task-uuid",
+    branch_name="main"
+)
+
+# Step 2: Fetch by commit ID
+prompt = await client.get_prompt(
+    prompt_id="...",
+    commit_id=head.effectiveCommitId
+)
+```
+
+This is useful when you want the "stable" state of a branch without any work-in-progress changes.
+
+## Caching Behavior
+
+The SDK uses an in-memory cache for commit-based access:
+
+```python
+# First call: fetches from API, stores in cache
+prompt1 = await client.get_prompt("...", commit_id="abc123")
+
+# Second call: returns from cache (no API call)
+prompt2 = await client.get_prompt("...", commit_id="abc123")
+
+# Branch access: always fetches (never cached)
+prompt3 = await client.get_prompt("...", branch_name="main")
+```
+
+**Caching rules:**
+- Commit-based fetches are cached (commits are immutable)
+- Branch-based fetches always go to the API (branches change)
+- Cache is per-client instance
+- Cache is in-memory only (not persisted)
+
+## PromptTemplate Structure
+
+When you fetch a prompt, you get a `PromptTemplate` object:
+
+```python
+prompt = await client.get_prompt(...)
+
+# Core properties
+prompt.id           # UUID
+prompt.name         # str
+prompt.description  # str | None
+prompt.task_id      # UUID
+
+# Content
+prompt.messages     # list[Message]
+prompt.input_schema # Schema | None
+
+# Versioning context
+prompt.branch_id    # UUID | None
+prompt.commit_id    # UUID | None
+
+# Tools and completion config
+prompt.tools               # list[SdkTool]
+prompt.completion_config   # CompletionConfig | None
+prompt.function_tools      # list[SdkTool] (tool_type='tool')
+prompt.structured_output_schema  # SdkTool | None (tool_type='structured_output')
+```
+
+### Accessing Messages
+
+```python
+# Get all messages
+for message in prompt.messages:
+    print(f"[{message.role}] {message.name}")
+    for block_group in message.blocks:
+        for block in block_group:
+            print(f"  - {block.block_type}")
+
+# Get messages by role
+system_messages = [m for m in prompt.messages if m.role == "system"]
+user_messages = [m for m in prompt.messages if m.role == "user"]
+
+# Get a specific message by role
+system = prompt.get_message_by_role("system")
+```
+
+### Messages contain blocks
+
+Messages use a 2D array structure for content blocks:
+
+```python
+message.blocks  # list[list[ContentBlock]]
+# Outer list: paragraphs/sections
+# Inner list: blocks within a paragraph
+```
+
+Block types include:
+- `TextContent`: Plain text
+- `Variable`: Template variables
+- `ImageContentFromSource`: Images
+- `PDFContentFromSource`: PDF documents
+- `ToolCall` / `ToolResult`: Function calling
+
+## Error Handling
+
+Handle common errors when fetching prompts:
+
+```python
+import httpx
+
+async with MoxnClient() as client:
+    try:
+        prompt = await client.get_prompt(
+            prompt_id="...",
+            branch_name="main"
+        )
+    except httpx.HTTPStatusError as e:
+        if e.response.status_code == 404:
+            print("Prompt not found")
+        elif e.response.status_code == 403:
+            print("Not authorized to access this prompt")
+        else:
+            raise
+```
+
+## Verifying Access
+
+Before making calls, you can verify your API key is valid:
+
+```python
+async with MoxnClient() as client:
+    info = await client.verify_access()
+    print(f"Authenticated: {info['authenticated']}")
+    print(f"Tenant: {info['tenant_id']}")
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Prompt Sessions" icon="layer-group" href="/guides/sessions">
+    Combine prompts with runtime data
+  </Card>
+  <Card title="Provider Integration" icon="plug" href="/guides/providers">
+    Convert prompts to provider formats
+  </Card>
+  <Card title="Versioning Concepts" icon="code-branch" href="/concepts/versioning">
+    Understand branches and commits
+  </Card>
+  <Card title="Entity Model" icon="diagram-project" href="/concepts/entities">
+    Learn about Tasks, Prompts, and Messages
+  </Card>
+</CardGroup>

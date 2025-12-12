@@ -1,80 +1,272 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quick Start
+description: Get up and running with Moxn in 5 minutes
 ---
 
-## Get started in three steps
+This guide walks you through installing the SDK, fetching a prompt, and making your first LLM call with telemetry.
 
-Get your documentation site running locally and make your first customization.
+## Prerequisites
 
-### Step 1: Set up your local environment
+- Python 3.10+
+- A Moxn account and API key (get one at [moxn.dev](https://moxn.dev))
+- An LLM provider API key (Anthropic, OpenAI, or Google)
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+## Installation
 
-### Step 2: Deploy your changes
+Install the Moxn SDK using pip:
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+```bash
+pip install moxn
+```
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+Set your API key as an environment variable:
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+```bash
+export MOXN_API_KEY="your-api-key"
+```
 
-### Step 3: Go live
+## Your First Moxn Call
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+Here's a complete example that fetches a prompt, creates a session, sends it to Claude, and logs the interaction:
 
-## Next steps
+<CodeGroup>
 
-Now that you have your docs running, explore these key features:
+```python Anthropic
+import asyncio
+from moxn import MoxnClient
+from moxn_types.content import Provider
+from anthropic import Anthropic
+
+async def main():
+    # Initialize the Moxn client
+    async with MoxnClient() as client:
+        # Fetch a prompt from your task
+        # Use branch_name for development, commit_id for production
+        prompt = await client.get_prompt(
+            prompt_id="your-prompt-id",
+            branch_name="main"
+        )
+
+        # Create a session with your input data
+        session = await client.create_prompt_session(
+            prompt_id="your-prompt-id",
+            branch_name="main",
+            session_data=None  # Replace with your codegen'd model
+        )
+
+        # Convert to Anthropic format and send
+        anthropic = Anthropic()
+        response = anthropic.messages.create(
+            **session.to_anthropic_invocation()
+        )
+
+        print(response.content[0].text)
+
+        # Log telemetry
+        async with client.span(session) as span:
+            await client.log_telemetry_event_from_response(
+                session, response, Provider.ANTHROPIC
+            )
+
+asyncio.run(main())
+```
+
+```python OpenAI
+import asyncio
+from moxn import MoxnClient
+from moxn_types.content import Provider
+from openai import OpenAI
+
+async def main():
+    # Initialize the Moxn client
+    async with MoxnClient() as client:
+        # Fetch a prompt from your task
+        prompt = await client.get_prompt(
+            prompt_id="your-prompt-id",
+            branch_name="main"
+        )
+
+        # Create a session with your input data
+        session = await client.create_prompt_session(
+            prompt_id="your-prompt-id",
+            branch_name="main",
+            session_data=None  # Replace with your codegen'd model
+        )
+
+        # Convert to OpenAI format and send
+        openai = OpenAI()
+        response = openai.chat.completions.create(
+            **session.to_openai_chat_invocation()
+        )
+
+        print(response.choices[0].message.content)
+
+        # Log telemetry
+        async with client.span(session) as span:
+            await client.log_telemetry_event_from_response(
+                session, response, Provider.OPENAI_CHAT
+            )
+
+asyncio.run(main())
+```
+
+```python Google
+import asyncio
+from moxn import MoxnClient
+from moxn_types.content import Provider
+from google import genai
+
+async def main():
+    # Initialize the Moxn client
+    async with MoxnClient() as client:
+        # Create a session with your input data
+        session = await client.create_prompt_session(
+            prompt_id="your-prompt-id",
+            branch_name="main",
+            session_data=None  # Replace with your codegen'd model
+        )
+
+        # Convert to Google format and send
+        google_client = genai.Client()
+        response = google_client.models.generate_content(
+            **session.to_google_gemini_invocation()
+        )
+
+        print(response.text)
+
+        # Log telemetry
+        async with client.span(session) as span:
+            await client.log_telemetry_event_from_response(
+                session, response, Provider.GOOGLE_GEMINI
+            )
+
+asyncio.run(main())
+```
+
+</CodeGroup>
+
+## Understanding the Code
+
+Let's break down what's happening:
+
+### 1. MoxnClient as Context Manager
+
+```python
+async with MoxnClient() as client:
+```
+
+The client manages connections and telemetry batching. Always use it as an async context manager to ensure proper cleanup.
+
+### 2. Fetching Prompts
+
+```python
+prompt = await client.get_prompt(
+    prompt_id="your-prompt-id",
+    branch_name="main"  # or commit_id="abc123" for production
+)
+```
+
+- **Branch access** (`branch_name`): Gets the latest version, including uncommitted changes. Use for development.
+- **Commit access** (`commit_id`): Gets an immutable snapshot. Use for production.
+
+### 3. Creating Sessions
+
+```python
+session = await client.create_prompt_session(
+    prompt_id="your-prompt-id",
+    branch_name="main",
+    session_data=YourInputModel(...)  # Pydantic model from codegen
+)
+```
+
+A session combines your prompt template with runtime data. The `session_data` is typically a Pydantic model generated by codegen.
+
+### 4. Converting to Provider Format
+
+```python
+response = anthropic.messages.create(
+    **session.to_anthropic_invocation()
+)
+```
+
+The `to_*_invocation()` methods return complete payloads you can unpack directly into provider SDKs. They include:
+- Messages formatted for the provider
+- Model configuration from your prompt
+- Tools and structured output schemas (if configured)
+
+### 5. Logging Telemetry
+
+```python
+async with client.span(session) as span:
+    await client.log_telemetry_event_from_response(
+        session, response, Provider.ANTHROPIC
+    )
+```
+
+Spans create observable traces of your LLM calls. Every call within a span is linked for debugging and analysis.
+
+## Using Code Generation
+
+For type-safe session data, generate Pydantic models from your prompts:
+
+```python
+# Generate models for all prompts in a task
+async with MoxnClient() as client:
+    await client.generate_task_models(
+        task_id="your-task-id",
+        branch_name="main",
+        output_dir="./models"
+    )
+```
+
+This creates a Python file with Pydantic models matching your prompt's input schema:
+
+```python
+# models/your_task_models.py (generated)
+from moxn_types.base import RenderableModel
+
+class YourPromptInput(RenderableModel):
+    query: str
+    user_id: str
+    context: list[str] | None = None
+
+    def render(self, **kwargs) -> dict[str, str]:
+        # Transforms your data for prompt injection
+        return {
+            "query": self.query,
+            "user_id": self.user_id,
+            "context": json.dumps(self.context) if self.context else "",
+        }
+```
+
+Then use it in your code:
+
+```python
+from models.your_task_models import YourPromptInput
+
+session = await client.create_prompt_session(
+    prompt_id="your-prompt-id",
+    session_data=YourPromptInput(
+        query="How do I reset my password?",
+        user_id="user_123",
+        context=["Previous support tickets..."]
+    )
+)
+```
+
+## Next Steps
 
 <CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card title="The Moxn Workflow" icon="arrows-rotate" href="/guides/workflow">
+    Understand the full development workflow
+  </Card>
+  <Card title="Prompt Sessions" icon="layer-group" href="/guides/sessions">
+    Learn more about sessions and rendering
+  </Card>
+  <Card title="Code Generation" icon="wand-magic-sparkles" href="/guides/codegen">
+    Deep dive into type-safe model generation
+  </Card>
+  <Card title="Telemetry" icon="chart-line" href="/telemetry/spans">
+    Set up comprehensive observability
+  </Card>
 </CardGroup>
-
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>

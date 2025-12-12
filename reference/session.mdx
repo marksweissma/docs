@@ -1,0 +1,424 @@
+---
+title: PromptSession
+description: API reference for the PromptSession class
+---
+
+The `PromptSession` is the runtime representation of a prompt template combined with session data. It handles variable substitution, provider conversion, and response parsing.
+
+## Creation
+
+Sessions are created from prompt templates using the client:
+
+```python
+session = await client.create_prompt_session(
+    prompt_id="prompt-id",
+    branch_name="main",
+    session_data=QueryInput(query="Hello")
+)
+```
+
+Or directly from a template:
+
+```python
+session = PromptSession.from_prompt_template(
+    prompt=prompt_template,
+    session_data=QueryInput(query="Hello")
+)
+```
+
+## Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | `UUID` | Unique session identifier |
+| `prompt` | `PromptTemplate` | The underlying prompt template |
+| `prompt_id` | `UUID` | Shortcut to `prompt.id` |
+| `messages` | `list[Message]` | Current message list |
+| `session_data` | `RenderableModel \| None` | The session data for variable substitution |
+
+---
+
+## Provider Conversion
+
+These methods convert the session to provider-specific formats for direct SDK usage.
+
+### to_anthropic_invocation
+
+Convert to complete Anthropic API payload with model parameters.
+
+```python
+def to_anthropic_invocation(
+    context: MessageContext | dict | None = None,
+    *,
+    model: str | None = None,
+    max_tokens: int | None = None,
+    temperature: float | None = None,
+    top_p: float | None = None,
+    thinking: dict[str, Any] | None = None,
+) -> AnthropicInvocationParam
+```
+
+**Parameters:**
+| Name | Type | Description |
+|------|------|-------------|
+| `context` | `MessageContext \| dict \| None` | Additional context (merged with session_data) |
+| `model` | `str \| None` | Model override (e.g., "claude-sonnet-4-20250514") |
+| `max_tokens` | `int \| None` | Max tokens override |
+| `temperature` | `float \| None` | Temperature override |
+| `top_p` | `float \| None` | Top-p override |
+| `thinking` | `dict \| None` | Extended thinking configuration |
+
+**Returns:** Complete payload ready for `**` unpacking.
+
+```python
+response = anthropic.messages.create(
+    **session.to_anthropic_invocation()
+)
+
+# With overrides
+response = anthropic.messages.create(
+    **session.to_anthropic_invocation(
+        model="claude-sonnet-4-20250514",
+        max_tokens=1024
+    )
+)
+```
+
+**Automatic inclusions:**
+- Tools (if configured in prompt)
+- Structured output format (if response schema configured)
+- Model parameters from `completion_config`
+
+<Note>
+For structured outputs, add the beta header manually:
+```python
+extra_headers={"anthropic-beta": "structured-outputs-2025-11-13"}
+```
+</Note>
+
+### to_openai_chat_invocation
+
+Convert to complete OpenAI Chat API payload.
+
+```python
+def to_openai_chat_invocation(
+    context: MessageContext | dict | None = None,
+    *,
+    model: str | None = None,
+    max_tokens: int | None = None,
+    temperature: float | None = None,
+    top_p: float | None = None,
+    thinking: dict[str, Any] | None = None,
+) -> OpenAIChatInvocationParam
+```
+
+```python
+response = openai.chat.completions.create(
+    **session.to_openai_chat_invocation()
+)
+```
+
+### to_openai_responses_invocation
+
+Convert to OpenAI Responses API payload.
+
+```python
+def to_openai_responses_invocation(
+    context: MessageContext | dict | None = None,
+    *,
+    model: str | None = None,
+    max_tokens: int | None = None,
+    temperature: float | None = None,
+    top_p: float | None = None,
+    thinking: dict[str, Any] | None = None,
+) -> OpenAIResponsesInvocationParam
+```
+
+```python
+response = openai.responses.create(
+    **session.to_openai_responses_invocation()
+)
+```
+
+### to_google_gemini_invocation
+
+Convert to Google Gemini API payload.
+
+```python
+def to_google_gemini_invocation(
+    context: MessageContext | dict | None = None,
+    *,
+    model: str | None = None,
+    max_tokens: int | None = None,
+    temperature: float | None = None,
+    top_p: float | None = None,
+    thinking: dict[str, Any] | None = None,
+) -> GoogleInvocationParam
+```
+
+```python
+response = client.models.generate_content(
+    **session.to_google_gemini_invocation()
+)
+```
+
+### to_google_vertex_invocation
+
+Convert to Google Vertex AI payload.
+
+```python
+def to_google_vertex_invocation(
+    context: MessageContext | dict | None = None,
+    *,
+    model: str | None = None,
+    max_tokens: int | None = None,
+    temperature: float | None = None,
+    top_p: float | None = None,
+    thinking: dict[str, Any] | None = None,
+) -> GoogleInvocationParam
+```
+
+### to_invocation
+
+Generic method that auto-selects provider based on `completion_config.provider`.
+
+```python
+def to_invocation(
+    context: MessageContext | dict | None = None,
+    *,
+    provider: Provider | None = None,
+    model: str | None = None,
+    max_tokens: int | None = None,
+    temperature: float | None = None,
+    top_p: float | None = None,
+    thinking: dict[str, Any] | None = None,
+) -> ProviderInvocationPayload
+```
+
+---
+
+## Message-Only Conversion
+
+These methods return just the messages without model parameters.
+
+### to_anthropic
+
+```python
+def to_anthropic(
+    context: MessageContext | dict | None = None
+) -> AnthropicMessagesParam
+```
+
+Returns `{"system": ..., "messages": [...]}`.
+
+### to_openai_chat
+
+```python
+def to_openai_chat(
+    context: MessageContext | dict | None = None
+) -> OpenAIChatMessagesParam
+```
+
+Returns `{"messages": [...]}`.
+
+### to_openai_responses
+
+```python
+def to_openai_responses(
+    context: MessageContext | dict | None = None
+) -> OpenAIResponsesMessagesParam
+```
+
+Returns `{"input": [...], "instructions": ...}`.
+
+### to_google_gemini
+
+```python
+def to_google_gemini(
+    context: MessageContext | dict | None = None
+) -> GoogleMessagesParam
+```
+
+Returns `{"system_instruction": ..., "content": [...]}`.
+
+### to_provider_payload
+
+Generic method for any provider:
+
+```python
+def to_provider_payload(
+    provider: Provider,
+    context: MessageContext | dict | None = None,
+) -> ProviderPayload
+```
+
+---
+
+## Response Handling
+
+### parse_provider_response
+
+Parse a provider response into normalized format.
+
+```python
+def parse_provider_response(
+    response: Any,
+    provider: Provider,
+) -> ParsedResponse
+```
+
+```python
+response = anthropic.messages.create(**session.to_anthropic_invocation())
+parsed = session.parse_provider_response(response, Provider.ANTHROPIC)
+
+# Access normalized content
+for candidate in parsed.candidates:
+    for block in candidate.content_blocks:
+        if isinstance(block, TextContent):
+            print(block.text)
+```
+
+### create_llm_event_from_response
+
+Create an LLM event for telemetry from a raw provider response.
+
+```python
+def create_llm_event_from_response(
+    response: AnthropicMessage | OpenAIChatCompletion | GoogleGenerateContentResponse,
+    provider: Provider,
+) -> LLMEvent
+```
+
+```python
+response = anthropic.messages.create(**session.to_anthropic_invocation())
+event = session.create_llm_event_from_response(response, Provider.ANTHROPIC)
+await client.log_telemetry_event(event)
+```
+
+### create_llm_event_from_parsed_response
+
+Create an LLM event from an already-parsed response with additional metadata.
+
+```python
+def create_llm_event_from_parsed_response(
+    parsed_response: ParsedResponse,
+    request_config: RequestConfig | None = None,
+    schema_definition: SchemaDefinition | None = None,
+    attributes: dict[str, Any] | None = None,
+    validation_errors: list[str] | None = None,
+) -> LLMEvent
+```
+
+**Parameters:**
+| Name | Type | Description |
+|------|------|-------------|
+| `parsed_response` | `ParsedResponse` | The parsed response |
+| `request_config` | `RequestConfig \| None` | Request configuration used |
+| `schema_definition` | `SchemaDefinition \| None` | Schema or tool definitions |
+| `attributes` | `dict \| None` | Custom attributes |
+| `validation_errors` | `list[str] \| None` | Validation errors if schema validation failed |
+
+```python
+parsed = session.parse_provider_response(response, Provider.ANTHROPIC)
+
+# Validate structured output
+try:
+    result = MySchema.model_validate_json(parsed.candidates[0].content[0].text)
+    validation_errors = None
+except ValidationError as e:
+    validation_errors = [str(err) for err in e.errors()]
+    result = None
+
+event = session.create_llm_event_from_parsed_response(
+    parsed_response=parsed,
+    validation_errors=validation_errors
+)
+await client.log_telemetry_event(event)
+```
+
+---
+
+## Runtime Message Management
+
+Add messages to the session at runtime for multi-turn conversations.
+
+### append_user_text
+
+Append a user message with text content.
+
+```python
+def append_user_text(
+    text: str,
+    name: str = "",
+    description: str = "",
+) -> None
+```
+
+```python
+session.append_user_text("What about the weather tomorrow?")
+```
+
+### append_assistant_text
+
+Append an assistant message with text content.
+
+```python
+def append_assistant_text(
+    text: str,
+    name: str = "",
+    description: str = "",
+) -> None
+```
+
+```python
+session.append_assistant_text("The weather will be sunny.")
+```
+
+### append_assistant_response
+
+Append an assistant response from a parsed LLM response.
+
+```python
+def append_assistant_response(
+    parsed_response: ParsedResponse,
+    candidate_idx: int = 0,
+    name: str = "",
+    description: str = "",
+) -> None
+```
+
+This is the preferred way to add LLM responses for multi-turn conversations:
+
+```python
+# First turn
+response = anthropic.messages.create(**session.to_anthropic_invocation())
+parsed = session.parse_provider_response(response, Provider.ANTHROPIC)
+session.append_assistant_response(parsed)
+
+# Second turn
+session.append_user_text("Tell me more")
+response = anthropic.messages.create(**session.to_anthropic_invocation())
+```
+
+---
+
+## Context Handling
+
+The session automatically handles context from `session_data`:
+
+1. If `session_data` is provided, `render()` is called to get variables
+2. These variables are used for substitution in message templates
+3. Additional `context` parameters are merged (taking precedence)
+
+```python
+# session_data provides base variables
+session = await client.create_prompt_session(
+    prompt_id="prompt-id",
+    session_data=QueryInput(query="Hello", user="Alice")
+)
+
+# Additional context overrides session_data
+payload = session.to_anthropic_invocation(
+    context={"user": "Bob"}  # Overrides session_data.user
+)
+```

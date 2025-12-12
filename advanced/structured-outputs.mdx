@@ -1,0 +1,393 @@
+---
+title: Structured Outputs
+description: Get JSON responses that conform to a schema
+---
+
+Structured outputs let you get JSON responses that conform to a predefined schema. This guide covers how to configure and use structured outputs.
+
+## What Are Structured Outputs?
+
+Instead of free-form text:
+
+```
+The sentiment is positive with high confidence.
+```
+
+Get structured JSON:
+
+```json
+{
+  "sentiment": "positive",
+  "confidence": 0.95,
+  "keywords": ["happy", "satisfied", "great"]
+}
+```
+
+## Setting Up Structured Outputs
+
+### In the Web App
+
+<Steps>
+  <Step title="Create a Schema">
+    Define the output structure in the Schemas section.
+  </Step>
+  <Step title="Set as Structured Output">
+    Mark the schema as "Structured Output" (not "Tool").
+  </Step>
+  <Step title="Attach to Prompt">
+    Attach the schema to your prompt's structured output setting.
+  </Step>
+</Steps>
+
+### Schema Example
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "sentiment": {
+      "type": "string",
+      "enum": ["positive", "negative", "neutral"]
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "keywords": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "reasoning": {
+      "type": "string"
+    }
+  },
+  "required": ["sentiment", "confidence"]
+}
+```
+
+## Provider Support
+
+| Provider | Structured Output Support |
+|----------|--------------------------|
+| Anthropic | Yes (beta) |
+| OpenAI | Yes |
+| Google | Yes |
+
+## Using in Code
+
+### Basic Usage
+
+```python
+session = await client.create_prompt_session(
+    prompt_id="sentiment-analysis-prompt",
+    session_data=AnalysisInput(text="Great product!")
+)
+
+# Structured output schema is included automatically
+response = anthropic.messages.create(
+    **session.to_anthropic_invocation(),
+    extra_headers={"anthropic-beta": "structured-outputs-2025-11-13"}
+)
+```
+
+### Parsing the Response
+
+```python
+import json
+from pydantic import BaseModel
+
+class SentimentResult(BaseModel):
+    sentiment: str
+    confidence: float
+    keywords: list[str] = []
+    reasoning: str | None = None
+
+# Parse the response
+parsed = session.parse_provider_response(response, Provider.ANTHROPIC)
+text_content = parsed.candidates[0].content[0].text
+
+# Validate with Pydantic
+result = SentimentResult.model_validate_json(text_content)
+print(f"Sentiment: {result.sentiment} ({result.confidence:.0%})")
+```
+
+## Provider-Specific Handling
+
+### Anthropic
+
+Requires beta header:
+
+```python
+response = anthropic.messages.create(
+    **session.to_anthropic_invocation(),
+    extra_headers={"anthropic-beta": "structured-outputs-2025-11-13"}
+)
+```
+
+Generated payload includes:
+
+```python
+{
+    "output_format": {
+        "type": "json_schema",
+        "json_schema": {
+            "name": "SentimentResult",
+            "schema": {...}
+        }
+    }
+}
+```
+
+### OpenAI
+
+Works out of the box:
+
+```python
+response = openai.chat.completions.create(
+    **session.to_openai_chat_invocation()
+)
+```
+
+Generated payload includes:
+
+```python
+{
+    "response_format": {
+        "type": "json_schema",
+        "json_schema": {
+            "name": "SentimentResult",
+            "schema": {...},
+            "strict": True
+        }
+    }
+}
+```
+
+### Google
+
+```python
+response = client.models.generate_content(
+    **session.to_google_gemini_invocation()
+)
+```
+
+Generated config includes:
+
+```python
+{
+    "config": {
+        "response_schema": {...},
+        "response_mime_type": "application/json"
+    }
+}
+```
+
+## Validation Patterns
+
+### Basic Validation
+
+```python
+from pydantic import ValidationError
+
+try:
+    result = SentimentResult.model_validate_json(response_text)
+except ValidationError as e:
+    print(f"Invalid response: {e}")
+```
+
+### With Telemetry
+
+```python
+validation_errors = []
+try:
+    result = SentimentResult.model_validate_json(response_text)
+except ValidationError as e:
+    validation_errors = [str(err) for err in e.errors()]
+    result = None
+
+# Log with validation status
+event = session.create_llm_event_from_parsed_response(
+    parsed_response=parsed,
+    validation_errors=validation_errors or None
+)
+await client.log_telemetry_event(event)
+```
+
+### Retry on Failure
+
+```python
+async def analyze_with_retry(text: str, max_retries: int = 2):
+    for attempt in range(max_retries + 1):
+        response = await call_llm()
+        parsed = session.parse_provider_response(response, provider)
+
+        try:
+            result = SentimentResult.model_validate_json(
+                parsed.candidates[0].content[0].text
+            )
+            return result
+        except ValidationError as e:
+            if attempt == max_retries:
+                raise
+            # Optionally: add error to context for next attempt
+```
+
+## Schema Design Tips
+
+### Use Enums for Categories
+
+```json
+{
+  "category": {
+    "type": "string",
+    "enum": ["bug", "feature", "question", "other"]
+  }
+}
+```
+
+### Set Bounds for Numbers
+
+```json
+{
+  "score": {
+    "type": "number",
+    "minimum": 0,
+    "maximum": 10
+  }
+}
+```
+
+### Use Required Fields
+
+```json
+{
+  "required": ["category", "confidence"]
+}
+```
+
+### Allow Additional Context
+
+Include a reasoning field for explainability:
+
+```json
+{
+  "reasoning": {
+    "type": "string",
+    "description": "Explanation for the classification"
+  }
+}
+```
+
+## Tools vs Structured Outputs
+
+| Aspect | Tools (Function Calling) | Structured Outputs |
+|--------|-------------------------|-------------------|
+| Use when | LLM decides to use a tool | Always want JSON |
+| Control | LLM chooses when | Guaranteed |
+| Response | May include tool calls | Pure JSON |
+| Multiple schemas | Yes (multiple tools) | One schema |
+
+**Use tools when:** The LLM should decide whether to call a function
+
+**Use structured output when:** You always want a specific JSON format
+
+## Combining with Tools
+
+You can have both tools and structured output:
+
+- Tools for actions (search, calculate, etc.)
+- Structured output for the final response format
+
+```python
+# Prompt has both tools and structured output configured
+response = anthropic.messages.create(
+    **session.to_anthropic_invocation(),
+    extra_headers={"anthropic-beta": "structured-outputs-2025-11-13"}
+)
+
+# Response may include tool calls followed by structured output
+for block in response.content:
+    if block.type == "tool_use":
+        # Handle tool call
+        result = execute_tool(block.name, block.input)
+    elif block.type == "text":
+        # Parse structured output
+        output = SentimentResult.model_validate_json(block.text)
+```
+
+## Complete Example
+
+```python
+from moxn import MoxnClient
+from moxn_types.content import Provider
+from anthropic import Anthropic
+from pydantic import BaseModel, ValidationError
+
+class ExtractionResult(BaseModel):
+    entities: list[str]
+    summary: str
+    category: str
+    confidence: float
+
+async def extract_from_document(text: str):
+    async with MoxnClient() as client:
+        session = await client.create_prompt_session(
+            prompt_id="extraction-prompt",
+            session_data=ExtractionInput(document=text)
+        )
+
+        async with client.span(
+            session,
+            name="extract_entities",
+            metadata={"doc_length": len(text)}
+        ) as span:
+            anthropic = Anthropic()
+            response = anthropic.messages.create(
+                **session.to_anthropic_invocation(),
+                extra_headers={"anthropic-beta": "structured-outputs-2025-11-13"}
+            )
+
+            parsed = session.parse_provider_response(
+                response, Provider.ANTHROPIC
+            )
+
+            # Validate structured output
+            validation_errors = []
+            try:
+                result = ExtractionResult.model_validate_json(
+                    parsed.candidates[0].content[0].text
+                )
+                span.set_attribute("extraction_success", True)
+                span.set_attribute("entity_count", len(result.entities))
+            except ValidationError as e:
+                validation_errors = [str(err) for err in e.errors()]
+                span.set_attribute("extraction_success", False)
+                result = None
+
+            # Log with validation status
+            event = session.create_llm_event_from_parsed_response(
+                parsed_response=parsed,
+                validation_errors=validation_errors or None
+            )
+            await client.log_telemetry_event(event)
+
+            return result
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Data Extraction Example" icon="file-export" href="/examples/extraction">
+    Complete extraction example
+  </Card>
+  <Card title="Provider Integration" icon="plug" href="/guides/providers">
+    Provider-specific details
+  </Card>
+  <Card title="Code Generation" icon="wand-magic-sparkles" href="/guides/codegen">
+    Generate models for outputs
+  </Card>
+  <Card title="Logging Events" icon="list" href="/telemetry/logging">
+    Log validation results
+  </Card>
+</CardGroup>

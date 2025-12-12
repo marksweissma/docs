@@ -1,0 +1,274 @@
+---
+title: Creating Tasks & Prompts
+description: Create and manage AI content in the Moxn web app
+---
+
+This guide walks through creating Tasks, Prompts, and Messages in the Moxn web app at [moxn.dev](https://moxn.dev).
+
+## Dashboard Overview
+
+When you log in, the dashboard shows your workspace:
+
+<Frame>
+  <img src="/images/01-dashboard-overview.png" alt="Moxn dashboard" />
+</Frame>
+
+The dashboard displays:
+- **Tasks**: Your prompt collections
+- **API Keys**: Manage keys for SDK access
+- **Workspace info**: Team and usage details
+
+## Creating a Task
+
+A Task is your top-level container—think of it like a Git repository for a specific AI feature.
+
+<Steps>
+  <Step title="Navigate to Tasks">
+    From the dashboard, click **Tasks** in the sidebar.
+  </Step>
+  <Step title="Click Create Task">
+    Click the **Create Task** button in the top right.
+  </Step>
+  <Step title="Fill in details">
+    - **Name**: A descriptive name (e.g., "Customer Support Bot")
+    - **Description**: What this task is for
+  </Step>
+  <Step title="Create">
+    Click **Create** to create your task with a default "main" branch.
+  </Step>
+</Steps>
+
+### Tasks List
+
+<Frame>
+  <img src="/images/02-tasks-list.png" alt="Tasks list" />
+</Frame>
+
+Each task card shows:
+- Task name and description
+- Last updated time
+- Entity type badge
+
+### Task Organization
+
+Organize tasks by:
+- **Feature**: One task per AI feature
+- **Team**: One task per team's prompts
+- **Project**: One task per project
+
+- **Your Workspace**
+  - Customer Support Bot (Task)
+  - Search Assistant (Task)
+  - Document Analyzer (Task)
+
+## Creating a Prompt
+
+Prompts are templates for LLM invocations within a task.
+
+<Steps>
+  <Step title="Open your Task">
+    Click on the task where you want to create the prompt.
+  </Step>
+  <Step title="Click Create Prompt">
+    Click **Create Prompt** or the **+** button.
+  </Step>
+  <Step title="Enter details">
+    - **Name**: The prompt's name (e.g., "Product Help")
+    - **Description**: What this prompt does
+    - **Folder**: Optional folder path (e.g., "support/tier1")
+  </Step>
+  <Step title="Create">
+    Click **Create** to add the prompt.
+  </Step>
+</Steps>
+
+### Task Detail View
+
+When you open a task, you see the **Prompts** tab:
+
+<Frame>
+  <img src="/images/03-task-detail-prompts-tab.png" alt="Task detail with prompts" />
+</Frame>
+
+The task detail page shows:
+- **Prompts tab**: All prompts in this task
+- **Schemas tab**: Input schemas and user-defined schemas
+- **Traces tab**: Execution logs from SDK invocations
+
+### Prompt Naming
+
+Use folders to organize prompts:
+
+- **Customer Support Bot**
+  - support/
+    - product-help
+    - billing-questions
+  - classification/
+    - query-classifier
+  - escalation/
+    - escalation-handler
+
+The folder structure is stored in the prompt name itself.
+
+## Adding Messages
+
+Messages are the content blocks that make up your prompt.
+
+<Steps>
+  <Step title="Open your Prompt">
+    Click on the prompt to open the editor.
+  </Step>
+  <Step title="Add a Message">
+    Click **Add Message** or the **+** in the messages panel.
+  </Step>
+  <Step title="Choose role">
+    Select the message role:
+    - **System**: Instructions for the LLM
+    - **User**: User input template
+    - **Assistant**: Example responses (for few-shot)
+  </Step>
+  <Step title="Write content">
+    Use the rich text editor to write your message content.
+  </Step>
+</Steps>
+
+### Prompt Detail View
+
+Opening a prompt shows its components:
+
+<Frame>
+  <img src="/images/04-prompt-detail-overview.png" alt="Prompt detail page" />
+</Frame>
+
+The prompt page displays:
+- **Input Schema**: Auto-generated from message variables
+- **Tools**: Attached schemas for function calling
+- **Message Templates**: The ordered list of messages
+
+### Message Types
+
+| Role | Purpose | Example |
+|------|---------|---------|
+| **System** | LLM instructions | "You are a helpful customer support agent..." |
+| **User** | User input template | `Customer asks: {{query}}` |
+| **Assistant** | Example output | "I'd be happy to help with that..." |
+
+### Rich Content
+
+The editor supports:
+- **Text**: Plain text content
+- **Variables**: Dynamic values from your code
+- **Images**: Inline images
+- **Files**: PDF documents
+- **Code blocks**: Formatted code snippets
+
+## Creating Messages for Reuse
+
+Messages can be shared across prompts. Create standalone messages:
+
+<Steps>
+  <Step title="Go to Messages">
+    In your task, click **Messages** in the sidebar.
+  </Step>
+  <Step title="Create Message">
+    Click **Create Message**.
+  </Step>
+  <Step title="Configure">
+    - **Name**: Descriptive name (e.g., "Standard System Prompt")
+    - **Role**: system, user, or assistant
+    - **Content**: The message content
+  </Step>
+  <Step title="Use in Prompts">
+    When adding messages to prompts, select existing messages to reuse them.
+  </Step>
+</Steps>
+
+### Benefits of Reuse
+
+- Update once, affects all prompts using it
+- Consistent instructions across prompts
+- Easier maintenance
+
+## Message Ordering
+
+Drag and drop to reorder messages within a prompt:
+
+- **Prompt: Product Help**
+  1. System Prompt (system)
+  2. Context Template (user)
+  3. Query Template (user)
+
+The order determines the conversation flow sent to the LLM.
+
+## Prompt Settings
+
+Configure prompt behavior:
+
+### Completion Config
+
+Set default model settings:
+- **Provider**: Anthropic, OpenAI, Google
+- **Model**: claude-sonnet-4-20250514, gpt-4o, etc.
+- **Max Tokens**: Maximum response length
+- **Temperature**: Creativity (0-1)
+
+### Tools
+
+Attach tools for function calling:
+1. Create a Schema with tool definitions
+2. Attach to the prompt
+3. Configure tool_choice (auto, required, specific tool)
+
+### Structured Output
+
+For JSON responses:
+1. Create a Schema defining the output structure
+2. Attach as structured output
+3. Responses will conform to the schema
+
+## Deleting Content
+
+<Warning>
+Deletes are tracked per-branch and take effect on commit.
+</Warning>
+
+To delete:
+1. Click the **...** menu on the item
+2. Select **Delete**
+3. Confirm the deletion
+
+The item remains in other branches until you merge.
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Start with system prompts">
+    Write clear system instructions first. They set the tone for everything.
+  </Accordion>
+  <Accordion title="Use descriptive names">
+    Names appear in code and logs. Make them meaningful.
+  </Accordion>
+  <Accordion title="Test before committing">
+    Use the Studio to test prompts before committing changes.
+  </Accordion>
+  <Accordion title="Create reusable system prompts">
+    Share common instructions across prompts to ensure consistency.
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Variables & Properties" icon="brackets-curly" href="/webapp/variables">
+    Add dynamic variables to messages
+  </Card>
+  <Card title="Branching & Committing" icon="code-branch" href="/webapp/versioning">
+    Version control your prompts
+  </Card>
+  <Card title="Working with Prompts" icon="file-lines" href="/guides/prompts">
+    Use prompts in your code
+  </Card>
+  <Card title="Entity Model" icon="diagram-project" href="/concepts/entities">
+    Understand the data model
+  </Card>
+</CardGroup>

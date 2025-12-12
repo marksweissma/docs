@@ -1,0 +1,399 @@
+---
+title: Provider Integration
+description: Converting prompts to Anthropic, OpenAI, and Google formats
+---
+
+Moxn supports multiple LLM providers. This guide covers how to convert prompts to provider-specific formats and handle their responses.
+
+## Supported Providers
+
+```python
+from moxn_types.content import Provider
+
+Provider.ANTHROPIC       # Claude (Anthropic)
+Provider.OPENAI_CHAT     # GPT models (OpenAI Chat Completions)
+Provider.OPENAI_RESPONSES # OpenAI Responses API
+Provider.GOOGLE_GEMINI   # Gemini (Google AI Studio)
+Provider.GOOGLE_VERTEX   # Gemini (Vertex AI)
+```
+
+## Anthropic (Claude)
+
+### Basic usage
+
+```python
+from moxn import MoxnClient
+from moxn_types.content import Provider
+from anthropic import Anthropic
+
+async with MoxnClient() as client:
+    session = await client.create_prompt_session(
+        prompt_id="...",
+        session_data=your_input
+    )
+
+    anthropic = Anthropic()
+    response = anthropic.messages.create(
+        **session.to_anthropic_invocation()
+    )
+
+    # Log telemetry
+    async with client.span(session) as span:
+        await client.log_telemetry_event_from_response(
+            session, response, Provider.ANTHROPIC
+        )
+```
+
+### What to_anthropic_invocation() returns
+
+```python
+{
+    "system": "Your system message...",  # Optional
+    "messages": [
+        {"role": "user", "content": "..."},
+        {"role": "assistant", "content": "..."}
+    ],
+    "model": "claude-sonnet-4-20250514",  # From completion_config
+    "max_tokens": 4096,
+    "temperature": 0.7,
+    # If tools configured:
+    "tools": [...],
+    "tool_choice": {"type": "auto"},
+    # If structured output configured:
+    "output_format": {...}
+}
+```
+
+### Extended thinking
+
+For Claude models with extended thinking:
+
+```python
+response = anthropic.messages.create(
+    **session.to_anthropic_invocation(
+        thinking={"type": "enabled", "budget_tokens": 10000}
+    ),
+    extra_headers={"anthropic-beta": "interleaved-thinking-2025-05-14"}
+)
+```
+
+### Structured outputs
+
+If your prompt has a structured output schema configured:
+
+```python
+response = anthropic.messages.create(
+    **session.to_anthropic_invocation(),
+    extra_headers={"anthropic-beta": "structured-outputs-2025-11-13"}
+)
+```
+
+## OpenAI (GPT)
+
+### Chat Completions API
+
+```python
+from openai import OpenAI
+
+openai = OpenAI()
+response = openai.chat.completions.create(
+    **session.to_openai_chat_invocation()
+)
+
+# Log telemetry
+async with client.span(session) as span:
+    await client.log_telemetry_event_from_response(
+        session, response, Provider.OPENAI_CHAT
+    )
+```
+
+### What to_openai_chat_invocation() returns
+
+```python
+{
+    "messages": [
+        {"role": "system", "content": "..."},
+        {"role": "user", "content": "..."},
+        {"role": "assistant", "content": "..."}
+    ],
+    "model": "gpt-4o",
+    "max_tokens": 4096,
+    "temperature": 0.7,
+    # If tools configured:
+    "tools": [...],
+    "tool_choice": "auto",
+    "parallel_tool_calls": True,
+    # If structured output configured:
+    "response_format": {...}
+}
+```
+
+### Responses API
+
+For OpenAI's newer Responses API:
+
+```python
+response = openai.responses.create(
+    **session.to_openai_responses_invocation()
+)
+
+await client.log_telemetry_event_from_response(
+    session, response, Provider.OPENAI_RESPONSES
+)
+```
+
+### Reasoning models
+
+For o1, o3, and other reasoning models:
+
+```python
+response = openai.chat.completions.create(
+    **session.to_openai_chat_invocation(
+        thinking={"reasoning_effort": "high"}
+    )
+)
+```
+
+## Google (Gemini)
+
+### Google AI Studio
+
+```python
+from google import genai
+
+google_client = genai.Client()
+response = google_client.models.generate_content(
+    **session.to_google_gemini_invocation()
+)
+
+# Log telemetry
+async with client.span(session) as span:
+    await client.log_telemetry_event_from_response(
+        session, response, Provider.GOOGLE_GEMINI
+    )
+```
+
+### Vertex AI
+
+```python
+from google import genai
+
+vertex_client = genai.Client(vertexai=True)
+response = vertex_client.models.generate_content(
+    **session.to_google_vertex_invocation()
+)
+
+await client.log_telemetry_event_from_response(
+    session, response, Provider.GOOGLE_VERTEX
+)
+```
+
+### What to_google_gemini_invocation() returns
+
+```python
+{
+    "model": "gemini-2.5-flash",
+    "contents": [...],  # Conversation content
+    "config": {
+        "system_instruction": "...",
+        "max_output_tokens": 4096,
+        "temperature": 0.7,
+        # If tools configured:
+        "tools": [{"function_declarations": [...]}],
+        "tool_config": {...},
+        # If structured output:
+        "response_schema": {...},
+        "response_mime_type": "application/json"
+    }
+}
+```
+
+### Thinking models
+
+For Gemini thinking models:
+
+```python
+response = google_client.models.generate_content(
+    **session.to_google_gemini_invocation(
+        thinking={"thinking_budget": 10000}
+    )
+)
+```
+
+## Generic Provider Method
+
+Use `to_invocation()` for provider-agnostic code:
+
+```python
+from moxn_types.content import Provider
+
+# Use provider from prompt's completion_config
+payload = session.to_invocation()
+
+# Or specify explicitly
+payload = session.to_invocation(provider=Provider.ANTHROPIC)
+
+# With overrides
+payload = session.to_invocation(
+    provider=Provider.OPENAI_CHAT,
+    model="gpt-4o",
+    max_tokens=8000,
+    temperature=0.5
+)
+```
+
+## Message-Only Methods
+
+If you only need messages (without model config):
+
+```python
+# Provider-specific message format
+messages = session.to_message_params(Provider.ANTHROPIC)
+
+# Or use specific methods
+anthropic_payload = session.to_anthropic()      # {system, messages}
+openai_payload = session.to_openai_chat()       # {messages}
+google_payload = session.to_google_gemini()     # {system_instruction, content}
+```
+
+## Parsing Responses
+
+Parse any provider's response to a normalized format:
+
+```python
+from moxn_types.content import Provider
+
+# Parse based on provider
+parsed = session.parse_provider_response(response, Provider.ANTHROPIC)
+
+# Access normalized data
+parsed.candidates        # list[Candidate] - response options
+parsed.input_tokens      # int | None
+parsed.output_tokens     # int | None
+parsed.model             # str | None
+parsed.stop_reason       # str | None
+parsed.raw_response      # dict - original response
+parsed.provider          # Provider
+
+# Each candidate has content blocks
+for candidate in parsed.candidates:
+    for block in candidate.content:
+        match block.block_type:
+            case "text":
+                print(block.text)
+            case "tool_call":
+                print(f"{block.tool_name}: {block.input}")
+            case "thinking":
+                print(f"Thinking: {block.text}")
+```
+
+## Tool Use
+
+If your prompt has tools configured, they're automatically included:
+
+```python
+# Tools are included in the invocation
+response = anthropic.messages.create(
+    **session.to_anthropic_invocation()
+)
+
+# Check for tool calls in response
+parsed = session.parse_provider_response(response, Provider.ANTHROPIC)
+for candidate in parsed.candidates:
+    for block in candidate.content:
+        if block.block_type == "tool_call":
+            # Execute the tool
+            result = execute_tool(block.tool_name, block.input)
+
+            # Add tool result to session (if doing multi-turn)
+            # Then call the LLM again...
+```
+
+### Tool choice
+
+The SDK translates tool_choice across providers:
+
+| Moxn Setting | Anthropic | OpenAI | Google |
+|--------------|-----------|--------|--------|
+| `"auto"` | `{"type": "auto"}` | `"auto"` | `{"mode": "AUTO"}` |
+| `"required"` | `{"type": "any"}` | `"required"` | `{"mode": "ANY"}` |
+| `"none"` | Tools omitted | `"none"` | `{"mode": "NONE"}` |
+| `"tool_name"` | `{"type": "tool", "name": "..."}` | `{"type": "function", "function": {"name": "..."}}` | `{"mode": "ANY", ...}` |
+
+## Multimodal Content
+
+Images and PDFs are automatically converted to provider-specific formats:
+
+```python
+# Anthropic: base64 with media_type
+{
+    "type": "image",
+    "source": {
+        "type": "base64",
+        "media_type": "image/png",
+        "data": "..."
+    }
+}
+
+# OpenAI: data URI
+{
+    "type": "image_url",
+    "image_url": {"url": "data:image/png;base64,..."}
+}
+
+# Google: Part with inline_data
+Part(inline_data=Blob(mime_type="image/png", data=...))
+```
+
+<Tip>
+The SDK handles signed URL refresh automatically for images and PDFs stored in cloud storage.
+</Tip>
+
+## Error Handling
+
+Handle provider-specific errors:
+
+```python
+from anthropic import APIError as AnthropicError
+from openai import APIError as OpenAIError
+
+try:
+    response = anthropic.messages.create(
+        **session.to_anthropic_invocation()
+    )
+except AnthropicError as e:
+    if "rate_limit" in str(e):
+        # Handle rate limiting
+        await asyncio.sleep(60)
+    else:
+        raise
+```
+
+## Provider Feature Matrix
+
+| Feature | Anthropic | OpenAI Chat | OpenAI Responses | Google |
+|---------|-----------|-------------|------------------|--------|
+| System messages | Separate field | In messages | Instructions | Config |
+| Tools | Yes | Yes | Yes | Yes |
+| Structured output | Yes (beta) | Yes | Yes | Yes |
+| Images | Yes | Yes | Yes | Yes |
+| PDFs | Yes | Yes | Limited | Yes |
+| Extended thinking | Yes | Yes (o1/o3) | Yes | Yes |
+| Streaming | SDK level | SDK level | SDK level | SDK level |
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Code Generation" icon="wand-magic-sparkles" href="/guides/codegen">
+    Generate type-safe input models
+  </Card>
+  <Card title="Structured Outputs" icon="brackets-curly" href="/advanced/structured-outputs">
+    Configure and parse structured responses
+  </Card>
+  <Card title="Multimodal Content" icon="images" href="/advanced/multimodal">
+    Work with images and documents
+  </Card>
+  <Card title="Telemetry" icon="chart-line" href="/telemetry/spans">
+    Log provider interactions
+  </Card>
+</CardGroup>
