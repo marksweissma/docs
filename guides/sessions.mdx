@@ -68,14 +68,25 @@ Session data goes through a transformation pipeline:
 ```mermaid
 flowchart TB
     A["YourInputModel (Pydantic)"] --> B[".render()"]
-    B --> C["dict[str, str] (flat string values)"]
+    B --> C["dict[str, RenderValue]"]
     C --> D["Variable substitution in messages"]
     D --> E["Provider-specific format"]
+
+    subgraph RenderValue["RenderValue Types"]
+        S["str - text values"]
+        CB["ContentBlock - images, PDFs"]
+        ARR["Sequence[ContentBlock] - arrays"]
+    end
 ```
+
+The `render()` method returns a dictionary where values can be:
+- **Strings**: Simple text values (the base case)
+- **ContentBlocks**: Multimodal content like images and PDFs
+- **Arrays**: Sequences of ContentBlocks for structured context (e.g., citations)
 
 ### How render() works
 
-The `render()` method transforms your typed data into a flat dictionary of strings:
+The `render()` method transforms your typed data into a dictionary that maps variable names to values. The base case returns string values:
 
 ```python
 class ProductHelpInput(RenderableModel):
@@ -92,6 +103,8 @@ class ProductHelpInput(RenderableModel):
 ```
 
 Each key in the returned dict corresponds to a variable name in your prompt messages.
+
+For multimodal content and structured arrays, `render()` can return ContentBlock types instead of strings—see [Advanced Render Patterns](#advanced-render-patterns) below.
 
 ### Customizing render()
 
@@ -124,6 +137,66 @@ def render(self, **kwargs) -> dict[str, str]:
         "documents": f"<documents>\n{docs_xml}\n</documents>"
     }
 ```
+
+### Advanced Render Patterns
+
+Beyond simple strings, `render()` can return ContentBlock types for multimodal content and arrays for structured context.
+
+#### Multimodal Variables
+
+Inject images and PDFs directly into your prompts:
+
+```python
+from moxn.base_models.blocks.image import ImageContentFromSource
+from moxn.base_models.blocks.file import PDFContentFromSource
+
+class DocumentAnalysisInput(RenderableModel):
+    query: str
+    document_url: str
+    screenshot_url: str
+
+    def render(self, **kwargs) -> dict[str, Any]:
+        return {
+            "query": self.query,
+            "document": PDFContentFromSource(
+                url=self.document_url,
+                name="source_document.pdf",
+            ),
+            "screenshot": ImageContentFromSource(
+                url=self.screenshot_url,
+            ),
+        }
+```
+
+When the session converts to provider format, these ContentBlocks become the appropriate multimodal content (e.g., `image` and `document` blocks for Anthropic).
+
+#### Arrays for Citations
+
+Return arrays of ContentBlocks to enable structured citation support. This is particularly useful with Anthropic's citations API, which allows the model to explicitly reference specific chunks of context in its response:
+
+```python
+from moxn.base_models.blocks.text import TextContent
+
+class RAGInput(RenderableModel):
+    query: str
+    chunks: list[DocumentChunk]
+
+    def render(self, **kwargs) -> dict[str, Any]:
+        return {
+            "query": self.query,
+            # Array of TextContent blocks for citations
+            "context_chunks": [
+                TextContent(text=chunk.text)
+                for chunk in self.chunks
+            ],
+        }
+```
+
+When Anthropic's citations feature is enabled, each `TextContent` in the array becomes a citable source. The model's response can then reference specific chunks by index, making it easy to verify which sources informed each part of the response.
+
+<Info>
+Arrays of ContentBlocks work with any provider, but citation-aware responses are currently specific to Anthropic's citations API.
+</Info>
 
 ## Converting to Provider Format
 

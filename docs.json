@@ -68,6 +68,12 @@
         "tab": "Examples",
         "groups": [
           {
+            "group": "Getting Started",
+            "pages": [
+              "examples/building"
+            ]
+          },
+          {
             "group": "Complete Examples",
             "pages": [
               "examples/rag",

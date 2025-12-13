@@ -1,0 +1,276 @@
+---
+title: Building a Document Analysis Pipeline
+description: Step-by-step guide to creating prompts, variables, and schemas
+---
+
+This example walks through building a complete document analysis pipeline in the Moxn web app, demonstrating variables, typed properties, enums, and code generation.
+
+## What We'll Build
+
+A three-prompt pipeline that:
+1. **Classifies** documents into categories (contract, invoice, report, etc.)
+2. **Extracts** structured entities from the document
+3. **Generates** a summary report
+
+## Step 1: Create a Task
+
+Navigate to the dashboard and click **Create Task**. Name it `document-analysis-pipeline` with a description.
+
+A Task is a container for related prompts—like a Git repository for your AI features. All prompts within a task share schemas and are versioned together.
+
+## Step 2: Create the Classifier Prompt
+
+### Add a System Message
+
+Create a new prompt called `document-classifier`. Add a system message with instructions:
+
+```
+You are a document classification expert. Analyze the provided document and classify it into one of the following categories: contract, invoice, report, memo, or email.
+
+Be precise and consider the document's structure, language, and purpose.
+```
+
+### Add a User Message with Variables
+
+Create a user message. Instead of hardcoding content, we'll use a **variable** to inject the document at runtime.
+
+Type `/` in the editor to open the slash command menu:
+
+<Frame caption="The slash command menu showing formatting and variable options">
+  <img src="/images/example-01-slash-command-menu.png" alt="Slash command menu" />
+</Frame>
+
+Select **Variable Block** to open the property editor:
+
+<Frame caption="The property editor for configuring variable types">
+  <img src="/images/example-02-property-editor-string.png" alt="Property editor" />
+</Frame>
+
+Configure the variable:
+- **Property Name**: `document`
+- **Description**: "The document content to classify"
+- **Type**: String
+
+The type dropdown shows all available types:
+
+<Frame caption="Available property types including String, Number, Object, Array, and references">
+  <img src="/images/example-03-type-dropdown.png" alt="Type dropdown" />
+</Frame>
+
+After clicking **Create**, the variable appears as a styled block in your message:
+
+<Frame caption="Variable block inserted in the message editor">
+  <img src="/images/example-04-variable-block-inserted.png" alt="Variable block in editor" />
+</Frame>
+
+## Step 3: Define the Output Schema
+
+Navigate to the **Schemas** tab. You'll see:
+
+- **Input Schemas**: Auto-generated from prompt variables
+- **User-Defined Schemas**: Custom schemas for structured outputs
+
+<Frame caption="The Schemas tab showing Input Schemas and User-Defined Schemas">
+  <img src="/images/example-07-schemas-overview.png" alt="Schemas overview" />
+</Frame>
+
+### Create an Enum Schema
+
+Click **Create Schema** and name it `ClassificationResult`. Add a property `document_type` with **allowed values** to create an enum:
+
+<Frame caption="Configuring enum values in the Allowed Values field">
+  <img src="/images/example-09-enum-allowed-values.png" alt="Enum configuration" />
+</Frame>
+
+Enter comma-separated values: `contract, invoice, report, memo, email`
+
+The validation message confirms: "Must be one of: contract, invoice, report, memo, email"
+
+## Step 4: Generate Pydantic Models
+
+Run code generation to create typed Python models:
+
+```python
+import asyncio
+from moxn import MoxnClient
+
+async def generate():
+    async with MoxnClient() as client:
+        await client.generate_task_models(
+            task_id="your-task-id",
+            branch_name="main",
+            output_dir="./models"
+        )
+
+asyncio.run(generate())
+```
+
+This generates:
+
+```python
+# models/document_analysis_pipeline_models.py
+
+from enum import Enum
+from pydantic import BaseModel
+from moxn_types.base import RenderableModel
+
+class DocumentType(str, Enum):
+    CONTRACT = "contract"
+    INVOICE = "invoice"
+    REPORT = "report"
+    MEMO = "memo"
+    EMAIL = "email"
+
+class ClassificationResult(BaseModel):
+    """Structured output schema for document classification."""
+    document_type: DocumentType
+    confidence: float | None = None
+
+class DocumentClassifierInput(RenderableModel):
+    """Input schema for document-classifier prompt."""
+    document: str
+
+    def render(self, **kwargs) -> dict[str, str]:
+        return {"document": self.document}
+```
+
+## Step 5: Use in Your Application
+
+```python
+from moxn import MoxnClient
+from moxn_types.content import Provider
+from anthropic import Anthropic
+from models.document_analysis_pipeline_models import (
+    DocumentClassifierInput,
+    ClassificationResult
+)
+
+async def classify_document(document_text: str) -> ClassificationResult:
+    async with MoxnClient() as client:
+        session = await client.create_prompt_session(
+            prompt_id="document-classifier",
+            branch_name="main",
+            session_data=DocumentClassifierInput(document=document_text)
+        )
+
+        async with client.span(session, name="classify_document") as span:
+            anthropic = Anthropic()
+            response = anthropic.messages.create(
+                **session.to_anthropic_invocation(),
+                extra_headers={"anthropic-beta": "structured-outputs-2025-11-13"}
+            )
+
+            await client.log_telemetry_event_from_response(
+                session, response, Provider.ANTHROPIC
+            )
+
+            parsed = session.parse_provider_response(response, Provider.ANTHROPIC)
+            result = ClassificationResult.model_validate_json(
+                parsed.candidates[0].content[0].text
+            )
+
+            span.set_attribute("document_type", result.document_type.value)
+            return result
+```
+
+## Extending the Pipeline
+
+### Entity Extractor with Object Schema
+
+Create a second prompt `entity-extractor` with an object schema for extracted entities:
+
+```python
+class ExtractedEntities(BaseModel):
+    """Entities extracted from a document."""
+    people: list[str] = []
+    organizations: list[str] = []
+    dates: list[str] = []
+    amounts: list[float] = []
+    key_terms: list[str] = []
+
+class EntityExtractorInput(RenderableModel):
+    document: str
+    document_type: DocumentType  # Reference the enum from classifier
+
+    def render(self, **kwargs) -> dict[str, str]:
+        return {
+            "document": self.document,
+            "document_type": self.document_type.value
+        }
+```
+
+### Report Generator with Schema Reference
+
+Create a third prompt `report-generator` that references outputs from earlier prompts:
+
+```python
+class ReportGeneratorInput(RenderableModel):
+    document: str
+    classification: ClassificationResult  # Reference classifier output
+    entities: ExtractedEntities           # Reference extractor output
+
+    def render(self, **kwargs) -> dict[str, str]:
+        return {
+            "document": self.document,
+            "classification": self.classification.model_dump_json(),
+            "entities": self.entities.model_dump_json()
+        }
+```
+
+## Complete Pipeline
+
+```python
+async def analyze_document(document_text: str) -> dict:
+    """Run the complete document analysis pipeline."""
+
+    async with MoxnClient() as client:
+        # Step 1: Classify
+        classification = await classify_document(document_text)
+
+        # Step 2: Extract entities
+        entities = await extract_entities(
+            document_text,
+            classification.document_type
+        )
+
+        # Step 3: Generate report
+        report = await generate_report(
+            document_text,
+            classification,
+            entities
+        )
+
+        return {
+            "classification": classification,
+            "entities": entities,
+            "report": report
+        }
+```
+
+## Key Concepts Demonstrated
+
+| Feature | Where Used |
+|---------|------------|
+| **Variables** | `document` variable in classifier input |
+| **Enums** | `DocumentType` with allowed values |
+| **Objects** | `ExtractedEntities` with nested fields |
+| **Schema References** | `ReportGeneratorInput` using other schemas |
+| **Code Generation** | Type-safe Pydantic models |
+| **Telemetry** | Spans and logging for observability |
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="RAG Pipeline" icon="magnifying-glass" href="/examples/rag">
+    Add retrieval to your prompts
+  </Card>
+  <Card title="Multi-Agent Workflow" icon="users" href="/examples/multi-agent">
+    Parallel execution patterns
+  </Card>
+  <Card title="Variables Deep Dive" icon="brackets-curly" href="/webapp/variables">
+    Advanced variable configuration
+  </Card>
+  <Card title="Structured Outputs" icon="file-code" href="/advanced/structured-outputs">
+    Schema design patterns
+  </Card>
+</CardGroup>

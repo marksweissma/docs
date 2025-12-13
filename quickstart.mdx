@@ -51,7 +51,10 @@ async def main():
         session = await client.create_prompt_session(
             prompt_id="your-prompt-id",
             branch_name="main",
-            session_data=None  # Replace with your codegen'd model
+            session_data=YourPromptInput(ragItems=[
+                ragItem(title="Best Document", content="The answer to the user's query")
+                ]
+            )
         )
 
         # Convert to Anthropic format and send

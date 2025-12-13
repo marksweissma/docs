@@ -1,11 +1,17 @@
 ---
 title: Introduction
-description: Versioned prompt management for production AI systems
+description: A powerful prompt editor with Git-like versioning and type-safe code generation
 ---
 
 # Moxn SDK
 
-Moxn is a Git-inspired content management system for AI engineering teams. It brings version control semantics to prompt management, enabling teams to collaborate on prompts with branching, merging, and rollback capabilities—just like code.
+A powerful prompt editor with Git-like versioning and type-safe code generation.
+
+<Frame>
+  <img src="/images/hero-editor-mermaid.png" alt="Moxn editor with mermaid diagrams and variables" />
+</Frame>
+
+Moxn gives AI engineers a rich editing environment for building, versioning, and observing prompts—with the same productivity tools you expect from modern development workflows.
 
 ## The Problem
 
@@ -13,6 +19,7 @@ Prompts are code, but they don't have the tooling.
 
 When building AI applications, you face a familiar set of challenges:
 
+- **No dedicated tooling**: Prompts are scattered across code comments, YAML files, and spreadsheets—with no proper editor for structured content
 - **No version control**: Prompts live in code comments, config files, or databases with no history
 - **No type safety**: Input variables are stringly-typed, leading to runtime errors
 - **No observability**: You can't see what prompts actually ran in production
@@ -23,8 +30,8 @@ Moxn solves these problems by treating prompts as first-class versioned entities
 ## How Moxn Works
 
 <Steps>
-  <Step title="Create prompts in the web app">
-    Design prompts with images, PDFs, and variables. Define variables using your backend types—Moxn provides render hooks to transform rich data into LLM-optimized formats.
+  <Step title="Author prompts in the rich editor">
+    Build prompts with mermaid diagrams, code blocks, XML documents, images, and PDFs. Define typed variables that connect to your backend models.
   </Step>
   <Step title="Generate type-safe models">
     Run codegen to create Pydantic models for your prompts. Get autocomplete and validation.
@@ -37,20 +44,24 @@ Moxn solves these problems by treating prompts as first-class versioned entities
   </Step>
 </Steps>
 
+<Frame caption="The Moxn editor with structured content blocks">
+  <img src="/images/editor-rich-content.png" alt="Message editor with reminders and code blocks" />
+</Frame>
+
 ## Key Features
 
 <CardGroup cols={2}>
+  <Card title="Rich Prompt Editor" icon="pen-fancy">
+    A block-based editor with mermaid diagrams, code blocks, XML documents, and multimodal content. Author prompts and review traces in the same interface.
+  </Card>
   <Card title="Git-Like Versioning" icon="code-branch">
-    Branch, commit, and rollback prompts. Pin production to specific commits.
+    Branch, commit, and rollback prompts. Pin production to specific commits. Review diffs before deploying.
   </Card>
   <Card title="Type-Safe Interfaces" icon="shield-check">
-    Auto-generated Pydantic models ensure type safety from editor to runtime.
-  </Card>
-  <Card title="Multi-Provider Support" icon="server">
-    Convert prompts to Anthropic, OpenAI, Google, or any provider format.
+    Auto-generated Pydantic models ensure type safety from editor to runtime. Get autocomplete and validation.
   </Card>
   <Card title="Full Observability" icon="chart-line">
-    W3C Trace Context compatible spans with complete LLM event logging.
+    View traces and spans in the same rich editor. W3C Trace Context compatible with complete LLM event logging.
   </Card>
 </CardGroup>
 
