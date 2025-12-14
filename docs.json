@@ -68,17 +68,9 @@
         "tab": "Examples",
         "groups": [
           {
-            "group": "Getting Started",
+            "group": "Examples",
             "pages": [
               "examples/building"
-            ]
-          },
-          {
-            "group": "Complete Examples",
-            "pages": [
-              "examples/rag",
-              "examples/extraction",
-              "examples/multi-agent"
             ]
           }
         ]
@@ -103,11 +95,6 @@
           "anchor": "App",
           "href": "https://moxn.dev",
           "icon": "browser"
-        },
-        {
-          "anchor": "GitHub",
-          "href": "https://github.com/moxn-ai",
-          "icon": "github"
         }
       ]
     }
@@ -141,8 +128,5 @@
     ]
   },
   "footer": {
-    "socials": {
-      "github": "https://github.com/moxn-ai"
-    }
   }
 }

@@ -51,8 +51,12 @@ async def main():
         session = await client.create_prompt_session(
             prompt_id="your-prompt-id",
             branch_name="main",
-            session_data=YourPromptInput(ragItems=[
-                ragItem(title="Best Document", content="The answer to the user's query")
+            session_data=YourPromptInput(
+                ragItems=[
+                    ragItem(
+                        title="Best Document",
+                         content="The answer to the user's query"
+                    )
                 ]
             )
         )
@@ -148,6 +152,38 @@ asyncio.run(main())
 
 </CodeGroup>
 
+## From Template to Provider Call
+
+The code above follows the core Moxn pattern (see [Core Concepts](/index#core-concepts)):
+
+| Step | What Happens |
+|------|--------------|
+| **1. Fetch template** | Your prompt (messages, variables, config) is retrieved from Moxn |
+| **2. Create session** | Template + your `session_data` = a session ready to render |
+| **3. Build invocation** | `to_anthropic_invocation()` returns a plain Python dict |
+| **4. Call provider** | You pass the dict to the provider SDK with `**invocation` |
+
+### You Control the Payload
+
+The invocation is just a dictionary—you can inspect, modify, or extend it:
+
+```python
+invocation = session.to_anthropic_invocation()
+
+# Add streaming
+invocation["stream"] = True
+
+# Use a new provider feature
+invocation["extra_headers"] = {"anthropic-beta": "citations-2025-01-01"}
+
+# Override settings for A/B testing
+invocation["model"] = "claude-sonnet-4-20250514"
+
+response = anthropic.messages.create(**invocation)
+```
+
+This design is intentional: Moxn helps you **build payloads**, but never **owns the integration**. You always call the provider SDK directly—no wrapper, no middleware, no magic. If a provider releases a new feature tomorrow, you can use it immediately by adding parameters to the dict.
+
 ## Understanding the Code
 
 Let's break down what's happening:
@@ -193,6 +229,7 @@ response = anthropic.messages.create(
 ```
 
 The `to_*_invocation()` methods return complete payloads you can unpack directly into provider SDKs. They include:
+
 - Messages formatted for the provider
 - Model configuration from your prompt
 - Tools and structured output schemas (if configured)
@@ -266,7 +303,11 @@ session = await client.create_prompt_session(
   <Card title="Prompt Sessions" icon="layer-group" href="/guides/sessions">
     Learn more about sessions and rendering
   </Card>
-  <Card title="Code Generation" icon="wand-magic-sparkles" href="/guides/codegen">
+  <Card
+    title="Code Generation"
+    icon="wand-magic-sparkles"
+    href="/guides/codegen"
+  >
     Deep dive into type-safe model generation
   </Card>
   <Card title="Telemetry" icon="chart-line" href="/telemetry/spans">
