@@ -186,23 +186,35 @@ event.attributes         # dict | None
 
 ## Custom Attributes
 
-Add custom data to events:
+Add custom data to events by setting metadata when creating the span:
 
 ```python
-# Method 1: In create_llm_event_from_parsed_response
-event = session.create_llm_event_from_parsed_response(
-    parsed_response=parsed,
-    attributes={
+# Set metadata at span creation (preferred)
+async with client.span(
+    session,
+    metadata={
+        "customer_id": "123",
         "query_type": "password_reset",
         "customer_tier": "premium",
         "ab_test_variant": "B"
     }
-)
+) as span:
+    response = await call_llm()
+    await client.log_telemetry_event_from_response(...)
+```
 
-# Method 2: On the span (affects all events in span)
-async with client.span(session, metadata={"customer_id": "123"}) as span:
-    span.set_attribute("query_type", "password_reset")
-    ...
+This metadata is captured with all telemetry events logged within the span.
+
+For event-specific attributes, use `create_llm_event_from_parsed_response`:
+
+```python
+event = session.create_llm_event_from_parsed_response(
+    parsed_response=parsed,
+    attributes={
+        "validation_passed": True,
+        "response_category": "helpful"
+    }
+)
 ```
 
 ## Validation Logging
@@ -288,10 +300,13 @@ async with client.span(session, name="batch_process") as root_span:
 
 ## Error Logging
 
-Log errors alongside successful calls:
+Spans automatically capture errors when exceptions are raised:
 
 ```python
-async with client.span(session) as span:
+async with client.span(
+    session,
+    metadata={"operation": "llm_call"}
+) as span:
     try:
         response = anthropic.messages.create(
             **session.to_anthropic_invocation()
@@ -300,9 +315,8 @@ async with client.span(session) as span:
             session, response, Provider.ANTHROPIC
         )
     except anthropic.RateLimitError as e:
-        span.set_attribute("error", "rate_limit")
-        span.set_attribute("error_message", str(e))
-        # Event not logged, but span captures the error
+        # The span automatically captures error.type and error.message
+        # when the exception propagates
         raise
 ```
 
@@ -323,7 +337,7 @@ These appear in the web app for cost analysis.
 
 ```python
 from moxn import MoxnClient
-from moxn_types.content import Provider
+from moxn.types.content import Provider
 from anthropic import Anthropic
 from pydantic import ValidationError
 
@@ -334,10 +348,14 @@ async def analyze_with_logging(query: str):
             session_data=AnalysisInput(query=query)
         )
 
+        # Set all known metadata at span creation
         async with client.span(
             session,
             name="structured_analysis",
-            metadata={"query_length": len(query)}
+            metadata={
+                "query_length": len(query),
+                "query_category": classify_query(query)
+            }
         ) as span:
 
             # Make the LLM call
@@ -357,18 +375,16 @@ async def analyze_with_logging(query: str):
                 result = AnalysisOutput.model_validate_json(
                     parsed.candidates[0].content[0].text
                 )
-                span.set_attribute("output_valid", True)
             except ValidationError as e:
                 validation_errors = [str(err) for err in e.errors()]
-                span.set_attribute("output_valid", False)
                 result = None
 
-            # Log the complete event
+            # Log the complete event with validation status
             event = session.create_llm_event_from_parsed_response(
                 parsed_response=parsed,
                 validation_errors=validation_errors or None,
                 attributes={
-                    "query_category": classify_query(query),
+                    "output_valid": result is not None,
                     "result_confidence": result.confidence if result else None
                 }
             )

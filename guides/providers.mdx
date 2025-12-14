@@ -8,7 +8,7 @@ Moxn supports multiple LLM providers. This guide covers how to convert prompts t
 ## Supported Providers
 
 ```python
-from moxn_types.content import Provider
+from moxn.types.content import Provider
 
 Provider.ANTHROPIC       # Claude (Anthropic)
 Provider.OPENAI_CHAT     # GPT models (OpenAI Chat Completions)
@@ -23,7 +23,7 @@ Provider.GOOGLE_VERTEX   # Gemini (Vertex AI)
 
 ```python
 from moxn import MoxnClient
-from moxn_types.content import Provider
+from moxn.types.content import Provider
 from anthropic import Anthropic
 
 async with MoxnClient() as client:
@@ -225,7 +225,7 @@ response = google_client.models.generate_content(
 Use `to_invocation()` for provider-agnostic code:
 
 ```python
-from moxn_types.content import Provider
+from moxn.types.content import Provider
 
 # Use provider from prompt's completion_config
 payload = session.to_invocation()
@@ -261,7 +261,7 @@ google_payload = session.to_google_gemini()     # {system_instruction, content}
 Parse any provider's response to a normalized format:
 
 ```python
-from moxn_types.content import Provider
+from moxn.types.content import Provider
 
 # Parse based on provider
 parsed = session.parse_provider_response(response, Provider.ANTHROPIC)

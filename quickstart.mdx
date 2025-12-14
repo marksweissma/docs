@@ -34,7 +34,7 @@ Here's a complete example that fetches a prompt, creates a session, sends it to 
 ```python Anthropic
 import asyncio
 from moxn import MoxnClient
-from moxn_types.content import Provider
+from moxn.types.content import Provider
 from anthropic import Anthropic
 
 async def main():
@@ -81,7 +81,7 @@ asyncio.run(main())
 ```python OpenAI
 import asyncio
 from moxn import MoxnClient
-from moxn_types.content import Provider
+from moxn.types.content import Provider
 from openai import OpenAI
 
 async def main():
@@ -120,7 +120,7 @@ asyncio.run(main())
 ```python Google
 import asyncio
 from moxn import MoxnClient
-from moxn_types.content import Provider
+from moxn.types.content import Provider
 from google import genai
 
 async def main():
@@ -265,7 +265,7 @@ This creates a Python file with Pydantic models matching your prompt's input sch
 # models/your_task_models.py (generated)
 from datetime import datetime
 from pydantic import BaseModel
-from moxn_types.base import RenderableModel
+from moxn.types.base import RenderableModel
 
 class Document(BaseModel):
     title: str

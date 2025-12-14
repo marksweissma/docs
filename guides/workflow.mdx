@@ -112,7 +112,7 @@ class ProductHelpInput(RenderableModel):
 You don't need generated models to use Moxn. Define your input model manually:
 
 ```python
-from moxn_types.base import RenderableModel
+from moxn.types.base import RenderableModel
 
 class MyInput(RenderableModel):
     query: str
@@ -137,7 +137,7 @@ Now use the generated models with the SDK:
 
 ```python
 from moxn import MoxnClient
-from moxn_types.content import Provider
+from moxn.types.content import Provider
 from generated_models.customer_support_bot_models import ProductHelpInput
 from anthropic import Anthropic
 
@@ -194,12 +194,15 @@ async def handle_support_query(customer_name: str, query: str):
     async with MoxnClient() as client:
         session = await client.create_prompt_session(...)
 
-        # Wrap your LLM call in a span
-        async with client.span(session, name="support_response") as span:
-            # Add searchable metadata
-            span.set_attribute("customer_name", customer_name)
-            span.set_attribute("query_type", classify_query(query))
-
+        # Wrap your LLM call in a span with searchable metadata
+        async with client.span(
+            session,
+            name="support_response",
+            metadata={
+                "customer_name": customer_name,
+                "query_type": classify_query(query)
+            }
+        ) as span:
             # Make the LLM call
             response = anthropic.messages.create(
                 **session.to_anthropic_invocation()

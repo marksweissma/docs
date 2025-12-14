@@ -194,9 +194,11 @@ async def span(
 async with client.span(
     session,
     name="process_query",
-    metadata={"customer_id": "cust_123"}
+    metadata={
+        "customer_id": "cust_123",
+        "status": "processing"
+    }
 ) as span:
-    span.set_attribute("status", "processing")
     response = anthropic.messages.create(**session.to_anthropic_invocation())
     await client.log_telemetry_event_from_response(session, response, Provider.ANTHROPIC)
 ```
@@ -368,9 +370,9 @@ async def create_prompt(
 ```
 
 ```python
-from moxn_types.requests import MessageData
-from moxn_types.content import MessageRole
-from moxn_types.blocks.text import TextContentModel
+from moxn.types.requests import MessageData
+from moxn.types.content import MessageRole
+from moxn.types.blocks.text import TextContentModel
 
 messages = [
     MessageData(

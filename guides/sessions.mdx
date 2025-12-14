@@ -248,7 +248,7 @@ response = client.models.generate_content(
 Use `to_invocation()` with an explicit provider:
 
 ```python
-from moxn_types.content import Provider
+from moxn.types.content import Provider
 
 # Uses completion_config.provider if set
 payload = session.to_invocation()
@@ -321,7 +321,7 @@ response2 = anthropic.messages.create(
 Parse provider responses into a normalized format:
 
 ```python
-from moxn_types.content import Provider
+from moxn.types.content import Provider
 
 # Get raw response from provider
 response = anthropic.messages.create(...)
@@ -387,7 +387,7 @@ Here's a full multi-turn conversation example:
 
 ```python
 from moxn import MoxnClient
-from moxn_types.content import Provider
+from moxn.types.content import Provider
 from anthropic import Anthropic
 from generated_models import ChatInput
 

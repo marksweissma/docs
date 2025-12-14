@@ -54,7 +54,7 @@ This creates:
 ```python
 # models/knowledge_base_assistant_models.py
 
-from moxn_types.base import RenderableModel
+from moxn.types.base import RenderableModel
 import json
 
 class Document(RenderableModel):
@@ -89,7 +89,7 @@ class RAGInput(RenderableModel):
 ```python
 import asyncio
 from moxn import MoxnClient
-from moxn_types.content import Provider
+from moxn.types.content import Provider
 from anthropic import Anthropic
 from models.knowledge_base_assistant_models import RAGInput, Document
 
@@ -118,20 +118,8 @@ async def answer_question(
     """Answer a question using RAG."""
 
     async with MoxnClient() as client:
-        # Step 1: Search for relevant documents
-        async with client.span(
-            session=None,  # Will create after search
-            name="search_documents"
-        ) as search_span:
-            search_span.set_attribute("query", query)
-
-            documents = await search_knowledge_base(query, top_k=5)
-
-            search_span.set_attribute("doc_count", len(documents))
-            search_span.set_attribute(
-                "top_score",
-                documents[0].score if documents else 0
-            )
+        # Step 1: Search for relevant documents (outside span)
+        documents = await search_knowledge_base(query, top_k=5)
 
         # Step 2: Create prompt session with context
         session = await client.create_prompt_session(
@@ -145,13 +133,15 @@ async def answer_question(
             )
         )
 
-        # Step 3: Generate response
+        # Step 3: Generate response with all context in metadata
         async with client.span(
             session,
             name="generate_answer",
             metadata={
                 "user_name": user_name,
-                "doc_count": len(documents)
+                "query": query,
+                "doc_count": len(documents),
+                "top_score": documents[0].score if documents else 0
             }
         ) as span:
             anthropic = Anthropic()

@@ -19,7 +19,7 @@ Wrap LLM calls in spans to capture telemetry:
 
 ```python
 from moxn import MoxnClient
-from moxn_types.content import Provider
+from moxn.types.content import Provider
 from anthropic import Anthropic
 
 async with MoxnClient() as client:
@@ -73,17 +73,19 @@ async with client.span(
 Access span information within the context:
 
 ```python
-async with client.span(session) as span:
+async with client.span(
+    session,
+    metadata={
+        "user_id": "user_123",
+        "query_type": "product_question"
+    }
+) as span:
     span.span_id          # str - unique span identifier
     span.context.trace_id # str - trace identifier
     span.name             # str - span name
     span.parent_span_id   # str | None - parent span (if nested)
     span.start_time       # datetime
-    span.attributes       # dict - custom attributes
-
-    # Add attributes during execution
-    span.set_attribute("user_id", "user_123")
-    span.set_attribute("query_type", "product_question")
+    span.attributes       # dict - custom attributes (from metadata)
 ```
 
 ## Parent-Child Spans
@@ -177,7 +179,7 @@ async with client.span(session, name="api_handler") as span:
 In another service or worker:
 
 ```python
-from moxn_types.telemetry import MoxnTraceCarrier
+from moxn.types.telemetry import MoxnTraceCarrier
 
 # Receive the carrier
 message = await queue.get()
@@ -225,7 +227,7 @@ async with client.span(session) as span:
 Resume traces from incoming HTTP:
 
 ```python
-from moxn_types.telemetry import TraceContext
+from moxn.types.telemetry import TraceContext
 
 # Parse incoming traceparent header
 traceparent = request.headers.get("traceparent")
@@ -245,9 +247,7 @@ if traceparent:
 
 ## Adding Metadata
 
-Add searchable metadata to spans:
-
-### At Creation
+Add searchable metadata to spans by passing it in the `metadata` parameter at span creation:
 
 ```python
 async with client.span(
@@ -255,25 +255,16 @@ async with client.span(
     metadata={
         "customer_id": "cust_123",
         "request_id": "req_456",
-        "environment": "production"
+        "environment": "production",
+        "query_type": "product_question",
+        "document_count": len(documents)
     }
 ) as span:
-    ...
-```
-
-### During Execution
-
-```python
-async with client.span(session) as span:
-    # Add attributes as you learn more
-    span.set_attribute("query_type", classify_query(query))
-    span.set_attribute("document_count", len(documents))
-
     response = await call_llm()
-
-    span.set_attribute("response_length", len(response.content))
-    span.set_attribute("stop_reason", response.stop_reason)
+    # Metadata is captured with all telemetry events in this span
 ```
+
+This is the preferred pattern—define all known metadata upfront when creating the span context.
 
 ## Span Events
 
@@ -301,17 +292,19 @@ Both events are associated with the same span.
 
 ## Error Handling
 
-Spans capture errors automatically:
+Spans capture errors automatically. Exceptions are recorded on the span when raised:
 
 ```python
-async with client.span(session) as span:
+async with client.span(
+    session,
+    metadata={"operation": "llm_call"}
+) as span:
     try:
         response = await call_llm()
         await client.log_telemetry_event_from_response(...)
     except Exception as e:
-        # Span captures the error
-        span.set_attribute("error", str(e))
-        span.set_attribute("error_type", type(e).__name__)
+        # The span automatically records exception details
+        # (error.type and error.message are captured)
         raise
 ```
 
@@ -350,7 +343,7 @@ async def lambda_handler(event, context):
 
 ```python
 from moxn import MoxnClient
-from moxn_types.content import Provider
+from moxn.types.content import Provider
 from anthropic import Anthropic
 import asyncio
 
@@ -365,22 +358,27 @@ async def handle_customer_query(query: str, customer_id: str):
         async with client.span(
             session,
             name="customer_support_request",
-            metadata={"customer_id": customer_id}
+            metadata={
+                "customer_id": customer_id,
+                "query_length": len(query)
+            }
         ) as root_span:
 
             # Step 1: Classify the query
-            async with client.span(session, name="classify") as span:
-                span.set_attribute("query_length", len(query))
-                classification = await classify_query(query)
-                span.set_attribute("classification", classification)
+            classification = await classify_query(query)
 
             # Step 2: Search for relevant docs
-            async with client.span(session, name="search") as span:
-                docs = await search_knowledge_base(query)
-                span.set_attribute("doc_count", len(docs))
+            docs = await search_knowledge_base(query)
 
-            # Step 3: Generate response
-            async with client.span(session, name="generate") as span:
+            # Step 3: Generate response with all context in metadata
+            async with client.span(
+                session,
+                name="generate",
+                metadata={
+                    "classification": classification,
+                    "doc_count": len(docs)
+                }
+            ) as span:
                 anthropic = Anthropic()
                 response = anthropic.messages.create(
                     **session.to_anthropic_invocation()

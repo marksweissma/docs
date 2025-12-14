@@ -112,7 +112,7 @@ This generates:
 
 from enum import Enum
 from pydantic import BaseModel
-from moxn_types.base import RenderableModel
+from moxn.types.base import RenderableModel
 
 class DocumentType(str, Enum):
     CONTRACT = "contract"
@@ -138,7 +138,7 @@ class DocumentClassifierInput(RenderableModel):
 
 ```python
 from moxn import MoxnClient
-from moxn_types.content import Provider
+from moxn.types.content import Provider
 from anthropic import Anthropic
 from models.document_analysis_pipeline_models import (
     DocumentClassifierInput,
@@ -153,15 +153,15 @@ async def classify_document(document_text: str) -> ClassificationResult:
             session_data=DocumentClassifierInput(document=document_text)
         )
 
-        async with client.span(session, name="classify_document") as span:
+        async with client.span(
+            session,
+            name="classify_document",
+            metadata={"doc_length": len(document_text)}
+        ) as span:
             anthropic = Anthropic()
             response = anthropic.messages.create(
                 **session.to_anthropic_invocation(),
                 extra_headers={"anthropic-beta": "structured-outputs-2025-11-13"}
-            )
-
-            await client.log_telemetry_event_from_response(
-                session, response, Provider.ANTHROPIC
             )
 
             parsed = session.parse_provider_response(response, Provider.ANTHROPIC)
@@ -169,7 +169,13 @@ async def classify_document(document_text: str) -> ClassificationResult:
                 parsed.candidates[0].content[0].text
             )
 
-            span.set_attribute("document_type", result.document_type.value)
+            # Log with classification result in event attributes
+            event = session.create_llm_event_from_parsed_response(
+                parsed_response=parsed,
+                attributes={"document_type": result.document_type.value}
+            )
+            await client.log_telemetry_event(event)
+
             return result
 ```
 

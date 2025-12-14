@@ -59,8 +59,8 @@ Summary: {{summary_result}}
 import asyncio
 from dataclasses import dataclass
 from moxn import MoxnClient
-from moxn_types.content import Provider
-from moxn_types.telemetry import SpanContext
+from moxn.types.content import Provider
+from moxn.types.telemetry import SpanContext
 from anthropic import Anthropic
 
 @dataclass
@@ -141,6 +141,7 @@ async def analyze_sentiment(
     async with client.span(
         session,
         name="sentiment_analysis",
+        metadata={"text_length": len(text)},
         parent_context=parent_context  # Link to root
     ) as span:
         response = anthropic.messages.create(
@@ -151,9 +152,7 @@ async def analyze_sentiment(
             session, response, Provider.ANTHROPIC
         )
 
-        result = response.content[0].text
-        span.set_attribute("sentiment", result)
-        return result
+        return response.content[0].text
 
 
 async def extract_entities(
@@ -172,6 +171,7 @@ async def extract_entities(
     async with client.span(
         session,
         name="entity_extraction",
+        metadata={"text_length": len(text)},
         parent_context=parent_context
     ) as span:
         response = anthropic.messages.create(
@@ -184,10 +184,7 @@ async def extract_entities(
         )
 
         parsed = session.parse_provider_response(response, Provider.ANTHROPIC)
-        result = json.loads(parsed.candidates[0].content[0].text)
-
-        span.set_attribute("entity_count", sum(len(v) for v in result.values()))
-        return result
+        return json.loads(parsed.candidates[0].content[0].text)
 
 
 async def create_summary(
@@ -206,6 +203,7 @@ async def create_summary(
     async with client.span(
         session,
         name="summarization",
+        metadata={"text_length": len(text)},
         parent_context=parent_context
     ) as span:
         response = anthropic.messages.create(
@@ -216,9 +214,7 @@ async def create_summary(
             session, response, Provider.ANTHROPIC
         )
 
-        result = response.content[0].text
-        span.set_attribute("summary_length", len(result))
-        return result
+        return response.content[0].text
 
 
 async def aggregate_results(
@@ -307,6 +303,7 @@ async def analyze_with_fallback(
     async with client.span(
         session,
         name="sentiment_with_fallback",
+        metadata={"has_fallback": True},
         parent_context=parent_context
     ) as span:
         try:
@@ -314,8 +311,7 @@ async def analyze_with_fallback(
                 client, anthropic, text, parent_context
             )
         except Exception as e:
-            span.set_attribute("error", str(e))
-            span.set_attribute("used_fallback", True)
+            # Span automatically captures error details
             return "unknown"  # Fallback value
 
 
@@ -394,12 +390,18 @@ Run different paths based on initial analysis:
 ```python
 async def conditional_workflow(document: str):
     async with MoxnClient() as client:
-        async with client.span(..., name="conditional_analysis") as root_span:
-            # First: classify the document
-            doc_type = await classify_document(client, document, root_span.context)
+        # Classify first to know the document type
+        doc_type = await classify_document(client, document)
 
-            root_span.set_attribute("doc_type", doc_type)
-
+        # Create span with classification in metadata
+        async with client.span(
+            session,
+            name="conditional_analysis",
+            metadata={
+                "doc_type": doc_type,
+                "doc_length": len(document)
+            }
+        ) as root_span:
             # Route to appropriate pipeline
             if doc_type == "financial":
                 return await financial_pipeline(client, document, root_span.context)

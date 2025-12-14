@@ -320,7 +320,7 @@ for block in response.content:
 
 ```python
 from moxn import MoxnClient
-from moxn_types.content import Provider
+from moxn.types.content import Provider
 from anthropic import Anthropic
 from pydantic import BaseModel, ValidationError
 
@@ -358,17 +358,18 @@ async def extract_from_document(text: str):
                 result = ExtractionResult.model_validate_json(
                     parsed.candidates[0].content[0].text
                 )
-                span.set_attribute("extraction_success", True)
-                span.set_attribute("entity_count", len(result.entities))
             except ValidationError as e:
                 validation_errors = [str(err) for err in e.errors()]
-                span.set_attribute("extraction_success", False)
                 result = None
 
-            # Log with validation status
+            # Log with validation status in event attributes
             event = session.create_llm_event_from_parsed_response(
                 parsed_response=parsed,
-                validation_errors=validation_errors or None
+                validation_errors=validation_errors or None,
+                attributes={
+                    "extraction_success": result is not None,
+                    "entity_count": len(result.entities) if result else 0
+                }
             )
             await client.log_telemetry_event(event)
 

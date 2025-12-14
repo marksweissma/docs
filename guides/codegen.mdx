@@ -76,7 +76,7 @@ For each prompt with an input schema, you get:
 
 ```python
 from pydantic import Field
-from moxn_types.base import RenderableModel, MoxnSchemaMetadata
+from moxn.types.base import RenderableModel, MoxnSchemaMetadata
 
 class ProductHelpInput(RenderableModel):
     """Input schema for Product Help prompt."""
@@ -305,7 +305,7 @@ You don't have to use codegen. You can create your own models:
 
 ```python
 from pydantic import BaseModel
-from moxn_types.base import RenderableModel
+from moxn.types.base import RenderableModel
 
 class MyInput(RenderableModel):
     query: str
