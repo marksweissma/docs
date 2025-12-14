@@ -26,6 +26,7 @@ When building AI applications, you face a familiar set of challenges:
 - - live in a config sytem. Great for your domain experts, painful for your engineers managing the schemaless integration between context and LLM
 - **No type safety**: Input variables are _stringly_-typed, leading to runtime errors
 - **No observability**: You can't see what prompts actually ran in production
+- **No pass-by-reference**: Using an LLMOps platform and want to maintain a single version of a system message that's shared across multiple surfaces of your agent? good luck
 - **No collaboration**: No shared workflows for reviewing prompts or debugging production traces
 
 Moxn solves these problems by treating prompts as first-class versioned entities with type-safe interfaces and full observability.
@@ -91,8 +92,8 @@ Moxn simplifies the common path without making edge cases harder.
     PDFs. Define typed variables that connect to your backend models.
   </Step>
   <Step title="Generate type-safe models">
-    Run codegen to create Pydantic models for your prompts. Get autocomplete and
-    validation.
+    Run codegen to create Pydantic models for your prompts. Get runtime validation, autocomplete in your IDE and
+    linting.
   </Step>
   <Step title="Use in your code">
     Fetch prompts, create sessions with your data, and send to any LLM provider.
@@ -139,7 +140,7 @@ from moxn import MoxnClient
 from moxn_types.content import Provider
 from anthropic import Anthropic
 
-# Define your session data (generated via codegen)
+# Define your session data (YourInputModel can be generated via codegen)
 session_data = YourInputModel(
     query="How do I reset my password?",
     user_id="user_123"

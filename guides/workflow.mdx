@@ -104,10 +104,32 @@ class ProductHelpInput(RenderableModel):
         }
 ```
 
-<Tip>
-  Run codegen as part of your CI/CD pipeline or development workflow, similar to
-  database migrations.
-</Tip>
+<Note>
+**Codegen is optional.** You can always define models manually—especially useful when iterating on prompts in a notebook or during early development. Codegen shines when you want to ensure your models stay in sync with your prompt schemas, and integrates well into CI/CD pipelines (similar to database migrations or OpenAPI client generation).
+</Note>
+
+<Accordion title="Using prompts without codegen">
+You don't need generated models to use Moxn. Define your input model manually:
+
+```python
+from moxn_types.base import RenderableModel
+
+class MyInput(RenderableModel):
+    query: str
+    context: str
+
+    def render(self, **kwargs) -> dict[str, str]:
+        return {"query": self.query, "context": self.context}
+
+# Use it directly
+session = await client.create_prompt_session(
+    prompt_id="...",
+    session_data=MyInput(query="Hello", context="Some context")
+)
+```
+
+This is often the fastest way to iterate when you're actively editing prompts and experimenting with different variable structures.
+</Accordion>
 
 ## Step 3: Use Prompts in Your Code
 

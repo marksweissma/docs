@@ -55,7 +55,7 @@ async def main():
                 ragItems=[
                     ragItem(
                         title="Best Document",
-                         content="The answer to the user's query"
+                        content="The answer to the user's query"
                     )
                 ]
             )
@@ -182,7 +182,7 @@ invocation["model"] = "claude-sonnet-4-20250514"
 response = anthropic.messages.create(**invocation)
 ```
 
-This design is intentional: Moxn helps you **build payloads**, but never **owns the integration**. You always call the provider SDK directly—no wrapper, no middleware, no magic. If a provider releases a new feature tomorrow, you can use it immediately by adding parameters to the dict.
+This design is intentional: Moxn helps you **build payloads**, but never **owns the integration**. You always call the provider SDK directly—no wrapper, no middleware, no magic. If a provider releases a new feature tomorrow, you can use it immediately by adding parameters to the dict or to the provider directly.
 
 ## Understanding the Code
 
@@ -263,35 +263,88 @@ This creates a Python file with Pydantic models matching your prompt's input sch
 
 ```python
 # models/your_task_models.py (generated)
+from datetime import datetime
+from pydantic import BaseModel
 from moxn_types.base import RenderableModel
+
+class Document(BaseModel):
+    title: str
+    created_at: datetime
+    last_modified: datetime | None = None
+    author: str
+    content: str
+
+    def to_xml(self) -> str:
+        """Render document as XML with metadata as attributes."""
+        attrs = f'title="{self.title}" author="{self.author}" created_at="{self.created_at.isoformat()}"'
+        if self.last_modified:
+            attrs += f' last_modified="{self.last_modified.isoformat()}"'
+        return f"<document {attrs}>\n{self.content}\n</document>"
+
 
 class YourPromptInput(RenderableModel):
     query: str
     user_id: str
-    context: list[str] | None = None
+    context: list[Document] | None = None
 
     def render(self, **kwargs) -> dict[str, str]:
-        # Transforms your data for prompt injection
+        # Render context as XML document collection
+        if self.context:
+            docs_xml = "\n".join(doc.to_xml() for doc in self.context)
+            context_str = f"<context>\n{docs_xml}\n</context>"
+        else:
+            context_str = ""
+
         return {
             "query": self.query,
             "user_id": self.user_id,
-            "context": json.dumps(self.context) if self.context else "",
+            "context": context_str,
         }
 ```
+
+The `render()` method transforms your typed data into strings for prompt injection. This example renders documents as XML—a format that works well for providing structured context to LLMs.
 
 Then use it in your code:
 
 ```python
-from models.your_task_models import YourPromptInput
+from models.your_task_models import YourPromptInput, Document
+from datetime import datetime
 
 session = await client.create_prompt_session(
     prompt_id="your-prompt-id",
     session_data=YourPromptInput(
         query="How do I reset my password?",
         user_id="user_123",
-        context=["Previous support tickets..."]
+        context=[
+            Document(
+                title="Password Reset Guide",
+                created_at=datetime(2024, 1, 15),
+                author="Support Team",
+                content="To reset your password, click 'Forgot Password' on the login page..."
+            ),
+            Document(
+                title="Account Security FAQ",
+                created_at=datetime(2024, 2, 1),
+                last_modified=datetime(2024, 3, 10),
+                author="Security Team",
+                content="We recommend using a password manager and enabling 2FA..."
+            )
+        ]
     )
 )
+```
+
+This renders into the prompt as:
+
+```xml
+<context>
+<document title="Password Reset Guide" author="Support Team" created_at="2024-01-15T00:00:00">
+To reset your password, click 'Forgot Password' on the login page...
+</document>
+<document title="Account Security FAQ" author="Security Team" created_at="2024-02-01T00:00:00" last_modified="2024-03-10T00:00:00">
+We recommend using a password manager and enabling 2FA...
+</document>
+</context>
 ```
 
 ## Next Steps
