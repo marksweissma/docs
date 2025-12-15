@@ -80,22 +80,40 @@ In the web app:
 
 ### PDF Block Types
 
-```python
-# Standard PDF
-PDFContentFromSource(
-    url="https://...",
-    name="document.pdf",
-    mime_type="application/pdf"
-)
+Like images, PDFs use `PDFContentFromSource`—a discriminated union. You can pass a dict or explicit type:
 
-# Signed URL PDF (from cloud storage)
-SignedURLPDFContent(
-    signed_url="https://s3.../document.pdf?signature=...",
-    file_path="documents/report.pdf",
-    expiration=datetime(2024, 1, 15, 12, 0, 0),
-    name="document.pdf"
-)
-```
+<Tabs>
+  <Tab title="Dict Literal">
+    ```python
+    pdf = {
+        "type": "url",
+        "url": "https://example.com/document.pdf",
+        "media_type": "application/pdf",
+        "filename": "document.pdf"
+    }
+    ```
+  </Tab>
+  <Tab title="Explicit Types">
+    ```python
+    from moxn.base_models.blocks.file import MediaDataPDFFromURL
+
+    pdf = MediaDataPDFFromURL(
+        url="https://example.com/document.pdf",
+        media_type="application/pdf",
+        filename="document.pdf"
+    )
+    ```
+  </Tab>
+</Tabs>
+
+### PDF Types
+
+| `type` value | Class | Required Fields |
+|--------------|-------|-----------------|
+| `"url"` | `MediaDataPDFFromURL` | `url`, `media_type`, `filename` |
+| `"base64"` | `MediaDataPDFFromBase64` | `base64`, `media_type`, `filename` |
+| `"bytes"` | `MediaDataPDFFromBytes` | `bytes`, `media_type`, `filename` |
+| `"local_file"` | `MediaDataPDFFromLocalFile` | `filepath`, `media_type`, `filename` |
 
 ## Signed URLs
 
@@ -146,78 +164,131 @@ Use variables for dynamic images:
 ### In the Web App
 
 1. Insert a variable with type "image"
-2. At runtime, provide the image URL or data
+2. At runtime, provide the image object
 
 ### In Code
 
-```python
-class InputWithImage(RenderableModel):
-    query: str
-    screenshot: str  # URL or base64
+Image variables use `ImageContentFromSource`, a **discriminated union** type. The SDK automatically dispatches to the correct image type based on the `type` field.
 
-    def render(self, **kwargs) -> dict[str, str]:
+```python
+from moxn.base_models.blocks.image import ImageContentFromSource
+from moxn.types.base import RenderableModel
+
+class ImageAnalysisInput(RenderableModel):
+    query: str
+    screenshot: ImageContentFromSource
+
+    def render(self, **kwargs) -> dict:
         return {
             "query": self.query,
-            "screenshot": self.screenshot  # Handled as image
+            "screenshot": self.screenshot,  # Returns the image object directly
         }
 ```
 
+### Constructing Images
+
+You can provide images in two ways:
+
+<Tabs>
+  <Tab title="Dict Literal">
+    Pass a dict with the right structure—no extra imports needed:
+
+    ```python
+    # From URL
+    image = {
+        "type": "url",
+        "url": "https://example.com/screenshot.png",
+        "media_type": "image/png"
+    }
+
+    # From base64
+    image = {
+        "type": "base64",
+        "base64": "iVBORw0KGgo...",
+        "media_type": "image/png"
+    }
+
+    session_data = ImageAnalysisInput(
+        query="What's in this image?",
+        screenshot=image
+    )
+    ```
+  </Tab>
+  <Tab title="Explicit Types">
+    Import and use the specific type for better IDE support:
+
+    ```python
+    from moxn.base_models.blocks.image import MediaImageFromURL
+
+    image = MediaImageFromURL(
+        url="https://example.com/screenshot.png",
+        media_type="image/png"
+    )
+
+    session_data = ImageAnalysisInput(
+        query="What's in this image?",
+        screenshot=image
+    )
+    ```
+  </Tab>
+</Tabs>
+
+Both approaches are equivalent—the dict is validated and converted using Pydantic's discriminated union dispatch.
+
+### Image Types
+
+| `type` value | Class | Required Fields |
+|--------------|-------|-----------------|
+| `"url"` | `MediaImageFromURL` | `url`, `media_type` |
+| `"base64"` | `MediaImageFromBase64` | `base64`, `media_type` |
+| `"bytes"` | `MediaImageFromBytes` | `bytes`, `media_type` |
+| `"local_file"` | `MediaImageFromLocalFile` | `filepath`, `media_type` |
+
+Supported `media_type` values: `"image/jpeg"`, `"image/png"`, `"image/gif"`, `"image/webp"`
+
 ## Provider-Specific Handling
+
+Moxn supports multiple provider APIs, each with different multimodal capabilities:
 
 ### Anthropic
 
-Anthropic supports:
-- Images (PNG, JPEG, GIF, WebP)
-- PDFs with citations
-- Prompt caching for large content
-
 ```python
-# Prompt caching for images (handled automatically when configured)
 session.to_anthropic_invocation()
 ```
 
+- Images: PNG, JPEG, GIF, WebP
+- PDFs: Native support with citations
+
 ### OpenAI
 
-OpenAI supports:
-- Images via data URIs or URLs
-- Limited PDF support (converted to images)
+OpenAI has two distinct APIs with different invocation methods:
 
 ```python
+# Chat Completions API
 session.to_openai_chat_invocation()
+
+# Responses API (different format)
+session.to_openai_responses_invocation()
 ```
+
+- Images: Via data URIs or URLs
+- PDFs: Limited support
 
 ### Google
 
-Google supports:
-- Images (various formats)
-- PDFs natively
-- Inline data blobs
+Google has two distinct APIs:
 
 ```python
+# Gemini Developer API
 session.to_google_gemini_invocation()
+
+# Vertex AI (different authentication and endpoints)
+session.to_google_vertex_invocation()
 ```
 
-## Best Practices
-
-<AccordionGroup>
-  <Accordion title="Compress images">
-    Large images increase latency and cost. Resize when possible.
-  </Accordion>
-  <Accordion title="Use appropriate formats">
-    - PNG for screenshots, diagrams
-    - JPEG for photos
-    - PDF for documents with complex layouts
-  </Accordion>
-  <Accordion title="Add alt text">
-    Always add descriptive alt text for accessibility and better LLM understanding.
-  </Accordion>
-  <Accordion title="Consider token limits">
-    Images consume tokens. Account for this in your max_tokens budget.
-  </Accordion>
-  <Accordion title="Test across providers">
-    Multimodal support varies. Test with each provider you support.
-  </Accordion>
-</AccordionGroup>
+- Images: Various formats
+- PDFs: Native support
+- Note: Vertex AI requires GCS URIs (`gs://`) for remote files—public HTTP URLs are not supported
 
 ## Error Handling
 
@@ -235,31 +306,35 @@ except anthropic.BadRequestError as e:
     raise
 ```
 
-## Token Estimation
-
-Images consume varying tokens by provider:
-
-| Provider | Image Token Cost |
-|----------|-----------------|
-| Anthropic | ~1600 tokens per image (varies by size) |
-| OpenAI | 85-170 tokens (low/high detail) |
-| Google | Varies by resolution |
-
-Check your provider's documentation for exact calculations.
-
 ## Complete Example
 
 ```python
 from moxn import MoxnClient
 from moxn.types.content import Provider
+from moxn.base_models.blocks.image import ImageContentFromSource
+from moxn.types.base import RenderableModel
 from anthropic import Anthropic
+
+class ImageAnalysisInput(RenderableModel):
+    """Input with an image for analysis."""
+    screenshot: ImageContentFromSource
+    question: str
+
+    def render(self, **kwargs) -> dict:
+        return {
+            "screenshot": self.screenshot,
+            "question": self.question,
+        }
 
 async def analyze_screenshot(image_url: str, question: str):
     async with MoxnClient() as client:
+        # Construct image using dict literal (or use explicit MediaImageFromURL)
+        image = {"type": "url", "url": image_url, "media_type": "image/png"}
+
         session = await client.create_prompt_session(
             prompt_id="image-analysis-prompt",
             session_data=ImageAnalysisInput(
-                image_url=image_url,
+                screenshot=image,
                 question=question
             )
         )
@@ -290,8 +365,8 @@ async def analyze_screenshot(image_url: str, question: str):
   <Card title="Provider Integration" icon="plug" href="/guides/providers">
     Provider-specific handling
   </Card>
-  <Card title="Data Extraction" icon="file-export" href="/examples/extraction">
-    Extract data from documents
+  <Card title="Document Analysis" icon="file-lines" href="/examples/building">
+    Build a document analysis pipeline
   </Card>
   <Card title="Logging Events" icon="list" href="/telemetry/logging">
     Log multimodal interactions
