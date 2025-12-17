@@ -274,12 +274,17 @@ class Document(BaseModel):
     author: str
     content: str
 
-    def to_xml(self) -> str:
-        """Render document as XML with metadata as attributes."""
-        attrs = f'title="{self.title}" author="{self.author}" created_at="{self.created_at.isoformat()}"'
+    def render(self) -> dict[str, str]:
+        """Render document data as a dictionary."""
+        result = {
+            "title": self.title,
+            "created_at": self.created_at.isoformat(),
+            "author": self.author,
+            "content": self.content,
+        }
         if self.last_modified:
-            attrs += f' last_modified="{self.last_modified.isoformat()}"'
-        return f"<document {attrs}>\n{self.content}\n</document>"
+            result["last_modified"] = self.last_modified.isoformat()
+        return result
 
 
 class YourPromptInput(RenderableModel):
@@ -290,8 +295,14 @@ class YourPromptInput(RenderableModel):
     def render(self, **kwargs) -> dict[str, str]:
         # Render context as XML document collection
         if self.context:
-            docs_xml = "\n".join(doc.to_xml() for doc in self.context)
-            context_str = f"<context>\n{docs_xml}\n</context>"
+            doc_xmls = []
+            for doc in self.context:
+                data = doc.render()
+                attrs = f'title="{data["title"]}" author="{data["author"]}" created_at="{data["created_at"]}"'
+                if "last_modified" in data:
+                    attrs += f' last_modified="{data["last_modified"]}"'
+                doc_xmls.append(f"<document {attrs}>\n{data['content']}\n</document>")
+            context_str = f"<context>\n" + "\n".join(doc_xmls) + "\n</context>"
         else:
             context_str = ""
 
