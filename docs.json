@@ -14,11 +14,19 @@
         "tab": "Guides",
         "groups": [
           {
+            "group": "Video Walkthrough",
+            "pages": [
+              "videos/overview",
+              "videos/models"
+            ]
+          },
+          {
             "group": "Getting Started",
             "pages": [
               "index",
               "quickstart",
-              "context"
+              "context",
+              "llms-txt"
             ]
           },
           {
