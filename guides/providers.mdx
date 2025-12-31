@@ -247,13 +247,16 @@ payload = session.to_invocation(
 If you only need messages (without model config):
 
 ```python
-# Provider-specific message format
-messages = session.to_message_params(Provider.ANTHROPIC)
+# Generic method (uses stored provider from completion_config)
+messages = session.to_messages()
 
-# Or use specific methods
-anthropic_payload = session.to_anthropic()      # {system, messages}
-openai_payload = session.to_openai_chat()       # {messages}
-google_payload = session.to_google_gemini()     # {system_instruction, content}
+# Or override provider explicitly
+messages = session.to_messages(provider=Provider.ANTHROPIC)
+
+# Or use provider-specific methods
+anthropic_payload = session.to_anthropic_messages()      # {system, messages}
+openai_payload = session.to_openai_chat_messages()       # {messages}
+google_payload = session.to_google_gemini_messages()     # {system_instruction, content}
 ```
 
 ## Parsing Responses
@@ -261,10 +264,11 @@ google_payload = session.to_google_gemini()     # {system_instruction, content}
 Parse any provider's response to a normalized format:
 
 ```python
-from moxn.types.content import Provider
+# Parse response (uses stored provider from completion_config)
+parsed = session.parse_response(response)
 
-# Parse based on provider
-parsed = session.parse_provider_response(response, Provider.ANTHROPIC)
+# Or override provider explicitly
+# parsed = session.parse_response(response, provider=Provider.ANTHROPIC)
 
 # Access normalized data
 parsed.candidates        # list[Candidate] - response options
@@ -298,7 +302,7 @@ response = anthropic.messages.create(
 )
 
 # Check for tool calls in response
-parsed = session.parse_provider_response(response, Provider.ANTHROPIC)
+parsed = session.parse_response(response)
 for candidate in parsed.candidates:
     for block in candidate.content:
         if block.block_type == "tool_call":

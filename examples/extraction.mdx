@@ -136,9 +136,7 @@ async def extract_invoice_data(document_text: str) -> InvoiceExtraction | None:
                 extra_headers={"anthropic-beta": "structured-outputs-2025-11-13"}
             )
 
-            parsed = session.parse_provider_response(
-                response, Provider.ANTHROPIC
-            )
+            parsed = session.parse_response(response)
 
             # Validate the structured output
             validation_errors = []
@@ -272,9 +270,7 @@ async def extract_with_retry(
                     extra_headers={"anthropic-beta": "structured-outputs-2025-11-13"}
                 )
 
-                parsed = session.parse_provider_response(
-                    response, Provider.ANTHROPIC
-                )
+                parsed = session.parse_response(response)
 
                 try:
                     result = InvoiceExtraction.model_validate_json(

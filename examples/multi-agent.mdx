@@ -183,7 +183,7 @@ async def extract_entities(
             session, response, Provider.ANTHROPIC
         )
 
-        parsed = session.parse_provider_response(response, Provider.ANTHROPIC)
+        parsed = session.parse_response(response)
         return json.loads(parsed.candidates[0].content[0].text)
 
 

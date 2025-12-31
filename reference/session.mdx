@@ -201,75 +201,107 @@ def to_invocation(
 
 These methods return just the messages without model parameters.
 
-### to_anthropic
+### to_anthropic_messages
 
 ```python
-def to_anthropic(
+def to_anthropic_messages(
     context: MessageContext | dict | None = None
 ) -> AnthropicMessagesParam
 ```
 
 Returns `{"system": ..., "messages": [...]}`.
 
-### to_openai_chat
+### to_openai_chat_messages
 
 ```python
-def to_openai_chat(
+def to_openai_chat_messages(
     context: MessageContext | dict | None = None
 ) -> OpenAIChatMessagesParam
 ```
 
 Returns `{"messages": [...]}`.
 
-### to_openai_responses
+### to_openai_responses_messages
 
 ```python
-def to_openai_responses(
+def to_openai_responses_messages(
     context: MessageContext | dict | None = None
 ) -> OpenAIResponsesMessagesParam
 ```
 
 Returns `{"input": [...], "instructions": ...}`.
 
-### to_google_gemini
+### to_google_gemini_messages
 
 ```python
-def to_google_gemini(
+def to_google_gemini_messages(
     context: MessageContext | dict | None = None
 ) -> GoogleMessagesParam
 ```
 
 Returns `{"system_instruction": ..., "content": [...]}`.
 
-### to_provider_payload
+### to_messages
 
-Generic method for any provider:
+Generic method for any provider. Uses stored `completion_config.provider` by default:
 
 ```python
-def to_provider_payload(
-    provider: Provider,
+def to_messages(
+    provider: Provider | None = None,
+    context: MessageContext | dict | None = None,
+) -> ProviderMessagesParam
+```
+
+```python
+# Uses stored provider from completion_config
+messages = session.to_messages()
+
+# Or override explicitly
+messages = session.to_messages(provider=Provider.ANTHROPIC)
+```
+
+### to_payload
+
+Generic method for any provider. Uses stored `completion_config.provider` by default:
+
+```python
+def to_payload(
+    provider: Provider | None = None,
     context: MessageContext | dict | None = None,
 ) -> ProviderPayload
+```
+
+```python
+# Uses stored provider from completion_config
+payload = session.to_payload()
+
+# Or override explicitly
+payload = session.to_payload(provider=Provider.ANTHROPIC)
 ```
 
 ---
 
 ## Response Handling
 
-### parse_provider_response
+### parse_response
 
-Parse a provider response into normalized format.
+Parse a provider response into normalized format. Uses stored `completion_config.provider` by default:
 
 ```python
-def parse_provider_response(
+def parse_response(
     response: Any,
-    provider: Provider,
+    provider: Provider | None = None,
 ) -> ParsedResponse
 ```
 
 ```python
 response = anthropic.messages.create(**session.to_anthropic_invocation())
-parsed = session.parse_provider_response(response, Provider.ANTHROPIC)
+
+# Uses stored provider from completion_config
+parsed = session.parse_response(response)
+
+# Or override explicitly
+parsed = session.parse_response(response, provider=Provider.ANTHROPIC)
 
 # Access normalized content
 for candidate in parsed.candidates:
@@ -280,19 +312,24 @@ for candidate in parsed.candidates:
 
 ### create_llm_event_from_response
 
-Create an LLM event for telemetry from a raw provider response.
+Create an LLM event for telemetry from a raw provider response. Uses stored `completion_config.provider` by default:
 
 ```python
 def create_llm_event_from_response(
     response: AnthropicMessage | OpenAIChatCompletion | GoogleGenerateContentResponse,
-    provider: Provider,
+    provider: Provider | None = None,
 ) -> LLMEvent
 ```
 
 ```python
 response = anthropic.messages.create(**session.to_anthropic_invocation())
-event = session.create_llm_event_from_response(response, Provider.ANTHROPIC)
+
+# Uses stored provider from completion_config
+event = session.create_llm_event_from_response(response)
 await client.log_telemetry_event(event)
+
+# Or override explicitly
+event = session.create_llm_event_from_response(response, provider=Provider.ANTHROPIC)
 ```
 
 ### create_llm_event_from_parsed_response
@@ -319,7 +356,7 @@ def create_llm_event_from_parsed_response(
 | `validation_errors` | `list[str] \| None` | Validation errors if schema validation failed |
 
 ```python
-parsed = session.parse_provider_response(response, Provider.ANTHROPIC)
+parsed = session.parse_response(response)
 
 # Validate structured output
 try:
@@ -392,7 +429,7 @@ This is the preferred way to add LLM responses for multi-turn conversations:
 ```python
 # First turn
 response = anthropic.messages.create(**session.to_anthropic_invocation())
-parsed = session.parse_provider_response(response, Provider.ANTHROPIC)
+parsed = session.parse_response(response)
 session.append_assistant_response(parsed)
 
 # Second turn

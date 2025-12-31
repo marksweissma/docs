@@ -103,8 +103,8 @@ class SentimentResult(BaseModel):
     keywords: list[str] = []
     reasoning: str | None = None
 
-# Parse the response
-parsed = session.parse_provider_response(response, Provider.ANTHROPIC)
+# Parse the response (uses stored provider from completion_config)
+parsed = session.parse_response(response)
 text_content = parsed.candidates[0].content[0].text
 
 # Validate with Pydantic
@@ -220,7 +220,7 @@ await client.log_telemetry_event(event)
 async def analyze_with_retry(text: str, max_retries: int = 2):
     for attempt in range(max_retries + 1):
         response = await call_llm()
-        parsed = session.parse_provider_response(response, provider)
+        parsed = session.parse_response(response)
 
         try:
             result = SentimentResult.model_validate_json(
@@ -348,9 +348,7 @@ async def extract_from_document(text: str):
                 extra_headers={"anthropic-beta": "structured-outputs-2025-11-13"}
             )
 
-            parsed = session.parse_provider_response(
-                response, Provider.ANTHROPIC
-            )
+            parsed = session.parse_response(response)
 
             # Validate structured output
             validation_errors = []

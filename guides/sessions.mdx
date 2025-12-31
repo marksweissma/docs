@@ -245,7 +245,7 @@ response = client.models.generate_content(
 
 ### Generic method
 
-Use `to_invocation()` with an explicit provider:
+Use `to_invocation()` which automatically selects the provider:
 
 ```python
 from moxn.types.content import Provider
@@ -256,6 +256,23 @@ payload = session.to_invocation()
 # Or specify explicitly
 payload = session.to_invocation(provider=Provider.ANTHROPIC)
 ```
+
+### Provider Defaulting
+
+When your prompt has `completion_config.provider` set (configured in the Moxn web app), many methods use it automatically:
+
+```python
+# These all use the stored provider from completion_config:
+payload = session.to_invocation()          # Invocation payload
+payload = session.to_payload()             # Messages-only payload
+parsed = session.parse_response(response)  # Response parsing
+event = session.create_llm_event_from_response(response)  # Telemetry
+
+# Override when needed:
+parsed = session.parse_response(response, provider=Provider.OPENAI_CHAT)
+```
+
+This simplifies code when you're using the provider configured in the web app, while still allowing runtime overrides.
 
 ### Overriding parameters
 
@@ -298,8 +315,8 @@ session.append_assistant_text(
 After getting a response, add it to the session for multi-turn conversations:
 
 ```python
-# Parse the response
-parsed = session.parse_provider_response(response, Provider.ANTHROPIC)
+# Parse the response (uses stored provider from completion_config)
+parsed = session.parse_response(response)
 
 # Add to session
 session.append_assistant_response(
@@ -321,13 +338,14 @@ response2 = anthropic.messages.create(
 Parse provider responses into a normalized format:
 
 ```python
-from moxn.types.content import Provider
-
 # Get raw response from provider
 response = anthropic.messages.create(...)
 
-# Parse to normalized format
-parsed = session.parse_provider_response(response, Provider.ANTHROPIC)
+# Parse to normalized format (uses stored provider from completion_config)
+parsed = session.parse_response(response)
+
+# Or override the provider explicitly
+# parsed = session.parse_response(response, provider=Provider.ANTHROPIC)
 
 # Access normalized content
 for candidate in parsed.candidates:
@@ -348,14 +366,14 @@ print(f"Stop reason: {parsed.stop_reason}")
 Create LLM events from responses for logging:
 
 ```python
-# Method 1: From raw response
-llm_event = session.create_llm_event_from_response(
-    response=response,
-    provider=Provider.ANTHROPIC
-)
+# Method 1: From raw response (uses stored provider from completion_config)
+llm_event = session.create_llm_event_from_response(response)
+
+# Or override the provider explicitly
+# llm_event = session.create_llm_event_from_response(response, provider=Provider.ANTHROPIC)
 
 # Method 2: From parsed response (with more control)
-parsed = session.parse_provider_response(response, Provider.ANTHROPIC)
+parsed = session.parse_response(response)
 llm_event = session.create_llm_event_from_parsed_response(
     parsed_response=parsed,
     request_config=request_config,  # Optional
@@ -417,7 +435,7 @@ async def chat_conversation():
             )
 
         # Add response to session
-        parsed1 = session.parse_provider_response(response1, Provider.ANTHROPIC)
+        parsed1 = session.parse_response(response1)
         session.append_assistant_response(parsed1)
 
         # Second turn

@@ -135,7 +135,7 @@ event = session.create_llm_event_from_response(
 )
 
 # Or from parsed response with extra data
-parsed = session.parse_provider_response(response, Provider.ANTHROPIC)
+parsed = session.parse_response(response)
 event = session.create_llm_event_from_parsed_response(
     parsed_response=parsed,
     request_config=config,          # Optional
@@ -228,7 +228,7 @@ response = anthropic.messages.create(
     **session.to_anthropic_invocation()
 )
 
-parsed = session.parse_provider_response(response, Provider.ANTHROPIC)
+parsed = session.parse_response(response)
 
 # Attempt to validate structured output
 validation_errors = []
@@ -364,10 +364,8 @@ async def analyze_with_logging(query: str):
                 **session.to_anthropic_invocation()
             )
 
-            # Parse response
-            parsed = session.parse_provider_response(
-                response, Provider.ANTHROPIC
-            )
+            # Parse response (uses stored provider from completion_config)
+            parsed = session.parse_response(response)
 
             # Validate structured output
             validation_errors = []

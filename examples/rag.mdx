@@ -212,7 +212,7 @@ async def conversation_loop():
                 )
 
             # Add response to session for context
-            parsed = session.parse_provider_response(response, Provider.ANTHROPIC)
+            parsed = session.parse_response(response)
             session.append_assistant_response(parsed)
 
             print(f"Assistant: {response.content[0].text}")
@@ -240,7 +240,7 @@ async def answer_with_citations(query: str, documents: list[Document]):
         extra_headers={"anthropic-beta": "structured-outputs-2025-11-13"}
     )
 
-    parsed = session.parse_provider_response(response, Provider.ANTHROPIC)
+    parsed = session.parse_response(response)
     result = CitedResponse.model_validate_json(
         parsed.candidates[0].content[0].text
     )

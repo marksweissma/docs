@@ -164,7 +164,7 @@ async def classify_document(document_text: str) -> ClassificationResult:
                 extra_headers={"anthropic-beta": "structured-outputs-2025-11-13"}
             )
 
-            parsed = session.parse_provider_response(response, Provider.ANTHROPIC)
+            parsed = session.parse_response(response)
             result = ClassificationResult.model_validate_json(
                 parsed.candidates[0].content[0].text
             )
