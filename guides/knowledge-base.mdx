@@ -1,0 +1,324 @@
+---
+title: Knowledge Base
+description: AI-native documentation with safe write access through branching
+---
+
+The Moxn Knowledge Base brings Git-like version control to documentation, designed specifically for teams using AI assistants. Give your AI assistant write access—safely. AI works on branches, you review and merge.
+
+<Frame>
+  <img src="/images/kb-editor.png" alt="Knowledge Base editor" />
+</Frame>
+
+## Why Knowledge Base?
+
+Traditional docs tools force a choice: either AI can edit (risky) or it can't (limiting). The Knowledge Base solves this with Git-like isolation:
+
+- **Safe AI write access** - AI creates and edits docs on a branch, you review and merge to main
+- **Works with any MCP host** - Claude, ChatGPT, Cursor, or any MCP-compatible assistant
+- **Versions everything** - Branch for experiments, commit to save, merge when ready
+- **Controls AI access** - Section-level permissions let you hide sensitive content from AI
+
+## Core Concepts
+
+### Documents
+
+Documents are the primary containers, like files in a Git repository:
+
+- Each document has a **path** (e.g., `/engineering/api-guide`) that determines its location in the folder hierarchy
+- Documents contain one or more **sections** with rich content
+- Each document has its own **branch history** independent of other documents
+
+<Frame>
+  <img src="/images/kb-main-page.png" alt="Knowledge Base folder structure" />
+</Frame>
+
+### Sections
+
+Sections are content blocks within a document:
+
+- Rich text with **bold**, *italic*, lists, tables, and headings
+- **Code blocks** with syntax highlighting for 20+ languages
+- **Mermaid diagrams** rendered inline for visual documentation
+- **Inline comments** for team discussions on specific text
+- Each section has a **name** (rendered as H2) and **content** below it
+- Sections can be reordered via drag-and-drop
+- Individual sections can have **permission overrides**
+
+<Frame>
+  <img src="/images/kb-document-editor.png" alt="Document editor with sections" />
+</Frame>
+
+### Branches
+
+Every document starts with a `main` branch. Create feature branches to:
+
+- Experiment with changes without affecting the published version
+- Have your AI make edits that you can review before merging
+- Collaborate with teammates on documentation updates
+
+Branches are **document-scoped**—each document has its own branch history.
+
+### Commits
+
+Commits create immutable snapshots of your document state:
+
+- Working changes accumulate until you commit
+- Each commit has a message describing the changes
+- You can view historical versions at any commit
+- Merge requests bring branch changes into main
+
+## The AI Write Workflow
+
+The key differentiator of the Knowledge Base is **safe AI write access** through branching.
+
+### The Flow
+
+1. **AI creates a branch** - Your AI assistant (via MCP) creates a feature branch for its work
+2. **AI makes changes** - Creates documents, adds sections, edits content, commits
+3. **You review** - Open the branch in the web UI, see exactly what changed
+4. **You merge** - When satisfied, merge to main. Or discard if the changes aren't right
+
+### Why Branching Makes This Safe
+
+Without branching, AI write access is dangerous:
+- AI could overwrite important content
+- Mistakes go directly to production
+- No easy way to review or rollback
+
+With branching:
+- Main is always protected
+- Every AI change is reviewable
+- Discard bad changes with one click
+- Full commit history for audit
+
+## Using the Knowledge Base
+
+### Creating Documents
+
+1. Navigate to **Knowledge Base** in the sidebar
+2. Click **New Document**
+3. Enter a path (e.g., `/engineering/api-guide`)
+4. Add sections with your content
+5. Click **Commit** to save
+
+### Branching Workflow
+
+**Create a branch:**
+
+1. Open a document
+2. Click the branch selector (shows "main")
+3. Select **Create Branch** from the Git Actions menu
+
+<Frame>
+  <img src="/images/kb-branch-selector.png" alt="Branch selector dropdown" />
+</Frame>
+
+<Frame>
+  <img src="/images/kb-git-actions-menu.png" alt="Git Actions menu" />
+</Frame>
+
+**Make changes:**
+
+- Edit content, add sections, reorder
+- Changes auto-save but aren't committed yet
+- Yellow "Uncommitted changes" indicator shows pending work
+
+**Commit changes:**
+
+1. Click **Commit**
+2. Enter a commit message
+3. Changes are now versioned
+
+### Merging Changes
+
+When you're ready to bring branch changes into main:
+
+1. Click **Git Actions** > **Create Merge Request**
+
+<Frame>
+  <img src="/images/kb-create-merge-request-dialog.png" alt="Create Merge Request dialog" />
+</Frame>
+
+2. Review the merge request in the list
+
+<Frame>
+  <img src="/images/kb-merge-requests-list.png" alt="List of merge requests" />
+</Frame>
+
+3. Compare versions side-by-side
+
+<Frame>
+  <img src="/images/kb-merge-compare-versions.png" alt="Side-by-side version comparison" />
+</Frame>
+
+4. If there are conflicts, resolve them section by section
+
+<Frame>
+  <img src="/images/kb-merge-conflict-resolution.png" alt="Conflict resolution interface" />
+</Frame>
+
+5. Complete the merge
+
+**Fast-forward merge:** When your branch has all the changes from main (no divergent edits), the merge happens automatically without conflicts.
+
+## Permission Model
+
+The Knowledge Base uses a three-tier permission system to control access.
+
+### Permission Levels
+
+| Level | Description |
+|-------|-------------|
+| `write` | Can read and modify content |
+| `read` | Can view content but not edit |
+| `none` | Content is hidden/filtered |
+
+### Permission Tiers
+
+| Tier | Purpose | Default |
+|------|---------|---------|
+| **Self** | Permission for the content creator | `write` |
+| **Team** | Permission for other workspace members | `read` |
+| **LLM** | Additional restriction when accessed via MCP | `read` |
+
+### How Permissions Cascade
+
+LLM permission is applied **on top of** Self/Team permissions:
+
+| Self | Team | LLM | Owner sees | Team sees | AI sees |
+|------|------|-----|------------|-----------|---------|
+| write | read | read | Full access | Read only | Read only |
+| write | read | none | Full access | Read only | Hidden |
+| write | none | none | Full access | Hidden | Hidden |
+
+### Use Cases
+
+**Hide sensitive content from AI:**
+
+Set `LLM Permission` to `none` on sections containing:
+- API keys or credentials
+- Internal business metrics
+- Personal information
+
+The section remains visible to your team but is filtered from MCP responses.
+
+**Team-only documentation:**
+
+Set `Team Permission` to `none` on sections that should be private to the author.
+
+<Note>
+Permissions can only be set on feature branches, not on main. This ensures changes to access control go through the normal review process.
+</Note>
+
+## MCP Integration
+
+The Knowledge Base integrates with any MCP-compatible AI assistant—Claude, ChatGPT, Cursor, or others.
+
+### Installation
+
+Install the MCP client globally:
+
+```bash
+npm install -g @moxn/mcp-kb
+```
+
+Or use directly with npx:
+
+```bash
+npx @moxn/mcp-kb --workspace=your-workspace-slug
+```
+
+### Configuration
+
+Add to your MCP configuration (e.g., `.mcp.json` for Claude Code):
+
+```json
+{
+  "mcpServers": {
+    "moxn-kb": {
+      "command": "npx",
+      "args": ["-y", "@moxn/mcp-kb", "--workspace=your-workspace-slug"]
+    }
+  }
+}
+```
+
+On first run, the client will:
+1. Open your browser to authenticate with Moxn
+2. Store credentials locally for future sessions
+
+### Available Tools
+
+Once connected, your AI assistant has access to these Knowledge Base tools:
+
+| Tool | Purpose |
+|------|---------|
+| `find` | List documents, sections, or folders |
+| `read` | Read document or section content |
+| `documents` | Create, update, delete documents; manage branches |
+| `sections` | Create, update, delete, reorder sections |
+| `search` | Search content across the knowledge base |
+
+### Example: AI Reading Docs
+
+When your AI assistant needs context about your project:
+
+```
+AI: Let me check the API documentation in your knowledge base.
+
+[Uses moxn-kb find to list documents]
+[Uses moxn-kb read to fetch content]
+
+Based on your API guide, the authentication endpoint is...
+```
+
+### Example: AI Writing Docs (The Safe Way)
+
+When your AI assistant helps document code:
+
+```
+AI: I'll create documentation for this new feature.
+
+[Uses moxn-kb documents to create a branch "docs/new-feature"]
+[Uses moxn-kb documents to create a new document]
+[Uses moxn-kb sections to add content sections]
+[Commits the changes]
+
+I've created the documentation at /engineering/new-feature on branch
+"docs/new-feature". You can review and merge in the web UI.
+```
+
+The key workflow: **AI writes on a branch → commits → you review in the web UI → you merge to main when satisfied.**
+
+## Best Practices
+
+### Document Organization
+
+- Use descriptive paths: `/engineering/api/authentication`
+- Group related documents in folders
+- Keep documents focused on single topics
+
+### Branching Strategy
+
+- Create branches for significant updates
+- Use descriptive branch names: `docs/add-deployment-guide`
+- Commit frequently with clear messages
+- Merge promptly to keep main up to date
+
+### Working with AI
+
+- Grant AI read access to reference documentation
+- Use branch isolation for AI-generated content
+- Review AI changes before merging to main
+- Use `LLM Permission: none` for sensitive sections
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Core Workflow" icon="diagram-project" href="/guides/workflow">
+    Learn the full prompt authoring workflow
+  </Card>
+  <Card title="Telemetry" icon="chart-line" href="/telemetry/spans">
+    Set up observability for your LLM calls
+  </Card>
+</CardGroup>

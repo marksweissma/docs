@@ -31,6 +31,12 @@
             ]
           },
           {
+            "group": "Knowledge Base",
+            "pages": [
+              "guides/knowledge-base"
+            ]
+          },
+          {
             "group": "Core Workflow",
             "pages": [
               "guides/workflow",
