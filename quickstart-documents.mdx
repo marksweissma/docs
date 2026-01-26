@@ -3,7 +3,7 @@ title: Documents Quick Start
 description: Connect your AI assistant to Moxn Documents
 ---
 
-This guide walks you through connecting Claude Desktop (or any MCP-compatible assistant) to Moxn Documents so your AI can read and write documentation safely.
+This guide walks you through connecting your AI assistant to Moxn Documents so it can read and write documentation safely.
 
 ## What You'll Set Up
 
@@ -17,7 +17,10 @@ All writes happen on branches—your main content stays protected until you appr
 ## Prerequisites
 
 - A Moxn account (get one at [moxn.dev](https://moxn.dev))
-- An AI assistant that supports MCP (Claude Desktop, Claude Code, Cursor, etc.)
+- An AI assistant that supports MCP:
+  - **Desktop apps**: Claude Desktop, ChatGPT Desktop, Cursor
+  - **CLI tools**: Claude Code, Gemini CLI
+  - **Cloud environments**: Claude Cowork
 
 <Note>
 **No coding required.** This setup involves copying a configuration snippet—that's it.
@@ -127,15 +130,169 @@ Choose your assistant below:
     Claude Code will automatically detect and connect to the server.
   </Tab>
 
-  <Tab title="Other MCP Hosts">
-    For other MCP-compatible assistants (Cursor, custom implementations), add the server configuration according to your client's documentation.
+  <Tab title="ChatGPT Desktop">
+    ChatGPT Desktop uses a GUI-based setup instead of a config file.
 
-    The key details:
-    - **Command**: `npx`
-    - **Args**: `["@moxn/mcp-kb", "--workspace=your-workspace-slug"]`
-    - **Type**: `stdio`
+    <Note>
+      **Requires Developer Mode.** You'll need a ChatGPT Plus or Pro subscription with developer mode enabled.
+    </Note>
+
+    1. Open ChatGPT Desktop
+    2. Go to **Settings** → **Apps & Connectors** → **Advanced settings**
+    3. Enable **Developer mode**
+    4. Click **Create** under connectors
+    5. Fill in:
+       - **Name**: `Moxn Documents`
+       - **Description**: `Read and write documentation`
+       - **URL**: `https://your-workspace-slug.moxn.dev/api/mcp/http`
+    6. Save the connector
+
+    Replace `your-workspace-slug` with your actual workspace slug (visible in your Moxn dashboard URL).
+
+    To use it, click the **+** button in a new chat, select **More**, then choose **Moxn Documents** from your connectors.
+
+    <Warning>
+      **Limitation:** The `upload_url` tool is not fully supported with remote connections. Avoid file uploads when using ChatGPT Desktop.
+    </Warning>
+  </Tab>
+
+  <Tab title="Cursor">
+    Add the configuration to your Cursor MCP settings:
+
+    1. Open Cursor
+    2. Go to **Settings** → **MCP**
+    3. Click **Add new MCP server**
+    4. Add this configuration:
+
+    ```json
+    {
+      "mcpServers": {
+        "moxn-kb": {
+          "type": "stdio",
+          "command": "npx",
+          "args": [
+            "@moxn/mcp-kb",
+            "--workspace=your-workspace-slug"
+          ]
+        }
+      }
+    }
+    ```
+
+    Cursor will automatically connect to the server.
+  </Tab>
+
+  <Tab title="Claude Cowork">
+    Claude Cowork runs in a cloud VM that cannot execute local commands like `npx`. Use the remote HTTP connection instead:
+
+    ```json
+    {
+      "mcpServers": {
+        "moxn-kb": {
+          "type": "http",
+          "url": "https://your-workspace-slug.moxn.dev/api/mcp/http"
+        }
+      }
+    }
+    ```
+
+    Replace `your-workspace-slug` with your actual workspace slug (visible in your Moxn dashboard URL).
+
+    <Warning>
+      **Limitation:** The `upload_url` tool is not fully supported in HTTP mode. Avoid file uploads when using Claude Cowork.
+    </Warning>
+  </Tab>
+
+  <Tab title="Gemini CLI">
+    The Gemini CLI supports MCP servers through its configuration file.
+
+    1. Create or edit `~/.gemini/settings.json`
+    2. Add the MCP server configuration:
+
+    ```json
+    {
+      "mcpServers": {
+        "moxn-kb": {
+          "command": "npx",
+          "args": [
+            "@moxn/mcp-kb",
+            "--workspace=your-workspace-slug"
+          ]
+        }
+      }
+    }
+    ```
+
+    See the [Gemini CLI MCP documentation](https://geminicli.com/docs/tools/mcp-server/) for more details.
+  </Tab>
+
+  <Tab title="Other Hosts">
+    For other MCP-compatible tools, you'll need either:
+
+    **Local connection** (if your tool can run `npx`):
+    ```json
+    {
+      "mcpServers": {
+        "moxn-kb": {
+          "type": "stdio",
+          "command": "npx",
+          "args": ["@moxn/mcp-kb", "--workspace=your-workspace-slug"]
+        }
+      }
+    }
+    ```
+
+    **Remote connection** (if your tool runs in a VM or browser):
+    ```json
+    {
+      "mcpServers": {
+        "moxn-kb": {
+          "type": "http",
+          "url": "https://your-workspace-slug.moxn.dev/api/mcp/http"
+        }
+      }
+    }
+    ```
+
+    Not sure which to use? See [Understanding Connection Types](#understanding-connection-types) below.
   </Tab>
 </Tabs>
+
+## Understanding Connection Types
+
+Not sure which setup to use? Here's the difference:
+
+| Type | How It Works | Apps That Use It |
+|------|--------------|------------------|
+| **Local (stdio)** | Runs on your machine via `npx` | Claude Desktop, Claude Code, Cursor, Gemini CLI |
+| **Remote (http)** | Connects to Moxn's servers | ChatGPT Desktop, Claude Cowork |
+
+**Local is better when available.** It supports all features including file uploads, and keeps data flowing through your machine.
+
+**Remote is required for cloud environments.** Apps like ChatGPT Desktop and Claude Cowork run in VMs that can't execute local commands. The `upload_url` tool doesn't work reliably in remote mode.
+
+### Using Multiple AI Assistants
+
+If you use several AI tools (e.g., Claude Code on your laptop and Claude Cowork in the browser), you can configure both connections. Use different server names so each tool knows which to use:
+
+```json
+{
+  "mcpServers": {
+    "moxn-kb": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "@moxn/mcp-kb",
+        "--workspace=your-workspace-slug"
+      ]
+    },
+    "moxn-kb-remote": {
+      "type": "http",
+      "url": "https://your-workspace-slug.moxn.dev/api/mcp/http"
+    }
+  }
+}
+```
 
 ## Step 3: Authenticate
 
@@ -215,3 +372,5 @@ This means you can give your AI full write access without worrying about acciden
 Sources:
 - [Getting Started with Local MCP Servers on Claude Desktop](https://support.claude.com/en/articles/10949351-getting-started-with-local-mcp-servers-on-claude-desktop)
 - [Connect to local MCP servers - Model Context Protocol](https://modelcontextprotocol.io/docs/develop/connect-local-servers)
+- [Connect MCP Servers to ChatGPT - OpenAI Developers](https://developers.openai.com/apps-sdk/deploy/connect-chatgpt/)
+- [MCP Servers with Gemini CLI](https://geminicli.com/docs/tools/mcp-server/)
