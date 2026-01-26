@@ -3,26 +3,26 @@ title: Moxn
 description: AI-native documentation and prompt management for LLM applications
 ---
 
-Moxn provides two complementary capabilities for teams building LLM applications: a **Knowledge Base** for AI-native documentation, and **Prompt Management** for versioning and observing your LLM prompts.
+Moxn provides two complementary capabilities for teams building LLM applications: **Documents** for AI-native documentation, and **Prompt Management** for versioning and observing your LLM prompts.
 
 ---
 
-## Knowledge Base
+## Documents
 
-AI-native documentation with safe write access through branching.
+AI-native documents with safe write access through branching.
 
-Traditional docs tools force a choice: either AI can edit (risky) or it can't (limiting). The Knowledge Base solves this with Git-like isolation—AI creates and edits on branches, you review and merge.
+Traditional docs tools force a choice: either AI can edit (risky) or it can't (limiting). Moxn Documents solves this with Git-like isolation—AI creates and edits on branches, you review and merge.
 
 <Frame>
-  <img src="/images/kb-editor.png" alt="Knowledge Base editor" />
+  <img src="/images/kb-editor.png" alt="Documents editor" />
 </Frame>
 
 - **Safe AI write access** - AI works on branches, you review and merge to main
 - **Works with any MCP host** - Claude, ChatGPT, Cursor, or any MCP-compatible assistant
 - **Section-level permissions** - Hide sensitive content from AI while keeping it visible to your team
 
-<Card title="Knowledge Base Guide" icon="book" href="/guides/knowledge-base">
-  Set up AI-native documentation with safe write access
+<Card title="Documents Quick Start" icon="book" href="/quickstart-documents">
+  Connect Claude Desktop or Claude Code in 5 minutes
 </Card>
 
 ---
@@ -75,20 +75,26 @@ async with MoxnClient() as client:
     await client.log_telemetry_event_from_response(session, response)
 ```
 
-<Card title="Prompt Management Guide" icon="code" href="/guides/workflow">
-  Start versioning and observing your prompts
+<Card title="Prompts Quick Start" icon="code" href="/quickstart">
+  Install the SDK and start versioning prompts
 </Card>
 
 ---
 
-## Next Steps
+## Learn More
 
 <CardGroup cols={2}>
-  <Card title="Quick Start" icon="rocket" href="/quickstart">
-    Install the SDK and run your first prompt
-  </Card>
   <Card title="Why Moxn?" icon="lightbulb" href="/context">
     The problems we solve for AI teams
+  </Card>
+  <Card title="Documents Guide" icon="book" href="/guides/knowledge-base">
+    Branches, commits, permissions, and MCP tools
+  </Card>
+  <Card title="Prompt Workflow" icon="diagram-project" href="/guides/workflow">
+    The complete prompt development cycle
+  </Card>
+  <Card title="Telemetry" icon="chart-line" href="/telemetry/spans">
+    Set up observability for your LLM calls
   </Card>
 </CardGroup>
 

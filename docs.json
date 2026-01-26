@@ -25,13 +25,14 @@
             "group": "Getting Started",
             "pages": [
               "index",
+              "quickstart-documents",
               "quickstart",
               "context",
               "llms-txt"
             ]
           },
           {
-            "group": "Knowledge Base",
+            "group": "Documents",
             "pages": [
               "guides/knowledge-base"
             ]

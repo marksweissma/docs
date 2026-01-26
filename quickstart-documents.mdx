@@ -1,0 +1,217 @@
+---
+title: Documents Quick Start
+description: Connect your AI assistant to Moxn Documents
+---
+
+This guide walks you through connecting Claude Desktop (or any MCP-compatible assistant) to Moxn Documents so your AI can read and write documentation safely.
+
+## What You'll Set Up
+
+After this guide, your AI assistant will be able to:
+- Read your team's documents for context
+- Create and edit documents on branches
+- Commit changes for you to review and merge
+
+All writes happen on branches—your main content stays protected until you approve changes.
+
+## Prerequisites
+
+- A Moxn account (get one at [moxn.dev](https://moxn.dev))
+- An AI assistant that supports MCP (Claude Desktop, Claude Code, Cursor, etc.)
+
+<Note>
+**No coding required.** This setup involves copying a configuration snippet—that's it.
+</Note>
+
+## Step 1: Get Your Configuration
+
+1. Sign in to [moxn.dev](https://moxn.dev)
+2. From the Dashboard, find the **Knowledge Base** card
+3. Click **MCP Setup**
+4. Copy the configuration snippet
+
+<Frame>
+  <img src="/images/mcp-setup-dialog.png" alt="MCP Setup dialog showing configuration" />
+</Frame>
+
+Your configuration will look like this (with your workspace slug):
+
+```json
+{
+  "mcpServers": {
+    "moxn-kb": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "@moxn/mcp-kb",
+        "--workspace=your-workspace-slug"
+      ]
+    }
+  }
+}
+```
+
+## Step 2: Add to Your AI Assistant
+
+Choose your assistant below:
+
+<Tabs>
+  <Tab title="Claude Desktop">
+    ### Mac
+
+    1. Open Claude Desktop
+    2. Click **Claude** in the menu bar → **Settings**
+    3. Select the **Developer** tab
+    4. Click **Edit Config**
+
+    This opens `claude_desktop_config.json` in your text editor. If the file is empty or just has `{}`, replace it with your configuration from Step 1.
+
+    If you already have other MCP servers configured, add the `moxn-kb` entry inside the existing `mcpServers` object:
+
+    ```json
+    {
+      "mcpServers": {
+        "existing-server": { ... },
+        "moxn-kb": {
+          "type": "stdio",
+          "command": "npx",
+          "args": [
+            "@moxn/mcp-kb",
+            "--workspace=your-workspace-slug"
+          ]
+        }
+      }
+    }
+    ```
+
+    5. Save the file
+    6. Quit and reopen Claude Desktop
+
+    ### Windows
+
+    1. Open Claude Desktop
+    2. Click the **hamburger menu** (☰) → **Settings**
+    3. Select the **Developer** tab
+    4. Click **Edit Config**
+
+    This opens `claude_desktop_config.json` in Notepad. Add your configuration as described above.
+
+    5. Save the file
+    6. Close and reopen Claude Desktop
+
+    ### Verify It's Working
+
+    After restarting Claude Desktop, you should see a **hammer icon** (🔨) in the bottom-right corner of the chat window. This indicates MCP servers are connected.
+
+    Click the **+** button at the bottom of the chat, then select **Connectors** to see your connected servers.
+  </Tab>
+
+  <Tab title="Claude Code">
+    Add the configuration to `.mcp.json` in your project root:
+
+    ```json
+    {
+      "mcpServers": {
+        "moxn-kb": {
+          "type": "stdio",
+          "command": "npx",
+          "args": [
+            "@moxn/mcp-kb",
+            "--workspace=your-workspace-slug"
+          ]
+        }
+      }
+    }
+    ```
+
+    Claude Code will automatically detect and connect to the server.
+  </Tab>
+
+  <Tab title="Other MCP Hosts">
+    For other MCP-compatible assistants (Cursor, custom implementations), add the server configuration according to your client's documentation.
+
+    The key details:
+    - **Command**: `npx`
+    - **Args**: `["@moxn/mcp-kb", "--workspace=your-workspace-slug"]`
+    - **Type**: `stdio`
+  </Tab>
+</Tabs>
+
+## Step 3: Authenticate
+
+The first time you use Moxn Documents with your AI:
+
+1. Ask your AI something like "List my Moxn documents"
+2. A browser window will open for authentication
+3. Sign in with your Moxn account
+4. Return to your AI assistant
+
+Your session persists across restarts—you only need to authenticate once.
+
+## Try It Out
+
+Once connected, try these prompts with your AI:
+
+**Read documents:**
+> "What documents do I have in Moxn?"
+
+> "Read the API documentation from my knowledge base"
+
+**Create content (safely on a branch):**
+> "Create a new document called 'Meeting Notes' with today's discussion points"
+
+> "Update the onboarding guide to include the new security requirements"
+
+Your AI will create a branch for any changes. You can review and merge in the Moxn web app.
+
+## How Safe Writes Work
+
+When your AI creates or edits content:
+
+1. **AI creates a branch** - Changes are isolated from your main content
+2. **AI commits changes** - Work is saved on the branch
+3. **You review in the web app** - See exactly what changed
+4. **You merge when ready** - Approve changes to make them live
+
+This means you can give your AI full write access without worrying about accidental overwrites or mistakes going live.
+
+<Frame>
+  <img src="/images/kb-merge-compare-versions.png" alt="Reviewing AI changes before merge" />
+</Frame>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Claude Desktop doesn't show the hammer icon">
+    - Make sure you saved the config file and restarted Claude Desktop completely (not just closed the window)
+    - Check that the JSON is valid (no trailing commas, matching braces)
+    - On Mac, you can find the config file at `~/Library/Application Support/Claude/claude_desktop_config.json`
+    - On Windows, it's at `%APPDATA%\Claude\claude_desktop_config.json`
+  </Accordion>
+
+  <Accordion title="Authentication window doesn't open">
+    - Make sure your default browser isn't blocking popups from Moxn
+    - Try running the MCP server manually to see errors: `npx @moxn/mcp-kb --workspace=your-workspace-slug`
+  </Accordion>
+
+  <Accordion title="'npx' is not recognized">
+    You need Node.js installed. Download it from [nodejs.org](https://nodejs.org) (choose the LTS version).
+
+    After installing, restart your terminal/computer and try again.
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Documents Guide" icon="book" href="/guides/knowledge-base">
+    Learn about branches, commits, and permissions
+  </Card>
+  <Card title="Prompt Management" icon="code" href="/quickstart">
+    Set up the SDK for prompt versioning
+  </Card>
+</CardGroup>
+
+Sources:
+- [Getting Started with Local MCP Servers on Claude Desktop](https://support.claude.com/en/articles/10949351-getting-started-with-local-mcp-servers-on-claude-desktop)
+- [Connect to local MCP servers - Model Context Protocol](https://modelcontextprotocol.io/docs/develop/connect-local-servers)
