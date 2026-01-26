@@ -37,7 +37,7 @@
             ]
           },
           {
-            "group": "Core Workflow",
+            "group": "Prompt Management",
             "pages": [
               "guides/workflow",
               "guides/prompts",

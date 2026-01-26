@@ -5,9 +5,24 @@ description: The problems Moxn solves for AI engineering teams
 
 # Why Moxn?
 
+Teams building LLM applications face two distinct challenges: managing documentation that AI can safely edit, and managing the prompts that power their AI features.
+
+## The Documentation Problem
+
+Traditional documentation tools force a choice:
+
+- **Let AI edit** - Risky. AI could overwrite important content, changes go directly to production, no easy review or rollback
+- **Keep AI read-only** - Limiting. You miss out on AI helping maintain and improve docs
+
+What teams need is a way to give AI write access *safely*—where AI works in isolation and you review before anything goes live.
+
+**The Moxn Knowledge Base solves this** with Git-like branching for documentation. AI creates and edits on branches. You review the changes in a familiar diff view. Merge when satisfied, discard if not. Your main branch stays protected.
+
+## The Prompt Problem
+
 Prompts are code, but they don't have the tooling.
 
-When building AI applications, you face a familiar set of challenges:
+When building AI features, you face a familiar set of challenges:
 
 - **No dedicated tooling**: Prompts are scattered across strings, YAML files, and spreadsheets—with no proper editor for structured content
 - **Version control friction**: Prompts either live in git (coupled to deploys, painful for domain experts) or in config systems (schemaless, painful for engineers)
@@ -16,7 +31,7 @@ When building AI applications, you face a familiar set of challenges:
 - **No reuse**: Want a shared system message across multiple agent surfaces? Good luck
 - **No collaboration**: No shared workflows for reviewing prompts or debugging production traces
 
-Moxn solves these problems by treating prompts as first-class versioned entities with type-safe interfaces and full observability.
+**Moxn Prompt Management solves this** by treating prompts as first-class versioned entities with type-safe interfaces and full observability.
 
 ## Core Architecture
 
@@ -101,10 +116,10 @@ Moxn simplifies the common path without making edge cases harder.
 ## Next Steps
 
 <CardGroup cols={2}>
+  <Card title="Knowledge Base" icon="book" href="/guides/knowledge-base">
+    Set up AI-native documentation
+  </Card>
   <Card title="Quick Start" icon="rocket" href="/quickstart">
     Install and run your first prompt
-  </Card>
-  <Card title="The Moxn Workflow" icon="arrows-rotate" href="/guides/workflow">
-    See the complete development cycle
   </Card>
 </CardGroup>
