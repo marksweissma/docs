@@ -16,6 +16,7 @@
           {
             "group": "Video Walkthrough",
             "pages": [
+              "videos/documents",
               "videos/overview",
               "videos/models",
               "videos/sessions"
