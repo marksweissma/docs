@@ -235,7 +235,7 @@ Add to your MCP configuration (e.g., `.mcp.json` for Claude Code):
 ```json
 {
   "mcpServers": {
-    "moxn-kb": {
+    "knowledge-base": {
       "command": "npx",
       "args": ["-y", "@moxn/mcp-kb", "--workspace=your-workspace-slug"]
     }
@@ -266,8 +266,8 @@ When your AI assistant needs context about your project:
 ```
 AI: Let me check the API documentation in your knowledge base.
 
-[Uses moxn-kb find to list documents]
-[Uses moxn-kb read to fetch content]
+[Uses knowledge-base find to list documents]
+[Uses knowledge-base read to fetch content]
 
 Based on your API guide, the authentication endpoint is...
 ```
@@ -279,9 +279,9 @@ When your AI assistant helps document code:
 ```
 AI: I'll create documentation for this new feature.
 
-[Uses moxn-kb documents to create a branch "docs/new-feature"]
-[Uses moxn-kb documents to create a new document]
-[Uses moxn-kb sections to add content sections]
+[Uses knowledge-base documents to create a branch "docs/new-feature"]
+[Uses knowledge-base documents to create a new document]
+[Uses knowledge-base sections to add content sections]
 [Commits the changes]
 
 I've created the documentation at /engineering/new-feature on branch

@@ -42,7 +42,7 @@ Your configuration will look like this (with your workspace slug):
 ```json
 {
   "mcpServers": {
-    "moxn-kb": {
+    "knowledge-base": {
       "type": "stdio",
       "command": "npx",
       "args": [
@@ -69,13 +69,13 @@ Choose your assistant below:
 
     This opens `claude_desktop_config.json` in your text editor. If the file is empty or just has `{}`, replace it with your configuration from Step 1.
 
-    If you already have other MCP servers configured, add the `moxn-kb` entry inside the existing `mcpServers` object:
+    If you already have other MCP servers configured, add the `knowledge-base` entry inside the existing `mcpServers` object:
 
     ```json
     {
       "mcpServers": {
         "existing-server": { ... },
-        "moxn-kb": {
+        "knowledge-base": {
           "type": "stdio",
           "command": "npx",
           "args": [
@@ -115,7 +115,7 @@ Choose your assistant below:
     ```json
     {
       "mcpServers": {
-        "moxn-kb": {
+        "knowledge-base": {
           "type": "stdio",
           "command": "npx",
           "args": [
@@ -167,7 +167,7 @@ Choose your assistant below:
     ```json
     {
       "mcpServers": {
-        "moxn-kb": {
+        "knowledge-base": {
           "type": "stdio",
           "command": "npx",
           "args": [
@@ -188,7 +188,7 @@ Choose your assistant below:
     ```json
     {
       "mcpServers": {
-        "moxn-kb": {
+        "knowledge-base": {
           "type": "http",
           "url": "https://your-workspace-slug.moxn.dev/api/mcp/http"
         }
@@ -212,7 +212,7 @@ Choose your assistant below:
     ```json
     {
       "mcpServers": {
-        "moxn-kb": {
+        "knowledge-base": {
           "command": "npx",
           "args": [
             "@moxn/mcp-kb",
@@ -233,7 +233,7 @@ Choose your assistant below:
     ```json
     {
       "mcpServers": {
-        "moxn-kb": {
+        "knowledge-base": {
           "type": "stdio",
           "command": "npx",
           "args": ["@moxn/mcp-kb", "--workspace=your-workspace-slug"]
@@ -246,7 +246,7 @@ Choose your assistant below:
     ```json
     {
       "mcpServers": {
-        "moxn-kb": {
+        "knowledge-base": {
           "type": "http",
           "url": "https://your-workspace-slug.moxn.dev/api/mcp/http"
         }
@@ -278,7 +278,7 @@ If you use several AI tools (e.g., Claude Code on your laptop and Claude Cowork 
 ```json
 {
   "mcpServers": {
-    "moxn-kb": {
+    "knowledge-base": {
       "type": "stdio",
       "command": "npx",
       "args": [
@@ -286,7 +286,7 @@ If you use several AI tools (e.g., Claude Code on your laptop and Claude Cowork 
         "--workspace=your-workspace-slug"
       ]
     },
-    "moxn-kb-remote": {
+    "knowledge-base-remote": {
       "type": "http",
       "url": "https://your-workspace-slug.moxn.dev/api/mcp/http"
     }
