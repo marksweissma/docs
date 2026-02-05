@@ -39,6 +39,12 @@
             ]
           },
           {
+            "group": "Migration",
+            "pages": [
+              "migration/local"
+            ]
+          },
+          {
             "group": "Prompt Management",
             "pages": [
               "guides/workflow",
