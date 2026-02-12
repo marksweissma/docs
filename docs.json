@@ -41,7 +41,8 @@
           {
             "group": "Migration",
             "pages": [
-              "migration/local"
+              "migration/local",
+              "migration/notion"
             ]
           },
           {

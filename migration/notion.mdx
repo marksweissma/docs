@@ -1,0 +1,330 @@
+---
+title: Import from Notion
+description: Migrate pages and databases from Notion into the Moxn Knowledge Base
+---
+
+Import your Notion workspace into the Moxn Knowledge Base. The `@moxn/kb-migrate` CLI extracts pages, converts blocks into sections, downloads images, and recreates Notion databases as KB databases with tag-backed columns.
+
+## Prerequisites
+
+- Node.js 18+
+- A **Notion integration token** with access to the pages you want to import
+- A **Moxn API key** with read and write permissions (create one at **Settings** > **API Keys** in the [web app](https://moxn.dev))
+
+## Step 1: Create a Notion Integration
+
+Moxn reads your Notion content through a [Notion integration](https://www.notion.so/help/create-integrations-with-the-notion-api). You need to create one and grant it access to your workspace.
+
+1. Go to [notion.so/my-integrations](https://www.notion.so/my-integrations) and click **New integration**
+2. Name it (e.g. "Moxn Importer"), select your workspace, and click **Submit**
+3. Copy the **Internal Integration Secret** — this is your `NOTION_TOKEN`
+4. In Notion, open the top-level page you want to import
+5. Click the **...** menu in the top right, then **Connections** > **Connect to** and select your integration
+
+<Note>
+The integration can only see pages it has been explicitly connected to. If you want to import your entire workspace, connect the integration at the top-level page and it will inherit access to all child pages.
+</Note>
+
+## Step 2: Get Your Moxn API Key
+
+1. Open the [Moxn web app](https://moxn.dev) and go to **Settings** > **API Keys**
+2. Create a new key with **read/write** scope
+3. Copy the key — this is your `MOXN_API_KEY`
+
+## Step 3: Run the Import
+
+```bash
+npx @moxn/kb-migrate notion \
+  --token=YOUR_NOTION_TOKEN \
+  --api-key=YOUR_MOXN_API_KEY
+```
+
+That's it. The tool discovers all pages in your workspace, converts them to KB documents, and uploads them.
+
+<Note>
+You can set environment variables instead of passing flags every time:
+
+```bash
+export NOTION_TOKEN="secret_abc123..."
+export MOXN_API_KEY="moxn_xyz789..."
+npx @moxn/kb-migrate notion
+```
+</Note>
+
+### Preview First with Dry Run
+
+See what would be imported without making changes:
+
+```bash
+npx @moxn/kb-migrate notion --dry-run
+```
+
+### Import a Subtree
+
+Import only a specific page and its children instead of the entire workspace:
+
+```bash
+npx @moxn/kb-migrate notion --root-page-id=abc123def456
+```
+
+The `--root-page-id` is the ID from the Notion page URL (the 32-character hex string after the page title).
+
+### Choose a Base Path
+
+By default, documents are created under `/imported-from-notion`. Change this with `--base-path`:
+
+```bash
+npx @moxn/kb-migrate notion --base-path=/engineering
+```
+
+## How It Works
+
+The migration runs in two passes:
+
+```mermaid
+flowchart LR
+    A[Discover] --> B[Extract]
+    B --> C[Upload]
+    C --> D[Databases]
+    D --> E[Report]
+```
+
+### 1. Discover
+
+The tool searches your Notion workspace to find all pages and databases. It builds a tree of parent-child relationships and computes KB paths from page titles.
+
+### 2. Extract
+
+For each page, the tool fetches all blocks and converts them to Moxn KB sections:
+
+| Notion Block | Moxn Result |
+|-------------|-------------|
+| H2 heading | **Section boundary** — a new KB section starts here |
+| H1, H3 headings | Markdown heading within the section |
+| Paragraphs | Text block with formatting (bold, italic, code, links) |
+| Bullet/numbered lists | Markdown lists with nesting |
+| Code blocks | Code block with language |
+| Images | Downloaded and uploaded to Moxn storage |
+| Tables | Markdown table |
+| Callouts | Blockquote with emoji prefix |
+| Toggle blocks | Collapsible content |
+| Synced blocks | Resolved inline (with cycle detection) |
+| Page mentions | Internal document links |
+
+Content before the first H2 heading goes into an "Introduction" section.
+
+### 3. Upload
+
+Each extracted document is created via the Moxn API. The tool handles conflicts based on the `--on-conflict` option and continues processing if individual pages fail.
+
+### 4. Databases
+
+After all pages are imported, the tool creates KB databases from Notion databases:
+
+- **Select** and **Multi-select** properties become KB database columns
+- Each option becomes a tag (e.g. a "Status" select with options "Done" and "In Progress" creates tags at `/imported/db-name/status/done` and `/imported/db-name/status/in-progress`)
+- Database entries (Notion pages within a database) are linked to the KB database
+- Tag values from Notion properties are assigned to the corresponding documents
+
+Other property types (text, number, date, etc.) are not mapped to columns — they appear as text content within the page body.
+
+## Document Path Mapping
+
+The tool creates KB paths from the Notion page hierarchy:
+
+| Notion Structure | `--base-path` | KB Document Path |
+|-----------------|---------------|------------------|
+| "API Guide" (top-level) | `/imported-from-notion` | `/imported-from-notion/api-guide` |
+| "Setup" under "API Guide" | `/engineering` | `/engineering/api-guide/setup` |
+| Database entry "Sprint 1" | `/engineering` | `/engineering/sprint-board/sprint-1` |
+
+Page titles are slugified: lowercased, spaces become hyphens, special characters removed.
+
+## CLI Options
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--token <token>` | `$NOTION_TOKEN` | Notion integration token (required) |
+| `--api-key <key>` | `$MOXN_API_KEY` | Moxn API key (required) |
+| `--api-url <url>` | `https://moxn.dev` | Moxn API base URL |
+| `--base-path <path>` | `/imported-from-notion` | Path prefix for all imported documents |
+| `--root-page-id <id>` | _(entire workspace)_ | Import only a subtree starting from this Notion page |
+| `--max-depth <n>` | _(unlimited)_ | Maximum page nesting depth |
+| `--on-conflict <action>` | `skip` | What to do when a path already exists: `skip` or `update` |
+| `--default-permission <perm>` | Server default | Default permission: `edit`, `read`, or `none` |
+| `--ai-access <perm>` | Server default | AI/MCP access level: `edit`, `read`, or `none` |
+| `--visibility <vis>` | _(none)_ | Shorthand: `team` (sets `--default-permission=read`) or `private` (sets `--default-permission=none`) |
+| `--dry-run` | `false` | Preview changes without calling the API |
+| `--json` | `false` | Output results as JSON |
+
+## Setting Permissions
+
+Control who can see imported documents:
+
+```bash
+# Team can read, AI assistants can read
+npx @moxn/kb-migrate notion --visibility=team --ai-access=read
+
+# Private — only the importer can see them
+npx @moxn/kb-migrate notion --visibility=private --ai-access=none
+```
+
+| Flag | `edit` | `read` | `none` |
+|------|--------|--------|--------|
+| **`--default-permission`** | Team members can edit | Team members can view only | Hidden from team |
+| **`--ai-access`** | AI assistants can read and edit | AI assistants can read only | Hidden from AI |
+
+The `--visibility` flag is a shorthand:
+- `--visibility=team` sets `--default-permission=read`
+- `--visibility=private` sets `--default-permission=none`
+
+See [Permission Model](/guides/knowledge-base#permission-model) for details on how permissions cascade.
+
+## Handling Conflicts
+
+When you re-run the import and documents already exist at the target paths:
+
+**`--on-conflict=skip`** (default) — existing documents are left untouched:
+
+```bash
+npx @moxn/kb-migrate notion --on-conflict=skip
+# First run: creates all documents
+# Second run: skips all (already exist)
+```
+
+**`--on-conflict=update`** — existing documents are replaced with the latest Notion content:
+
+```bash
+npx @moxn/kb-migrate notion --on-conflict=update
+# Creates new versions — previous versions are preserved in commit history
+```
+
+## JSON Output
+
+Use `--json` for structured output in CI or scripts:
+
+```bash
+npx @moxn/kb-migrate notion --json 2>/dev/null
+```
+
+```json
+{
+  "timestamp": "2026-02-11T12:00:00.000Z",
+  "source": { "type": "notion", "location": "Notion workspace" },
+  "targetApi": "https://moxn.dev",
+  "basePath": "/imported-from-notion",
+  "options": { "dryRun": false, "onConflict": "skip" },
+  "results": [
+    {
+      "sourcePath": "api-guide",
+      "documentPath": "/imported-from-notion/api-guide",
+      "status": "created",
+      "sectionsCount": 5,
+      "duration": 2100
+    }
+  ],
+  "summary": {
+    "total": 12,
+    "created": 12,
+    "updated": 0,
+    "skipped": 0,
+    "failed": 0,
+    "duration": 18500
+  }
+}
+```
+
+## Examples
+
+### Import entire workspace
+
+```bash
+npx @moxn/kb-migrate notion \
+  --token=$NOTION_TOKEN \
+  --api-key=$MOXN_API_KEY \
+  --base-path=/from-notion
+```
+
+### Import a single team's pages
+
+```bash
+npx @moxn/kb-migrate notion \
+  --root-page-id=abc123def456 \
+  --base-path=/engineering \
+  --visibility=team
+```
+
+### Re-sync after Notion updates
+
+```bash
+npx @moxn/kb-migrate notion \
+  --on-conflict=update \
+  --base-path=/from-notion
+```
+
+### Import with restricted AI access
+
+```bash
+npx @moxn/kb-migrate notion \
+  --base-path=/internal \
+  --default-permission=read \
+  --ai-access=none
+```
+
+## Limitations
+
+| Constraint | Details |
+|-----------|---------|
+| **Max documents** | 10,000 per import. Use `--root-page-id` for large workspaces. |
+| **Database properties** | Only **Select** and **Multi-select** are mapped to KB columns. Other types appear as page content. |
+| **Embedded content** | Videos, embeds, and bookmarks are converted to text links. |
+| **Synced blocks** | Resolved inline with cycle detection. Deeply nested synced blocks may not render identically. |
+| **Rate limits** | Notion API allows ~3 requests/second. The tool throttles automatically. |
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Error: Notion token required">
+    Pass your token via `--token` or set the environment variable:
+
+    ```bash
+    export NOTION_TOKEN=secret_abc123...
+    npx @moxn/kb-migrate notion
+    ```
+  </Accordion>
+
+  <Accordion title="Pages are missing from the import">
+    The Notion integration can only access pages it's been connected to. In Notion, open the parent page, click **...** > **Connections** > **Connect to** and select your integration. Child pages inherit access from their parent.
+  </Accordion>
+
+  <Accordion title="Images aren't showing up">
+    Notion-hosted images are downloaded and re-uploaded to Moxn storage during import. If the download fails (e.g. expired URL), the image is skipped with a warning. Re-running the import with `--on-conflict=update` will retry failed images.
+
+    External image URLs are kept as-is and must be publicly accessible.
+  </Accordion>
+
+  <Accordion title="Database columns are missing">
+    Only **Select** and **Multi-select** Notion properties are imported as KB database columns. Other property types (text, number, date, formula, relation, etc.) are rendered as text in the page body instead.
+  </Accordion>
+
+  <Accordion title="Import is slow">
+    The Notion API has rate limits (~3 requests/second). For a workspace with 100+ pages, expect the import to take a few minutes. The tool shows progress as it goes.
+
+    Use `--root-page-id` to import a smaller subtree if you don't need the entire workspace.
+  </Accordion>
+
+  <Accordion title="Some pages failed but others succeeded">
+    The tool continues processing remaining pages when one fails. Check the summary output for failed pages and their error messages. Re-run with `--on-conflict=skip` to retry only the failed ones (successfully created pages will be skipped).
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Knowledge Base Guide" icon="book" href="/guides/knowledge-base">
+    Learn about branches, commits, and permissions
+  </Card>
+  <Card title="Connect AI Assistants" icon="robot" href="/quickstart-documents">
+    Set up MCP access so AI can use your imported docs
+  </Card>
+</CardGroup>
