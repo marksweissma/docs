@@ -120,6 +120,11 @@
           "anchor": "App",
           "href": "https://moxn.dev",
           "icon": "browser"
+        },
+        {
+          "anchor": "Community",
+          "href": "https://join.slack.com/t/moxn-community/shared_invite/zt-3q2x8mb0m-3DJ_BoJ6W5G5~fjMriKm5w",
+          "icon": "slack"
         }
       ]
     }
@@ -132,7 +137,7 @@
     "links": [
       {
         "label": "Support",
-        "href": "mailto:support@moxn.dev"
+        "href": "mailto:mark.s.weiss.ma@gmail.com"
       }
     ],
     "primary": {
