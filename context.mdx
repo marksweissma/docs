@@ -1,125 +1,83 @@
 ---
 title: Why Moxn?
-description: The problems Moxn solves for AI engineering teams
+description: A knowledge base built for AI agents — not just humans
 ---
 
 # Why Moxn?
 
-Teams building LLM applications face two distinct challenges: managing documentation that AI can safely edit, and managing the prompts that power their AI features.
+AI agents are useful when they have context. The problem is getting your team's knowledge into a format agents can actually use.
 
-## The Documentation Problem
+## The Problem
 
-Traditional documentation tools force a choice:
+Most teams keep docs in wikis, Google Drive, Notion, or markdown files. To give an agent access you end up:
 
-- **Let AI edit** - Risky. AI could overwrite important content, changes go directly to production, no easy review or rollback
-- **Keep AI read-only** - Limiting. You miss out on AI helping maintain and improve docs
+- Copy-pasting content into prompts
+- Building RAG pipelines over exports
+- Writing custom integrations per tool
 
-What teams need is a way to give AI write access *safely*—where AI works in isolation and you review before anything goes live.
+And when agents need to *write* docs, it's worse — either they can't, or they edit production content directly with no review step.
 
-**Moxn Documents solves this** with Git-like branching for documentation. AI creates and edits on branches. You review the changes in a familiar diff view. Merge when satisfied, discard if not. Your main branch stays protected.
+## How Moxn Works
 
-## The Prompt Problem
+Moxn is a knowledge base with a built-in MCP server. Your agents connect and get structured access to your docs through a standard tool interface.
 
-Prompts are code, but they don't have the tooling.
+**For reading:** Agents use `find`, `read`, and `search` tools to query your knowledge base. No RAG pipeline, no embeddings, no exports — agents read the same docs your team writes in.
 
-When building AI features, you face a familiar set of challenges:
+**For writing:** When you ask an agent to create or update content, it works on a branch. You review the diff and merge, just like a pull request. Main is always protected.
 
-- **No dedicated tooling**: Prompts are scattered across strings, YAML files, and spreadsheets—with no proper editor for structured content
-- **Version control friction**: Prompts either live in git (coupled to deploys, painful for domain experts) or in config systems (schemaless, painful for engineers)
-- **No type safety**: Input variables are _stringly_-typed, leading to runtime errors
-- **No observability**: You can't see what prompts actually ran in production
-- **No reuse**: Want a shared system message across multiple agent surfaces? Good luck
-- **No collaboration**: No shared workflows for reviewing prompts or debugging production traces
+**For permissions:** You control what agents can see at the section level. API keys, credentials, internal metrics — mark sections as hidden from LLMs and they're filtered from MCP responses.
 
-**Moxn Prompt Management solves this** by treating prompts as first-class versioned entities with type-safe interfaces and full observability.
-
-## Core Architecture
-
-Moxn separates **content management** from **runtime execution**:
-
-<Steps>
-  <Step title="Prompt Template" icon="file-lines">
-    Messages, variables, and model config—stored in Moxn, versioned like code.
-  </Step>
-  <Step title="Prompt Session" icon="layer-group">
-    Template + your runtime data, created in your application.
-  </Step>
-  <Step title="Invocation" icon="paper-plane">
-    A plain Python dict you pass directly to the provider SDK.
-  </Step>
-</Steps>
-
-```mermaid
-sequenceDiagram
-    participant App as Your App
-    participant Moxn as Moxn SDK
-    participant LLM as Anthropic/OpenAI
-
-    App->>Moxn: get_prompt(prompt_id)
-    Moxn-->>App: Prompt Template
-    Note right of App: Template + session_data
-    App->>Moxn: create_prompt_session(template, data)
-    Moxn-->>App: Prompt Session
-    App->>App: session.to_anthropic_invocation()
-    Note right of App: Returns a plain dict
-    App->>LLM: messages.create(**invocation)
-    LLM-->>App: response
-    App->>Moxn: log_telemetry_event(response)
-```
-
-## Design Philosophy
-
-### Moxn Builds Payloads, You Own the Integration
-
-The SDK produces standard Python dictionaries. You unpack them directly into provider SDKs:
-
-```python
-# Moxn builds the payload from your template + data
-invocation = session.to_anthropic_invocation()
-
-# You call the provider directly—no wrapper, no magic
-response = anthropic.messages.create(**invocation)
-```
-
-This means you can always:
-- **Modify the payload** before sending (add headers, override settings)
-- **Use new provider features** without waiting for SDK updates
-- **Compose with other tools** in your stack
-
-Moxn simplifies the common path without making edge cases harder.
-
-## Key Features
+## Features
 
 <CardGroup cols={2}>
-  <Card title="Rich Prompt Editor" icon="pen-fancy">
-    A block-based editor with mermaid diagrams, code blocks, XML documents, and
-    multimodal content. Author prompts and review traces in the same interface.
+  <Card title="MCP Integration" icon="plug">
+    Connect any MCP host in minutes. Agents get `find`, `read`, `search`, `documents`, and `sections` tools out of the box.
   </Card>
-  <Card title="Git-Like Versioning" icon="code-branch">
-    Branch, commit, and rollback prompts. Pin production to specific commits.
-    Review diffs before deploying.
+  <Card title="Branching" icon="code-branch">
+    Agent writes are isolated on branches. Review diffs, merge when satisfied, discard if not. Main stays protected.
   </Card>
-  <Card title="Type-Safe Interfaces" icon="shield-check">
-    Auto-generated Pydantic models ensure type safety from editor to runtime.
-    Get autocomplete and validation.
+  <Card title="Permissions" icon="lock">
+    Three-tier access control (self, team, LLM) at the section level. Hide sensitive content from agents without hiding it from your team.
   </Card>
-  <Card title="Full Observability" icon="chart-line">
-    View traces and spans in the same rich editor. W3C Trace Context compatible
-    with complete LLM event logging.
+  <Card title="Tags" icon="tags">
+    Categorize and filter documents. Useful for both human navigation and scoping agent searches.
+  </Card>
+  <Card title="Merge Requests" icon="code-pull-request">
+    Review agent-generated changes in a diff view. Approve, request changes, or discard.
   </Card>
 </CardGroup>
 
-<Frame caption="The Moxn editor with structured content blocks">
-  <img src="/images/editor-rich-content.png" alt="Message editor with reminders and code blocks" />
+<Frame caption="Knowledge base with documents, tags, and MCP setup">
+  <img src="/images/kb-landing-page.png" alt="Moxn Knowledge Base" />
 </Frame>
+
+<Frame caption="Tags for categorization">
+  <img src="/images/kb-tags-documentation.png" alt="Tags" />
+</Frame>
+
+<Frame caption="Merge requests for reviewing agent writes">
+  <img src="/images/kb-merge-requests-tab.png" alt="Merge requests" />
+</Frame>
+
+<Frame caption="MCP setup dialog">
+  <img src="/images/kb-mcp-expanded.png" alt="MCP setup" />
+</Frame>
+
+## Migration
+
+Already have docs elsewhere? Import from local files (markdown, text) or directly from Notion.
+
+<Card title="Migration Guide" icon="arrow-right-arrow-left" href="/migration/local">
+  Import existing docs into Moxn
+</Card>
 
 ## Next Steps
 
 <CardGroup cols={2}>
-  <Card title="Documents Quick Start" icon="book" href="/quickstart-documents">
-    Set up AI-native documentation
+  <Card title="Quick Start" icon="rocket" href="/quickstart-documents">
+    Connect your AI assistant in 5 minutes
   </Card>
-  <Card title="Prompts Quick Start" icon="rocket" href="/quickstart">
-    Install the SDK and run your first prompt
+  <Card title="Documents Guide" icon="book" href="/guides/knowledge-base">
+    Branches, commits, permissions, and MCP tools
   </Card>
 </CardGroup>

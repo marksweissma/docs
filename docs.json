@@ -1,7 +1,7 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
-  "name": "Moxn SDK",
+  "name": "Moxn",
   "colors": {
     "primary": "#3b82f6",
     "light": "#a855f7",
@@ -16,10 +16,7 @@
           {
             "group": "Video Walkthrough",
             "pages": [
-              "videos/documents",
-              "videos/overview",
-              "videos/models",
-              "videos/sessions"
+              "videos/documents"
             ]
           },
           {
@@ -27,7 +24,6 @@
             "pages": [
               "index",
               "quickstart-documents",
-              "quickstart",
               "context",
               "llms-txt"
             ]
@@ -43,72 +39,6 @@
             "pages": [
               "migration/local",
               "migration/notion"
-            ]
-          },
-          {
-            "group": "Prompt Management",
-            "pages": [
-              "guides/workflow",
-              "guides/prompts",
-              "guides/sessions",
-              "guides/providers",
-              "guides/codegen"
-            ]
-          },
-          {
-            "group": "Concepts",
-            "pages": [
-              "concepts/entities",
-              "concepts/versioning",
-              "concepts/variables"
-            ]
-          },
-          {
-            "group": "Telemetry",
-            "pages": [
-              "telemetry/spans",
-              "telemetry/logging",
-              "telemetry/reviewing"
-            ]
-          },
-          {
-            "group": "Web App",
-            "pages": [
-              "webapp/creating",
-              "webapp/variables",
-              "webapp/versioning",
-              "webapp/studio"
-            ]
-          },
-          {
-            "group": "Advanced",
-            "pages": [
-              "advanced/multimodal",
-              "advanced/structured-outputs"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "Examples",
-        "groups": [
-          {
-            "group": "Examples",
-            "pages": [
-              "examples/building"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "Reference",
-        "groups": [
-          {
-            "group": "SDK Reference",
-            "pages": [
-              "reference/client",
-              "reference/session",
-              "reference/types"
             ]
           }
         ]

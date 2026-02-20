@@ -3,15 +3,41 @@ title: Import from Notion
 description: Migrate pages and databases from Notion into the Moxn Knowledge Base
 ---
 
-Import your Notion workspace into the Moxn Knowledge Base. The `@moxn/kb-migrate` CLI extracts pages, converts blocks into sections, downloads images, and recreates Notion databases as KB databases with tag-backed columns.
+Import your Notion workspace into the Moxn Knowledge Base. You can import directly from the web app, or use the `@moxn/kb-migrate` CLI for more control.
 
-## Prerequisites
+## Web Import
+
+The fastest way to import from Notion — no terminal required.
+
+1. Sign in to [moxn.dev](https://moxn.dev) and go to **Knowledge Base**
+2. Click **Import** → **From Notion**
+3. Connect your Notion account when prompted
+4. Select the pages and databases you want to import
+5. Click **Next** to start the import
+
+<Frame>
+  <img src="/images/import-dropdown.png" alt="Import menu showing Notion option" />
+</Frame>
+
+<Frame>
+  <img src="/images/notion-import-dialog.png" alt="Notion import content selection dialog" />
+</Frame>
+
+The web importer handles authentication, content selection, and upload in one flow. Imported pages appear in your Knowledge Base immediately.
+
+---
+
+## CLI Import
+
+For scripting, CI pipelines, or more granular control over the import, use the `@moxn/kb-migrate` CLI. It extracts pages, converts blocks into sections, downloads images, and recreates Notion databases as KB databases with tag-backed columns.
+
+### Prerequisites
 
 - Node.js 18+
 - A **Notion integration token** with access to the pages you want to import
 - A **Moxn API key** with read and write permissions (create one at **Settings** > **API Keys** in the [web app](https://moxn.dev))
 
-## Step 1: Create a Notion Integration
+### Step 1: Create a Notion Integration
 
 Moxn reads your Notion content through a [Notion integration](https://www.notion.so/help/create-integrations-with-the-notion-api). You need to create one and grant it access to your workspace.
 
@@ -25,13 +51,13 @@ Moxn reads your Notion content through a [Notion integration](https://www.notion
 The integration can only see pages it has been explicitly connected to. If you want to import your entire workspace, connect the integration at the top-level page and it will inherit access to all child pages.
 </Note>
 
-## Step 2: Get Your Moxn API Key
+### Step 2: Get Your Moxn API Key
 
 1. Open the [Moxn web app](https://moxn.dev) and go to **Settings** > **API Keys**
 2. Create a new key with **read/write** scope
 3. Copy the key — this is your `MOXN_API_KEY`
 
-## Step 3: Run the Import
+### Step 3: Run the Import
 
 ```bash
 npx @moxn/kb-migrate notion \

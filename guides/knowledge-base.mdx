@@ -3,7 +3,7 @@ title: Knowledge Base
 description: AI-native documentation with safe write access through branching
 ---
 
-The Moxn Knowledge Base brings Git-like version control to documentation, designed specifically for teams using AI assistants. Give your AI assistant write access—safely. AI works on branches, you review and merge.
+The Moxn Knowledge Base is where your team and AI agents work with the same documentation. Your team writes in a rich web editor. Agents connect over MCP to search, read, and write. Git-like branching and version control keep everything in sync.
 
 <Frame>
   <img src="/images/kb-editor.png" alt="Knowledge Base editor" />
@@ -11,12 +11,11 @@ The Moxn Knowledge Base brings Git-like version control to documentation, design
 
 ## Why Knowledge Base?
 
-Traditional docs tools force a choice: either AI can edit (risky) or it can't (limiting). The Knowledge Base solves this with Git-like isolation:
-
-- **Safe AI write access** - AI creates and edits docs on a branch, you review and merge to main
-- **Works with any MCP host** - Claude, ChatGPT, Cursor, or any MCP-compatible assistant
-- **Versions everything** - Branch for experiments, commit to save, merge when ready
-- **Controls AI access** - Section-level permissions let you hide sensitive content from AI
+- **Agent-native access** - Agents connect via MCP to search, read, and write your docs through structured tools
+- **Rich editor for your team** - Code blocks, mermaid diagrams, inline comments, drag-and-drop sections
+- **Branching and merging** - Isolate changes (from agents or teammates), review diffs, merge when ready
+- **Works with any MCP host** - Claude, ChatGPT, Cursor, Gemini, or any MCP-compatible assistant
+- **Section-level permissions** - Control what agents can see without affecting your team's access
 
 ## Core Concepts
 
@@ -315,10 +314,10 @@ The key workflow: **AI writes on a branch → commits → you review in the web 
 ## Next Steps
 
 <CardGroup cols={2}>
-  <Card title="Core Workflow" icon="diagram-project" href="/guides/workflow">
-    Learn the full prompt authoring workflow
+  <Card title="Quick Start" icon="rocket" href="/quickstart-documents">
+    Connect your AI assistant in 5 minutes
   </Card>
-  <Card title="Telemetry" icon="chart-line" href="/telemetry/spans">
-    Set up observability for your LLM calls
+  <Card title="Migration" icon="arrow-right-arrow-left" href="/migration/notion">
+    Import your Notion workspace into Moxn
   </Card>
 </CardGroup>

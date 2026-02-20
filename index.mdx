@@ -1,83 +1,82 @@
 ---
 title: Moxn
-description: AI-native documentation and prompt management for LLM applications
+description: A knowledge base built for AI agents — search, read, and write docs over MCP
 ---
 
-Moxn provides two complementary capabilities for teams building LLM applications: **Documents** for AI-native documentation, and **Prompt Management** for versioning and observing your LLM prompts.
-
----
-
-## Documents
-
-AI-native documents with safe write access through branching.
-
-Traditional docs tools force a choice: either AI can edit (risky) or it can't (limiting). Moxn Documents solves this with Git-like isolation—AI creates and edits on branches, you review and merge.
+Moxn is a knowledge base designed for AI agents. Your agents connect over MCP to search, read, and write documentation — the same docs your team edits in a rich web editor. No RAG pipelines, no embeddings, no exports.
 
 <Frame>
-  <img src="/images/kb-editor.png" alt="Documents editor" />
+  <img src="/images/kb-landing-page.png" alt="Moxn Knowledge Base" />
 </Frame>
 
-- **Safe AI write access** - AI works on branches, you review and merge to main
-- **Works with any MCP host** - Claude, ChatGPT, Cursor, or any MCP-compatible assistant
-- **Section-level permissions** - Hide sensitive content from AI while keeping it visible to your team
-
-<Card title="Documents Quick Start" icon="book" href="/quickstart-documents">
-  Connect Claude Desktop or Claude Code in 5 minutes
+<Card title="Quick Start" icon="rocket" href="/quickstart-documents">
+  Connect any MCP host — Claude, ChatGPT, Cursor, Gemini, and more — in 5 minutes
 </Card>
 
 ---
 
-## Prompt Management
+## Built for Agents
 
-Version, render, and observe your LLM prompts.
+Agents connect to Moxn via MCP and get structured access to your knowledge base through a standard tool interface: `find`, `read`, `search`, `documents`, and `sections`.
 
-```mermaid
-flowchart LR
-    A[Author] --> B[Generate]
-    B --> C[Use]
-    C --> D[Observe]
-```
+Unlike bolting an API onto a wiki, Moxn is built from the ground up for agent access. Documents are organized by paths, sections are individually addressable, and search returns clean text — not HTML fragments or PDF chunks.
 
-<Steps>
-  <Step title="Author prompts in a rich editor">
-    Build prompts with typed variables, structured content, and Git-like versioning.
-  </Step>
-  <Step title="Generate type-safe models">
-    Run codegen to get Pydantic models with autocomplete and validation.
-  </Step>
-  <Step title="Use prompts in your code">
-    Fetch prompts, inject your context, get provider-specific payloads.
-  </Step>
-  <Step title="Observe in production">
-    Log traces and review them in the same editor you authored in.
-  </Step>
-</Steps>
+<CardGroup cols={2}>
+  <Card title="Search and read" icon="magnifying-glass">
+    Agents query your docs for context, grounding responses in your team's actual knowledge instead of stale training data.
+  </Card>
+  <Card title="Write on branches" icon="code-branch">
+    When you ask an agent to create or update content, it works on a branch. You review the diff and merge when ready.
+  </Card>
+  <Card title="Control visibility" icon="lock">
+    Section-level permissions let you hide sensitive content (API keys, credentials, internal metrics) from agents while keeping it visible to your team.
+  </Card>
+  <Card title="Any MCP host" icon="plug">
+    Claude.ai, ChatGPT, Gemini, Claude Code, Cursor, Claude Desktop, and any other MCP-compatible client.
+  </Card>
+</CardGroup>
 
-### Quick Example
+---
 
-```python
-from moxn import MoxnClient
-from anthropic import Anthropic
+## A Real Editor for Your Team
 
-async with MoxnClient() as client:
-    # Fetch prompt and inject your data
-    session = await client.create_prompt_session(
-        prompt_id="support-agent",
-        session_data=SupportInput(query="How do I reset my password?")
-    )
+Moxn isn't just an API for agents — it's a full-featured editor for your team. Rich text, code blocks with syntax highlighting, mermaid diagrams, inline comments, and drag-and-drop section reordering.
 
-    # Send to provider
-    response = Anthropic().messages.create(
-        **session.to_anthropic_invocation()
-    )
+<Frame>
+  <img src="/images/kb-editor.png" alt="Moxn document editor with sections, code blocks, and mermaid diagrams" />
+</Frame>
 
-    # Log for observability
-    await client.log_telemetry_event_from_response(session, response)
-```
+Your team writes and edits documentation in the web app. Agents read and write the same content over MCP. Everyone works from a single source of truth.
 
-<Card title="Prompts Quick Start" icon="code" href="/quickstart">
-  Install the SDK and start versioning prompts
-</Card>
+---
+
+## Version Control Built In
+
+Every document has branches, commits, and merge requests — the same workflow developers already know from Git.
+
+- **Branch** to experiment or isolate agent writes
+- **Commit** to create immutable snapshots
+- **Merge** when you're satisfied with the changes
+- **Roll back** to any previous version
+
+<Frame>
+  <img src="/images/kb-merge-compare-versions.png" alt="Side-by-side merge comparison with mermaid diagrams" />
+</Frame>
+
+---
+
+## Bring Your Existing Docs
+
+Import from Notion with full fidelity — pages, databases, properties, and cross-references come through intact. Or import local markdown and CSV files.
+
+<CardGroup cols={2}>
+  <Card title="Import from Notion" icon="arrow-right-arrow-left" href="/migration/notion">
+    One-click web import or CLI for scripting
+  </Card>
+  <Card title="Import Local Files" icon="file-import" href="/migration/local">
+    Markdown, text, and CSV from your filesystem
+  </Card>
+</CardGroup>
 
 ---
 
@@ -85,16 +84,16 @@ async with MoxnClient() as client:
 
 <CardGroup cols={2}>
   <Card title="Why Moxn?" icon="lightbulb" href="/context">
-    The problems we solve for AI teams
+    What makes this different from a wiki or Google Drive
   </Card>
   <Card title="Documents Guide" icon="book" href="/guides/knowledge-base">
     Branches, commits, permissions, and MCP tools
   </Card>
-  <Card title="Prompt Workflow" icon="diagram-project" href="/guides/workflow">
-    The complete prompt development cycle
+  <Card title="Quick Start" icon="rocket" href="/quickstart-documents">
+    Connect your AI assistant in 5 minutes
   </Card>
-  <Card title="Telemetry" icon="chart-line" href="/telemetry/spans">
-    Set up observability for your LLM calls
+  <Card title="Migration" icon="arrow-right-arrow-left" href="/migration/local">
+    Import existing docs from local files or Notion
   </Card>
 </CardGroup>
 

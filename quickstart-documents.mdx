@@ -3,41 +3,42 @@ title: Documents Quick Start
 description: Connect your AI assistant to Moxn Documents
 ---
 
-This guide walks you through connecting your AI assistant to Moxn Documents so it can read and write documentation safely.
+This guide walks you through connecting your AI assistant to Moxn Documents so it can search, read, and write documentation.
 
 ## What You'll Set Up
 
 After this guide, your AI assistant will be able to:
-- Read your team's documents for context
-- Create and edit documents on branches
+- Search and read your team's documents for context
+- Create and edit documents on branches (when you ask it to)
 - Commit changes for you to review and merge
 
-All writes happen on branches—your main content stays protected until you approve changes.
+Writes happen on branches — your main content stays protected until you approve changes.
 
 ## Prerequisites
 
 - A Moxn account (get one at [moxn.dev](https://moxn.dev))
 - An AI assistant that supports MCP:
-  - **Desktop apps**: Claude Desktop, ChatGPT Desktop, Cursor
-  - **CLI tools**: Claude Code, Gemini CLI
+  - **Web apps**: Claude.ai, ChatGPT, Gemini
   - **Cloud environments**: Claude Cowork
+  - **CLI tools**: Claude Code, Gemini CLI
+  - **Desktop apps**: Cursor, Claude Desktop, ChatGPT Desktop
 
 <Note>
-**No coding required.** This setup involves copying a configuration snippet—that's it.
+**No coding required.** This setup involves copying a configuration snippet — that's it.
 </Note>
 
 ## Step 1: Get Your Configuration
 
 1. Sign in to [moxn.dev](https://moxn.dev)
-2. From the Dashboard, find the **Knowledge Base** card
-3. Click **MCP Setup**
-4. Copy the configuration snippet
+2. Go to **Knowledge Base**
+3. Click **MCP Setup** to expand the configuration panel
+4. Copy the configuration snippet for your connection type (stdio or http)
 
 <Frame>
-  <img src="/images/mcp-setup-dialog.png" alt="MCP Setup dialog showing configuration" />
+  <img src="/images/mcp-setup-dialog.png" alt="MCP Setup panel showing configuration" />
 </Frame>
 
-Your configuration will look like this (with your workspace slug):
+**Local (stdio)** — runs on your machine via `npx`:
 
 ```json
 {
@@ -54,11 +55,149 @@ Your configuration will look like this (with your workspace slug):
 }
 ```
 
+**Remote (http)** — connects directly to Moxn's servers:
+
+```json
+{
+  "mcpServers": {
+    "knowledge-base": {
+      "type": "http",
+      "url": "https://your-workspace-slug.moxn.dev/api/mcp/http"
+    }
+  }
+}
+```
+
 ## Step 2: Add to Your AI Assistant
 
 Choose your assistant below:
 
 <Tabs>
+  <Tab title="Claude (web)">
+    Claude.ai supports MCP servers through its Integrations settings.
+
+    1. Go to [claude.ai](https://claude.ai)
+    2. Click your **profile icon** → **Settings** → **Integrations**
+    3. Click **Add Integration** and select **MCP**
+    4. Enter the remote URL:
+       ```
+       https://your-workspace-slug.moxn.dev/api/mcp/http
+       ```
+    5. Save the integration
+
+    Replace `your-workspace-slug` with your actual workspace slug (visible in your Moxn dashboard URL).
+
+    Once connected, you can use Moxn tools in any Claude.ai conversation.
+  </Tab>
+
+  <Tab title="ChatGPT (web)">
+    ChatGPT supports MCP connectors through its settings.
+
+    <Note>
+      **Requires a Plus or Pro subscription** with developer mode enabled.
+    </Note>
+
+    1. Go to [chatgpt.com](https://chatgpt.com)
+    2. Open **Settings** → **Apps & Connectors** → **Advanced settings**
+    3. Enable **Developer mode**
+    4. Click **Create** under connectors
+    5. Fill in:
+       - **Name**: `Moxn Documents`
+       - **Description**: `Search, read, and write documentation`
+       - **URL**: `https://your-workspace-slug.moxn.dev/api/mcp/http`
+    6. Save the connector
+
+    Replace `your-workspace-slug` with your actual workspace slug.
+
+    To use it, click the **+** button in a new chat, select **More**, then choose **Moxn Documents** from your connectors.
+
+    <Warning>
+      **Limitation:** The `upload_url` tool is not fully supported with remote connections. Avoid file uploads when using ChatGPT.
+    </Warning>
+  </Tab>
+
+  <Tab title="Gemini (web)">
+    Google Gemini supports MCP through Google AI Studio.
+
+    1. Go to [aistudio.google.com](https://aistudio.google.com)
+    2. Open a project and go to **Tools** → **MCP Servers**
+    3. Add a new server with the remote URL:
+       ```
+       https://your-workspace-slug.moxn.dev/api/mcp/http
+       ```
+    4. Save the configuration
+
+    Replace `your-workspace-slug` with your actual workspace slug.
+  </Tab>
+
+  <Tab title="Claude Cowork">
+    Claude Cowork runs in a cloud VM that cannot execute local commands like `npx`. Use the remote HTTP connection instead:
+
+    ```json
+    {
+      "mcpServers": {
+        "knowledge-base": {
+          "type": "http",
+          "url": "https://your-workspace-slug.moxn.dev/api/mcp/http"
+        }
+      }
+    }
+    ```
+
+    Replace `your-workspace-slug` with your actual workspace slug (visible in your Moxn dashboard URL).
+
+    <Warning>
+      **Limitation:** The `upload_url` tool is not fully supported in HTTP mode. Avoid file uploads when using Claude Cowork.
+    </Warning>
+  </Tab>
+
+  <Tab title="Claude Code">
+    Add the configuration to `.mcp.json` in your project root:
+
+    ```json
+    {
+      "mcpServers": {
+        "knowledge-base": {
+          "type": "stdio",
+          "command": "npx",
+          "args": [
+            "@moxn/mcp-kb",
+            "--workspace=your-workspace-slug"
+          ]
+        }
+      }
+    }
+    ```
+
+    Claude Code will automatically detect and connect to the server.
+  </Tab>
+
+  <Tab title="Cursor">
+    Add the configuration to your Cursor MCP settings:
+
+    1. Open Cursor
+    2. Go to **Settings** → **MCP**
+    3. Click **Add new MCP server**
+    4. Add this configuration:
+
+    ```json
+    {
+      "mcpServers": {
+        "knowledge-base": {
+          "type": "stdio",
+          "command": "npx",
+          "args": [
+            "@moxn/mcp-kb",
+            "--workspace=your-workspace-slug"
+          ]
+        }
+      }
+    }
+    ```
+
+    Cursor will automatically connect to the server.
+  </Tab>
+
   <Tab title="Claude Desktop">
     ### Mac
 
@@ -104,30 +243,9 @@ Choose your assistant below:
 
     ### Verify It's Working
 
-    After restarting Claude Desktop, you should see a **hammer icon** (🔨) in the bottom-right corner of the chat window. This indicates MCP servers are connected.
+    After restarting Claude Desktop, you should see a **hammer icon** in the bottom-right corner of the chat window. This indicates MCP servers are connected.
 
     Click the **+** button at the bottom of the chat, then select **Connectors** to see your connected servers.
-  </Tab>
-
-  <Tab title="Claude Code">
-    Add the configuration to `.mcp.json` in your project root:
-
-    ```json
-    {
-      "mcpServers": {
-        "knowledge-base": {
-          "type": "stdio",
-          "command": "npx",
-          "args": [
-            "@moxn/mcp-kb",
-            "--workspace=your-workspace-slug"
-          ]
-        }
-      }
-    }
-    ```
-
-    Claude Code will automatically detect and connect to the server.
   </Tab>
 
   <Tab title="ChatGPT Desktop">
@@ -143,7 +261,7 @@ Choose your assistant below:
     4. Click **Create** under connectors
     5. Fill in:
        - **Name**: `Moxn Documents`
-       - **Description**: `Read and write documentation`
+       - **Description**: `Search, read, and write documentation`
        - **URL**: `https://your-workspace-slug.moxn.dev/api/mcp/http`
     6. Save the connector
 
@@ -153,53 +271,6 @@ Choose your assistant below:
 
     <Warning>
       **Limitation:** The `upload_url` tool is not fully supported with remote connections. Avoid file uploads when using ChatGPT Desktop.
-    </Warning>
-  </Tab>
-
-  <Tab title="Cursor">
-    Add the configuration to your Cursor MCP settings:
-
-    1. Open Cursor
-    2. Go to **Settings** → **MCP**
-    3. Click **Add new MCP server**
-    4. Add this configuration:
-
-    ```json
-    {
-      "mcpServers": {
-        "knowledge-base": {
-          "type": "stdio",
-          "command": "npx",
-          "args": [
-            "@moxn/mcp-kb",
-            "--workspace=your-workspace-slug"
-          ]
-        }
-      }
-    }
-    ```
-
-    Cursor will automatically connect to the server.
-  </Tab>
-
-  <Tab title="Claude Cowork">
-    Claude Cowork runs in a cloud VM that cannot execute local commands like `npx`. Use the remote HTTP connection instead:
-
-    ```json
-    {
-      "mcpServers": {
-        "knowledge-base": {
-          "type": "http",
-          "url": "https://your-workspace-slug.moxn.dev/api/mcp/http"
-        }
-      }
-    }
-    ```
-
-    Replace `your-workspace-slug` with your actual workspace slug (visible in your Moxn dashboard URL).
-
-    <Warning>
-      **Limitation:** The `upload_url` tool is not fully supported in HTTP mode. Avoid file uploads when using Claude Cowork.
     </Warning>
   </Tab>
 
@@ -264,16 +335,16 @@ Not sure which setup to use? Here's the difference:
 
 | Type | How It Works | Apps That Use It |
 |------|--------------|------------------|
-| **Local (stdio)** | Runs on your machine via `npx` | Claude Desktop, Claude Code, Cursor, Gemini CLI |
-| **Remote (http)** | Connects to Moxn's servers | ChatGPT Desktop, Claude Cowork |
+| **Local (stdio)** | Runs on your machine via `npx` | Claude Code, Cursor, Claude Desktop, Gemini CLI |
+| **Remote (http)** | Connects to Moxn's servers | Claude.ai, ChatGPT, Gemini, Claude Cowork, ChatGPT Desktop |
 
 **Local is better when available.** It supports all features including file uploads, and keeps data flowing through your machine.
 
-**Remote is required for cloud environments.** Apps like ChatGPT Desktop and Claude Cowork run in VMs that can't execute local commands. The `upload_url` tool doesn't work reliably in remote mode.
+**Remote is required for web and cloud environments.** Web apps and cloud VMs can't execute local commands. The `upload_url` tool doesn't work reliably in remote mode.
 
 ### Using Multiple AI Assistants
 
-If you use several AI tools (e.g., Claude Code on your laptop and Claude Cowork in the browser), you can configure both connections. Use different server names so each tool knows which to use:
+If you use several AI tools (e.g., Claude Code on your laptop and Claude.ai in the browser), you can configure both connections. Use different server names so each tool knows which to use:
 
 ```json
 {
@@ -303,7 +374,7 @@ The first time you use Moxn Documents with your AI:
 3. Sign in with your Moxn account
 4. Return to your AI assistant
 
-Your session persists across restarts—you only need to authenticate once.
+Your session persists across restarts — you only need to authenticate once.
 
 ## Try It Out
 
@@ -314,7 +385,7 @@ Once connected, try these prompts with your AI:
 
 > "Read the API documentation from my knowledge base"
 
-**Create content (safely on a branch):**
+**Create content (on a branch):**
 > "Create a new document called 'Meeting Notes' with today's discussion points"
 
 > "Update the onboarding guide to include the new security requirements"
@@ -364,8 +435,8 @@ This means you can give your AI full write access without worrying about acciden
   <Card title="Documents Guide" icon="book" href="/guides/knowledge-base">
     Learn about branches, commits, and permissions
   </Card>
-  <Card title="Prompt Management" icon="code" href="/quickstart">
-    Set up the SDK for prompt versioning
+  <Card title="Migration" icon="arrow-right-arrow-left" href="/migration/local">
+    Import your existing docs into Moxn
   </Card>
 </CardGroup>
 
