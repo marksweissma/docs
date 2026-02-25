@@ -1,18 +1,11 @@
 ---
-title: Documents Quick Start
-description: Connect your AI assistant to Moxn Documents
+title: MCP Quick Start
+description: Connect your AI assistant to Moxn Documents over MCP
 ---
 
-This guide walks you through connecting your AI assistant to Moxn Documents so it can search, read, and write documentation.
+This guide walks you through connecting your AI assistant to Moxn Documents over MCP so it can search, read, and write documentation.
 
-## What You'll Set Up
-
-After this guide, your AI assistant will be able to:
-- Search and read your team's documents for context
-- Create and edit documents on branches (when you ask it to)
-- Commit changes for you to review and merge
-
-Writes happen on branches — your main content stays protected until you approve changes.
+For CLI-based setup (API key, no MCP), see [CLI Quick Start](/guides/knowledge-base-cli).
 
 ## Prerequisites
 
@@ -392,21 +385,6 @@ Once connected, try these prompts with your AI:
 
 Your AI will create a branch for any changes. You can review and merge in the Moxn web app.
 
-## How Safe Writes Work
-
-When your AI creates or edits content:
-
-1. **AI creates a branch** - Changes are isolated from your main content
-2. **AI commits changes** - Work is saved on the branch
-3. **You review in the web app** - See exactly what changed
-4. **You merge when ready** - Approve changes to make them live
-
-This means you can give your AI full write access without worrying about accidental overwrites or mistakes going live.
-
-<Frame>
-  <img src="/images/kb-merge-compare-versions.png" alt="Reviewing AI changes before merge" />
-</Frame>
-
 ## Troubleshooting
 
 <AccordionGroup>
@@ -428,20 +406,3 @@ This means you can give your AI full write access without worrying about acciden
     After installing, restart your terminal/computer and try again.
   </Accordion>
 </AccordionGroup>
-
-## Next Steps
-
-<CardGroup cols={2}>
-  <Card title="Documents Guide" icon="book" href="/guides/knowledge-base">
-    Learn about branches, commits, and permissions
-  </Card>
-  <Card title="Migration" icon="arrow-right-arrow-left" href="/migration/local">
-    Import your existing docs into Moxn
-  </Card>
-</CardGroup>
-
-Sources:
-- [Getting Started with Local MCP Servers on Claude Desktop](https://support.claude.com/en/articles/10949351-getting-started-with-local-mcp-servers-on-claude-desktop)
-- [Connect to local MCP servers - Model Context Protocol](https://modelcontextprotocol.io/docs/develop/connect-local-servers)
-- [Connect MCP Servers to ChatGPT - OpenAI Developers](https://developers.openai.com/apps-sdk/deploy/connect-chatgpt/)
-- [MCP Servers with Gemini CLI](https://geminicli.com/docs/tools/mcp-server/)

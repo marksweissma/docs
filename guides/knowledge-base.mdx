@@ -1,21 +1,15 @@
 ---
-title: Knowledge Base
-description: AI-native documentation with safe write access through branching
+title: Documents & Branching
+description: Core concepts — documents, sections, branches, commits, permissions, and the AI write workflow
 ---
 
-The Moxn Knowledge Base is where your team and AI agents work with the same documentation. Your team writes in a rich web editor. Agents connect over MCP to search, read, and write. Git-like branching and version control keep everything in sync.
+For a visual overview, watch the [video walkthrough](/videos/documents).
+
+The Moxn Knowledge Base is where your team and AI agents work with the same documentation. Your team writes in a rich web editor. Agents connect over MCP or CLI to search, read, and write. Git-like branching and version control keep everything in sync.
 
 <Frame>
   <img src="/images/kb-editor.png" alt="Knowledge Base editor" />
 </Frame>
-
-## Why Knowledge Base?
-
-- **Agent-native access** - Agents connect via MCP to search, read, and write your docs through structured tools
-- **Rich editor for your team** - Code blocks, mermaid diagrams, inline comments, drag-and-drop sections
-- **Branching and merging** - Isolate changes (from agents or teammates), review diffs, merge when ready
-- **Works with any MCP host** - Claude, ChatGPT, Cursor, Gemini, or any MCP-compatible assistant
-- **Section-level permissions** - Control what agents can see without affecting your team's access
 
 ## Core Concepts
 
@@ -72,7 +66,7 @@ The key differentiator of the Knowledge Base is **safe AI write access** through
 
 ### The Flow
 
-1. **AI creates a branch** - Your AI assistant (via MCP) creates a feature branch for its work
+1. **AI creates a branch** - Your AI assistant (via MCP or CLI) creates a feature branch for its work
 2. **AI makes changes** - Creates documents, adds sections, edits content, commits
 3. **You review** - Open the branch in the web UI, see exactly what changed
 4. **You merge** - When satisfied, merge to main. Or discard if the changes aren't right
@@ -209,93 +203,7 @@ Set `Team Permission` to `none` on sections that should be private to the author
 Permissions can only be set on feature branches, not on main. This ensures changes to access control go through the normal review process.
 </Note>
 
-## MCP Integration
-
-The Knowledge Base integrates with any MCP-compatible AI assistant—Claude, ChatGPT, Cursor, or others.
-
-### Installation
-
-Install the MCP client globally:
-
-```bash
-npm install -g @moxn/mcp-kb
-```
-
-Or use directly with npx:
-
-```bash
-npx @moxn/mcp-kb --workspace=your-workspace-slug
-```
-
-### Configuration
-
-Add to your MCP configuration (e.g., `.mcp.json` for Claude Code):
-
-```json
-{
-  "mcpServers": {
-    "knowledge-base": {
-      "command": "npx",
-      "args": ["-y", "@moxn/mcp-kb", "--workspace=your-workspace-slug"]
-    }
-  }
-}
-```
-
-On first run, the client will:
-1. Open your browser to authenticate with Moxn
-2. Store credentials locally for future sessions
-
-### Available Tools
-
-Once connected, your AI assistant has access to these Knowledge Base tools:
-
-| Tool | Purpose |
-|------|---------|
-| `find` | List documents, sections, or folders |
-| `read` | Read document or section content |
-| `documents` | Create, update, delete documents; manage branches |
-| `sections` | Create, update, delete, reorder sections |
-| `search` | Search content across the knowledge base |
-
-### Example: AI Reading Docs
-
-When your AI assistant needs context about your project:
-
-```
-AI: Let me check the API documentation in your knowledge base.
-
-[Uses knowledge-base find to list documents]
-[Uses knowledge-base read to fetch content]
-
-Based on your API guide, the authentication endpoint is...
-```
-
-### Example: AI Writing Docs (The Safe Way)
-
-When your AI assistant helps document code:
-
-```
-AI: I'll create documentation for this new feature.
-
-[Uses knowledge-base documents to create a branch "docs/new-feature"]
-[Uses knowledge-base documents to create a new document]
-[Uses knowledge-base sections to add content sections]
-[Commits the changes]
-
-I've created the documentation at /engineering/new-feature on branch
-"docs/new-feature". You can review and merge in the web UI.
-```
-
-The key workflow: **AI writes on a branch → commits → you review in the web UI → you merge to main when satisfied.**
-
 ## Best Practices
-
-### Document Organization
-
-- Use descriptive paths: `/engineering/api/authentication`
-- Group related documents in folders
-- Keep documents focused on single topics
 
 ### Branching Strategy
 
@@ -310,14 +218,3 @@ The key workflow: **AI writes on a branch → commits → you review in the web 
 - Use branch isolation for AI-generated content
 - Review AI changes before merging to main
 - Use `LLM Permission: none` for sensitive sections
-
-## Next Steps
-
-<CardGroup cols={2}>
-  <Card title="Quick Start" icon="rocket" href="/quickstart-documents">
-    Connect your AI assistant in 5 minutes
-  </Card>
-  <Card title="Migration" icon="arrow-right-arrow-left" href="/migration/notion">
-    Import your Notion workspace into Moxn
-  </Card>
-</CardGroup>

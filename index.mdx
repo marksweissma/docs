@@ -1,25 +1,41 @@
 ---
 title: Moxn
-description: A knowledge base built for AI agents — search, read, and write docs over MCP
+description: A knowledge base built for AI agents — connect via MCP or CLI
 ---
 
-Moxn is a knowledge base designed for AI agents. Your agents connect over MCP to search, read, and write documentation — the same docs your team edits in a rich web editor. No RAG pipelines, no embeddings, no exports.
+Moxn is a knowledge base designed for AI agents. Most teams keep docs in wikis, Google Drive, or Notion — and end up copy-pasting into prompts or building RAG pipelines just to give agents access. Moxn gives your agents direct, structured access to your docs over MCP or CLI. No exports, no embeddings, no custom integrations.
 
 <Frame>
   <img src="/images/kb-landing-page.png" alt="Moxn Knowledge Base" />
 </Frame>
 
-<Card title="Quick Start" icon="rocket" href="/quickstart-documents">
-  Connect any MCP host — Claude, ChatGPT, Cursor, Gemini, and more — in 5 minutes
-</Card>
+---
+
+## Choose Your Setup
+
+Pick the connection method that fits your workflow:
+
+| | CLI | MCP |
+|---|---|---|
+| **Auth** | API key (`MOXN_API_KEY`) | Browser-based OAuth |
+| **Setup** | `npm install` + `install-skill` | Config snippet in MCP settings |
+| **Best for** | Claude Code, Codex, Cursor, and other coding agents | Claude.ai, ChatGPT, Gemini, desktop apps |
+| **How it works** | Agent calls `knowledge-base` commands directly | Agent uses MCP tools |
+
+<CardGroup cols={2}>
+  <Card title="CLI Quick Start" icon="terminal" href="/guides/knowledge-base-cli">
+    API key auth, no MCP needed — ideal for coding agents
+  </Card>
+  <Card title="MCP Quick Start" icon="plug" href="/quickstart-documents">
+    Connect any MCP host — Claude, ChatGPT, Cursor, Gemini, and more
+  </Card>
+</CardGroup>
 
 ---
 
 ## Built for Agents
 
-Agents connect to Moxn via MCP and get structured access to your knowledge base through a standard tool interface: `find`, `read`, `search`, `documents`, and `sections`.
-
-Unlike bolting an API onto a wiki, Moxn is built from the ground up for agent access. Documents are organized by paths, sections are individually addressable, and search returns clean text — not HTML fragments or PDF chunks.
+Agents connect to Moxn and get structured access to your knowledge base through a standard tool interface: `find`, `read`, `search`, `documents`, and `sections`.
 
 <CardGroup cols={2}>
   <Card title="Search and read" icon="magnifying-glass">
@@ -50,21 +66,6 @@ Your team writes and edits documentation in the web app. Agents read and write t
 
 ---
 
-## Version Control Built In
-
-Every document has branches, commits, and merge requests — the same workflow developers already know from Git.
-
-- **Branch** to experiment or isolate agent writes
-- **Commit** to create immutable snapshots
-- **Merge** when you're satisfied with the changes
-- **Roll back** to any previous version
-
-<Frame>
-  <img src="/images/kb-merge-compare-versions.png" alt="Side-by-side merge comparison with mermaid diagrams" />
-</Frame>
-
----
-
 ## Bring Your Existing Docs
 
 Import from Notion with full fidelity — pages, databases, properties, and cross-references come through intact. Or import local markdown and CSV files.
@@ -75,25 +76,6 @@ Import from Notion with full fidelity — pages, databases, properties, and cros
   </Card>
   <Card title="Import Local Files" icon="file-import" href="/migration/local">
     Markdown, text, and CSV from your filesystem
-  </Card>
-</CardGroup>
-
----
-
-## Learn More
-
-<CardGroup cols={2}>
-  <Card title="Why Moxn?" icon="lightbulb" href="/context">
-    What makes this different from a wiki or Google Drive
-  </Card>
-  <Card title="Documents Guide" icon="book" href="/guides/knowledge-base">
-    Branches, commits, permissions, and MCP tools
-  </Card>
-  <Card title="Quick Start" icon="rocket" href="/quickstart-documents">
-    Connect your AI assistant in 5 minutes
-  </Card>
-  <Card title="Migration" icon="arrow-right-arrow-left" href="/migration/local">
-    Import existing docs from local files or Notion
   </Card>
 </CardGroup>
 

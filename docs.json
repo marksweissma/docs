@@ -14,22 +14,26 @@
         "tab": "Guides",
         "groups": [
           {
-            "group": "Video Walkthrough",
+            "group": "Overview",
             "pages": [
+              "index",
               "videos/documents"
             ]
           },
           {
-            "group": "Getting Started",
+            "group": "CLI Setup",
             "pages": [
-              "index",
-              "quickstart-documents",
-              "context",
-              "llms-txt"
+              "guides/knowledge-base-cli"
             ]
           },
           {
-            "group": "Documents",
+            "group": "MCP Setup",
+            "pages": [
+              "quickstart-documents"
+            ]
+          },
+          {
+            "group": "Concepts",
             "pages": [
               "guides/knowledge-base"
             ]
