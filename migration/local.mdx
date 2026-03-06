@@ -5,6 +5,10 @@ description: Migrate markdown and text files into the Moxn Knowledge Base
 
 Import existing documentation from your filesystem into the Moxn Knowledge Base. The `@moxn/kb-migrate` CLI reads markdown and text files, splits them into sections, uploads images, and creates documents via the API.
 
+<Tip>
+If you have `@moxn/kb-cli` installed, you can run `knowledge-base import-local` instead of `npx @moxn/kb-migrate local`.
+</Tip>
+
 ## Prerequisites
 
 - Node.js 18+
@@ -142,6 +146,10 @@ Files with **no H2 headers** produce a single section named "Content" containing
 | `--on-conflict <action>` | `skip` | What to do when a path already exists: `skip` or `update` |
 | `--default-permission <perm>` | Server default | Default permission level: `edit`, `read`, or `none` |
 | `--ai-access <perm>` | Server default | AI/MCP access level: `edit`, `read`, or `none` |
+| `--created-after <date>` | _(none)_ | Only include files created after this date (ISO 8601) |
+| `--created-before <date>` | _(none)_ | Only include files created before this date (ISO 8601) |
+| `--modified-after <date>` | _(none)_ | Only include files modified after this date (ISO 8601) |
+| `--modified-before <date>` | _(none)_ | Only include files modified before this date (ISO 8601) |
 | `--dry-run` | `false` | Preview changes without calling the API |
 | `--json` | `false` | Output results as JSON |
 

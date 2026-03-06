@@ -3,33 +3,11 @@ title: Import from Notion
 description: Migrate pages and databases from Notion into the Moxn Knowledge Base
 ---
 
-Import your Notion workspace into the Moxn Knowledge Base. You can import directly from the web app, or use the `@moxn/kb-migrate` CLI for more control.
+Import your Notion workspace into the Moxn Knowledge Base using the `@moxn/kb-migrate` CLI. It extracts pages, converts blocks into sections, downloads images, and recreates Notion databases as KB databases with tag-backed columns.
 
-## Web Import
-
-The fastest way to import from Notion — no terminal required.
-
-1. Sign in to [moxn.dev](https://moxn.dev) and go to **Knowledge Base**
-2. Click **Import** → **From Notion**
-3. Connect your Notion account when prompted
-4. Select the pages and databases you want to import
-5. Click **Next** to start the import
-
-<Frame>
-  <img src="/images/import-dropdown.png" alt="Import menu showing Notion option" />
-</Frame>
-
-<Frame>
-  <img src="/images/notion-import-dialog.png" alt="Notion import content selection dialog" />
-</Frame>
-
-The web importer handles authentication, content selection, and upload in one flow. Imported pages appear in your Knowledge Base immediately.
-
----
-
-## CLI Import
-
-For scripting, CI pipelines, or more granular control over the import, use the `@moxn/kb-migrate` CLI. It extracts pages, converts blocks into sections, downloads images, and recreates Notion databases as KB databases with tag-backed columns.
+<Tip>
+If you have `@moxn/kb-cli` installed, you can run `knowledge-base import-notion` instead of `npx @moxn/kb-migrate notion`.
+</Tip>
 
 ### Prerequisites
 
@@ -180,6 +158,10 @@ Page titles are slugified: lowercased, spaces become hyphens, special characters
 | `--default-permission <perm>` | Server default | Default permission: `edit`, `read`, or `none` |
 | `--ai-access <perm>` | Server default | AI/MCP access level: `edit`, `read`, or `none` |
 | `--visibility <vis>` | _(none)_ | Shorthand: `team` (sets `--default-permission=read`) or `private` (sets `--default-permission=none`) |
+| `--created-after <date>` | _(none)_ | Only include docs created after this date (ISO 8601) |
+| `--created-before <date>` | _(none)_ | Only include docs created before this date (ISO 8601) |
+| `--modified-after <date>` | _(none)_ | Only include docs modified after this date (ISO 8601) |
+| `--modified-before <date>` | _(none)_ | Only include docs modified before this date (ISO 8601) |
 | `--dry-run` | `false` | Preview changes without calling the API |
 | `--json` | `false` | Output results as JSON |
 

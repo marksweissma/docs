@@ -1,0 +1,57 @@
+---
+title: Import & Export
+description: Move your docs in and out of Moxn — no lock-in
+---
+
+Moxn supports round-trip migration: import your existing docs, work in Moxn with AI agents and your team, and export changes back when you need to.
+
+## Import
+
+Bring existing documentation into Moxn from external sources.
+
+<CardGroup cols={2}>
+  <Card title="Import from Local Files" icon="file-import" href="/migration/local">
+    Markdown, text, and CSV files from your filesystem
+  </Card>
+  <Card title="Import from Notion" icon="arrow-right-to-bracket" href="/migration/notion">
+    Pages, databases, properties, and cross-references
+  </Card>
+</CardGroup>
+
+## Export
+
+Get your docs back out of Moxn in the format you need.
+
+<CardGroup cols={2}>
+  <Card title="Export to Local Files" icon="file-export" href="/migration/export-local">
+    Download as markdown with images, PDFs, and CSVs
+  </Card>
+  <Card title="Export to Notion" icon="arrow-right-from-bracket" href="/migration/export-notion">
+    Push pages back to your Notion workspace
+  </Card>
+</CardGroup>
+
+## Two Ways to Run
+
+All import and export commands are available through two tools:
+
+| Tool | Install | Command prefix |
+|------|---------|----------------|
+| **`@moxn/kb-cli`** | `npm install -g @moxn/kb-cli` | `knowledge-base import-notion`, `knowledge-base export-local`, etc. |
+| **`@moxn/kb-migrate`** | No install needed | `npx @moxn/kb-migrate notion`, `npx @moxn/kb-migrate export`, etc. |
+
+Both use the same underlying migration engine. The CLI is convenient if you already have `@moxn/kb-cli` installed for other commands. `npx @moxn/kb-migrate` works without any prior installation.
+
+## Date Filtering
+
+All commands support date filters to narrow the scope of your import or export:
+
+```bash
+# Only import/export docs modified in the last week
+--modified-after=2026-02-27
+
+# Only docs created in January
+--created-after=2026-01-01 --created-before=2026-02-01
+```
+
+Dates use ISO 8601 format (`YYYY-MM-DD` or full datetime).

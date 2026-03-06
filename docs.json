@@ -39,10 +39,14 @@
             ]
           },
           {
-            "group": "Migration",
+            "group": "Import & Export",
+            "icon": "arrow-right-arrow-left",
             "pages": [
+              "migration/index",
               "migration/local",
-              "migration/notion"
+              "migration/notion",
+              "migration/export-local",
+              "migration/export-notion"
             ]
           }
         ]
