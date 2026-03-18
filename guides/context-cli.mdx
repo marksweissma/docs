@@ -1,9 +1,9 @@
 ---
 title: CLI Quick Start
-description: Install the knowledge-base CLI to give AI coding agents direct access to Moxn Documents
+description: Install the context CLI to give AI coding agents direct access to Moxn Documents
 ---
 
-The **knowledge-base CLI** is the fastest setup for AI coding agents in the terminal. It uses API key authentication and works as a [Claude Code skill](https://docs.anthropic.com/en/docs/claude-code/skills) — no MCP configuration required. For web and desktop apps, see [MCP Quick Start](/quickstart-documents).
+The **context CLI** is the fastest setup for AI coding agents in the terminal. It uses API key authentication and works as a [Claude Code skill](https://docs.anthropic.com/en/docs/claude-code/skills) — no MCP configuration required. For web and desktop apps, see [MCP Quick Start](/quickstart-documents).
 
 ## Prerequisites
 
@@ -14,10 +14,10 @@ The **knowledge-base CLI** is the fastest setup for AI coding agents in the term
 ## Step 1: Install the CLI
 
 ```bash
-npm install -g @moxn/kb-cli
+npm install -g @moxn/context-cli
 ```
 
-This installs the `knowledge-base` command globally.
+This installs the `context` command globally.
 
 ## Step 2: Set Your API Key
 
@@ -36,7 +36,7 @@ The CLI automatically loads `.env` files from the current directory — no globa
 Verify the connection:
 
 ```bash
-knowledge-base find --type document --limit 1
+context find --type document --limit 1
 ```
 
 You should see a JSON response with your documents.
@@ -48,18 +48,18 @@ The skill installer copies a `SKILL.md` file into your project (or home director
 **Project-local** (recommended — scoped to one repo):
 
 ```bash
-knowledge-base install-skill
+context install-skill
 ```
 
-This creates `.claude/skills/knowledge-base/SKILL.md` in your current directory.
+This creates `.claude/skills/context/SKILL.md` in your current directory.
 
 **Global** (available in all projects):
 
 ```bash
-knowledge-base install-skill --global
+context install-skill --global
 ```
 
-This creates the skill in `~/.claude/skills/knowledge-base/SKILL.md`.
+This creates the skill in `~/.claude/skills/context/SKILL.md`.
 
 <Note>
 The skill file includes a checksum so future `install-skill` runs can safely update it. If you've manually edited the file, use `--force` to overwrite.
@@ -69,21 +69,21 @@ The skill file includes a checksum so future `install-skill` runs can safely upd
 
 Once the skill is installed, your AI agent can use it immediately. Try asking:
 
-> "Search my knowledge base for onboarding docs"
+> "Search my docs for onboarding content"
 
 > "Create a new document at /engineering/api-reference with an overview section"
 
 > "Read the auth guide from Moxn"
 
-The agent will call `knowledge-base` commands and get JSON responses — no MCP server needed.
+The agent will call `context` commands and get JSON responses — no MCP server needed.
 
 ## Updating
 
 When a new version is published, update the CLI and re-run the skill installer:
 
 ```bash
-npm install -g @moxn/kb-cli
-knowledge-base install-skill
+npm install -g @moxn/context-cli
+context install-skill
 ```
 
 The installer only overwrites the skill file if it hasn't been manually modified (or if you pass `--force`).

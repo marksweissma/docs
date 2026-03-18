@@ -23,7 +23,7 @@
           {
             "group": "CLI Setup",
             "pages": [
-              "guides/knowledge-base-cli"
+              "guides/context-cli"
             ]
           },
           {
@@ -35,7 +35,7 @@
           {
             "group": "Concepts",
             "pages": [
-              "guides/knowledge-base"
+              "guides/context"
             ]
           },
           {

@@ -1,12 +1,12 @@
 ---
 title: Export to Local Files
-description: Download Moxn Knowledge Base documents as markdown files
+description: Download Moxn documents as markdown files
 ---
 
-Export your Knowledge Base documents to local markdown files. The tool fetches documents via the API, converts sections to markdown, and downloads any attached images, PDFs, and CSVs.
+Export your documents to local markdown files. The tool fetches documents via the API, converts sections to markdown, and downloads any attached images, PDFs, and CSVs.
 
 <Tip>
-If you have `@moxn/kb-cli` installed, you can run `knowledge-base export-local` instead of `npx @moxn/kb-migrate export`.
+If you have `@moxn/context-cli` installed, you can run `context export-local` instead of `npx @moxn/kb-migrate export`.
 </Tip>
 
 ## Prerequisites
@@ -72,7 +72,7 @@ Files are written to your output directory, mirroring the KB path structure.
 
 ## Directory Structure
 
-The exported files mirror your Knowledge Base hierarchy:
+The exported files mirror your document hierarchy:
 
 ```
 output/
@@ -162,7 +162,7 @@ npx @moxn/kb-migrate export ./output \
   </Accordion>
 
   <Accordion title="Export is slow">
-    Large knowledge bases with many images or attachments take longer due to file downloads. Use `--base-path` to export a smaller subset, or `--modified-after` to export only recent changes.
+    Large workspaces with many images or attachments take longer due to file downloads. Use `--base-path` to export a smaller subset, or `--modified-after` to export only recent changes.
   </Accordion>
 </AccordionGroup>
 

@@ -1,12 +1,12 @@
 ---
 title: Export to Notion
-description: Push Moxn Knowledge Base documents to a Notion workspace
+description: Push Moxn documents to a Notion workspace
 ---
 
-Export your Knowledge Base documents back to Notion. The tool creates Notion pages from your KB documents, preserving structure, formatting, and cross-references.
+Export your documents back to Notion. The tool creates Notion pages from your KB documents, preserving structure, formatting, and cross-references.
 
 <Tip>
-If you have `@moxn/kb-cli` installed, you can run `knowledge-base export-notion` instead of `npx @moxn/kb-migrate export-notion`.
+If you have `@moxn/context-cli` installed, you can run `context export-notion` instead of `npx @moxn/kb-migrate export-notion`.
 </Tip>
 
 ## Prerequisites
@@ -223,7 +223,7 @@ npx @moxn/kb-migrate export-notion \
   </Accordion>
 
   <Accordion title="Export is slow">
-    The Notion API has rate limits (~3 requests/second). For large knowledge bases, expect the export to take a few minutes. Use `--base-path` or date filters to export a smaller subset.
+    The Notion API has rate limits (~3 requests/second). For large workspaces, expect the export to take a few minutes. Use `--base-path` or date filters to export a smaller subset.
   </Accordion>
 </AccordionGroup>
 

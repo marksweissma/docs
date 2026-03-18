@@ -5,7 +5,7 @@ description: Connect your AI assistant to Moxn Documents over MCP
 
 This guide walks you through connecting your AI assistant to Moxn Documents over MCP so it can search, read, and write documentation.
 
-For CLI-based setup (API key, no MCP), see [CLI Quick Start](/guides/knowledge-base-cli).
+For CLI-based setup (API key, no MCP), see [CLI Quick Start](/guides/context-cli).
 
 ## Prerequisites
 
@@ -36,7 +36,7 @@ For CLI-based setup (API key, no MCP), see [CLI Quick Start](/guides/knowledge-b
 ```json
 {
   "mcpServers": {
-    "knowledge-base": {
+    "context": {
       "type": "stdio",
       "command": "npx",
       "args": [
@@ -53,7 +53,7 @@ For CLI-based setup (API key, no MCP), see [CLI Quick Start](/guides/knowledge-b
 ```json
 {
   "mcpServers": {
-    "knowledge-base": {
+    "context": {
       "type": "http",
       "url": "https://your-workspace-slug.moxn.dev/api/mcp/http"
     }
@@ -129,7 +129,7 @@ Choose your assistant below:
     ```json
     {
       "mcpServers": {
-        "knowledge-base": {
+        "context": {
           "type": "http",
           "url": "https://your-workspace-slug.moxn.dev/api/mcp/http"
         }
@@ -150,7 +150,7 @@ Choose your assistant below:
     ```json
     {
       "mcpServers": {
-        "knowledge-base": {
+        "context": {
           "type": "stdio",
           "command": "npx",
           "args": [
@@ -176,7 +176,7 @@ Choose your assistant below:
     ```json
     {
       "mcpServers": {
-        "knowledge-base": {
+        "context": {
           "type": "stdio",
           "command": "npx",
           "args": [
@@ -201,13 +201,13 @@ Choose your assistant below:
 
     This opens `claude_desktop_config.json` in your text editor. If the file is empty or just has `{}`, replace it with your configuration from Step 1.
 
-    If you already have other MCP servers configured, add the `knowledge-base` entry inside the existing `mcpServers` object:
+    If you already have other MCP servers configured, add the `"context"` entry inside the existing `mcpServers` object:
 
     ```json
     {
       "mcpServers": {
         "existing-server": { ... },
-        "knowledge-base": {
+        "context": {
           "type": "stdio",
           "command": "npx",
           "args": [
@@ -276,7 +276,7 @@ Choose your assistant below:
     ```json
     {
       "mcpServers": {
-        "knowledge-base": {
+        "context": {
           "command": "npx",
           "args": [
             "@moxn/mcp-kb",
@@ -297,7 +297,7 @@ Choose your assistant below:
     ```json
     {
       "mcpServers": {
-        "knowledge-base": {
+        "context": {
           "type": "stdio",
           "command": "npx",
           "args": ["@moxn/mcp-kb", "--workspace=your-workspace-slug"]
@@ -310,7 +310,7 @@ Choose your assistant below:
     ```json
     {
       "mcpServers": {
-        "knowledge-base": {
+        "context": {
           "type": "http",
           "url": "https://your-workspace-slug.moxn.dev/api/mcp/http"
         }
@@ -342,7 +342,7 @@ If you use several AI tools (e.g., Claude Code on your laptop and Claude.ai in t
 ```json
 {
   "mcpServers": {
-    "knowledge-base": {
+    "context": {
       "type": "stdio",
       "command": "npx",
       "args": [
@@ -350,7 +350,7 @@ If you use several AI tools (e.g., Claude Code on your laptop and Claude.ai in t
         "--workspace=your-workspace-slug"
       ]
     },
-    "knowledge-base-remote": {
+    "context-remote": {
       "type": "http",
       "url": "https://your-workspace-slug.moxn.dev/api/mcp/http"
     }
@@ -376,7 +376,7 @@ Once connected, try these prompts with your AI:
 **Read documents:**
 > "What documents do I have in Moxn?"
 
-> "Read the API documentation from my knowledge base"
+> "Read the API documentation from Moxn"
 
 **Create content (on a branch):**
 > "Create a new document called 'Meeting Notes' with today's discussion points"

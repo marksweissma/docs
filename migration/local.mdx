@@ -1,12 +1,12 @@
 ---
 title: Import from Local Files
-description: Migrate markdown and text files into the Moxn Knowledge Base
+description: Migrate markdown and text files into Moxn
 ---
 
-Import existing documentation from your filesystem into the Moxn Knowledge Base. The `@moxn/kb-migrate` CLI reads markdown and text files, splits them into sections, uploads images, and creates documents via the API.
+Import existing documentation from your filesystem into Moxn. The `@moxn/kb-migrate` CLI reads markdown and text files, splits them into sections, uploads images, and creates documents via the API.
 
 <Tip>
-If you have `@moxn/kb-cli` installed, you can run `knowledge-base import-local` instead of `npx @moxn/kb-migrate local`.
+If you have `@moxn/context-cli` installed, you can run `context import-local` instead of `npx @moxn/kb-migrate local`.
 </Tip>
 
 ## Prerequisites
@@ -33,7 +33,7 @@ Preview what would happen without making changes:
 npx @moxn/kb-migrate local ./docs --api-key=YOUR_API_KEY --dry-run
 ```
 
-Import under a specific path prefix in the Knowledge Base:
+Import under a specific path prefix:
 
 ```bash
 npx @moxn/kb-migrate local ./docs --api-key=YOUR_API_KEY --base-path=/guides
@@ -190,7 +190,7 @@ npx @moxn/kb-migrate local ./docs \
 | **`--default-permission`** | Team members can edit | Team members can view only | Hidden from team |
 | **`--ai-access`** | AI assistants can read and write | AI assistants can read only | Hidden from AI |
 
-See [Permission Model](/guides/knowledge-base#permission-model) for details on how permissions cascade.
+See [Permission Model](/guides/context#permission-model) for details on how permissions cascade.
 
 ## Custom File Extensions
 
@@ -316,7 +316,7 @@ npx @moxn/kb-migrate local ./docs \
 ## Next Steps
 
 <CardGroup cols={2}>
-  <Card title="Knowledge Base Guide" icon="book" href="/guides/knowledge-base">
+  <Card title="Documents Guide" icon="book" href="/guides/context">
     Learn about branches, commits, and permissions
   </Card>
   <Card title="Connect AI Assistants" icon="robot" href="/quickstart-documents">

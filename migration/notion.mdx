@@ -1,12 +1,12 @@
 ---
 title: Import from Notion
-description: Migrate pages and databases from Notion into the Moxn Knowledge Base
+description: Migrate pages and databases from Notion into Moxn
 ---
 
-Import your Notion workspace into the Moxn Knowledge Base using the `@moxn/kb-migrate` CLI. It extracts pages, converts blocks into sections, downloads images, and recreates Notion databases as KB databases with tag-backed columns.
+Import your Notion workspace into Moxn using the `@moxn/kb-migrate` CLI. It extracts pages, converts blocks into sections, downloads images, and recreates Notion databases as KB databases with tag-backed columns.
 
 <Tip>
-If you have `@moxn/kb-cli` installed, you can run `knowledge-base import-notion` instead of `npx @moxn/kb-migrate notion`.
+If you have `@moxn/context-cli` installed, you can run `context import-notion` instead of `npx @moxn/kb-migrate notion`.
 </Tip>
 
 ### Prerequisites
@@ -186,7 +186,7 @@ The `--visibility` flag is a shorthand:
 - `--visibility=team` sets `--default-permission=read`
 - `--visibility=private` sets `--default-permission=none`
 
-See [Permission Model](/guides/knowledge-base#permission-model) for details on how permissions cascade.
+See [Permission Model](/guides/context#permission-model) for details on how permissions cascade.
 
 ## Handling Conflicts
 
@@ -329,7 +329,7 @@ npx @moxn/kb-migrate notion \
 ## Next Steps
 
 <CardGroup cols={2}>
-  <Card title="Knowledge Base Guide" icon="book" href="/guides/knowledge-base">
+  <Card title="Documents Guide" icon="book" href="/guides/context">
     Learn about branches, commits, and permissions
   </Card>
   <Card title="Connect AI Assistants" icon="robot" href="/quickstart-documents">
