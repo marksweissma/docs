@@ -39,6 +39,15 @@
             ]
           },
           {
+            "group": "Auto-Docs",
+            "icon": "robot",
+            "pages": [
+              "guides/auto-docs",
+              "guides/auto-docs-pr",
+              "guides/auto-docs-commit"
+            ]
+          },
+          {
             "group": "Import & Export",
             "icon": "arrow-right-arrow-left",
             "pages": [
