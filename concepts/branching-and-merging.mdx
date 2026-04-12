@@ -1,0 +1,115 @@
+---
+title: Branching & Merging
+description: Git-like version control for documentation — branches, commits, merge requests, and changesets
+---
+
+Moxn applies Git semantics to documentation. Every document has its own branch history, and changes flow through branches, commits, and merge requests before reaching `main`.
+
+## Why Branching Matters for AI
+
+Without branching, giving an agent write access to your docs is risky — it can overwrite content and mistakes go straight to production with no review step.
+
+With branching:
+- **`main` is always protected** — agents cannot push directly to main
+- **Every AI change is reviewable** — open a branch in the web UI and see exactly what changed
+- **Bad changes are discardable** — one click to abandon a branch
+
+## Branches
+
+Every document starts with a `main` branch. You can create **feature branches** for:
+
+- Iterative AI-generated updates you want to review before merging
+- Collaborative edits between teammates
+- Experiments you might want to discard
+
+Branches are **document-scoped** — each document has its own independent branch history, not shared with other documents. This means you can update `/engineering/api-guide` on a branch without affecting `/engineering/deployment-guide`.
+
+<Frame>
+  <img src="/images/kb-branch-selector.png" alt="Branch selector dropdown" />
+</Frame>
+
+## Commits
+
+A **commit** creates an immutable snapshot of a document's sections at a point in time:
+
+- Working changes accumulate in a draft state until you commit
+- Each commit has a message
+- You can view content at any historical commit
+- Reverting creates a new commit with a previous commit's content (non-destructive)
+
+In the web app, click **Commit** to save. Via MCP, every `sections` write auto-commits. Use `documents` with `action: "log"` to see history and `action: "revert"` to roll back.
+
+## The AI Write Workflow
+
+```
+1. Agent creates a feature branch
+2. Agent writes sections and commits
+3. You open the branch in the web UI
+4. You review the diff
+5. You create a merge request → merge to main
+```
+
+<Frame>
+  <img src="/images/kb-merge-compare-versions.png" alt="Side-by-side version comparison" />
+</Frame>
+
+## Merge Requests
+
+A **merge request** (MR) brings changes from a source branch into a target branch (usually `main`) for a single document.
+
+**Create via web app:**
+1. Open a document on a feature branch
+2. Click **Git Actions** > **Create Merge Request**
+3. Confirm source and target branches, add a title
+
+<Frame>
+  <img src="/images/kb-git-actions-menu.png" alt="Git Actions menu" />
+</Frame>
+
+**Create via MCP:**
+Use the [`merge_requests` tool](/reference/mcp/merge-requests) with `action: "create"`.
+
+### Analyzing Conflicts
+
+When source and target have diverged, `analyze` returns:
+- **Section diffs** — added, modified, deleted sections
+- **Conflicts** — sections changed on both branches since they diverged
+- **Tag changes** — assignments that differ between branches
+- **Path collisions** — if the document path changed on one branch
+
+### Resolving Conflicts
+
+For each conflicting section, choose `"source"` (incoming) or `"target"` (current). Pass `resolutions` when calling `execute`.
+
+**Fast-forward merge:** If the source branch has all commits from the target (no divergence), Moxn merges automatically — no conflicts possible.
+
+<Frame>
+  <img src="/images/kb-merge-conflict-resolution.png" alt="Conflict resolution interface" />
+</Frame>
+
+## Changesets
+
+A **changeset** is a collection of merge requests that are coordinated together. It's a convenience wrapper for managing simultaneous changes across multiple documents that share the same branch name — instead of tracking each MR individually, you work through one changeset.
+
+When you create a changeset, Moxn discovers all documents that have commits on the named branch and creates individual MRs for each. Each MR can be analyzed and merged on its own schedule; the changeset just keeps them organized.
+
+This is the mechanism behind the [Auto-Docs](/guides/auto-docs) workflow for PR documentation — one changeset per PR branch, one MR per affected doc.
+
+See the [`changesets` tool](/reference/mcp/changesets) for the MCP surface.
+
+## Discard
+
+`discard` resets a branch's working state back to the last commit without creating a new commit. Use it to throw away draft edits that haven't been committed yet.
+
+To completely abandon a feature branch (including its commits), delete the branch with `documents` > `action: "delete_branch"`.
+
+## Viewing History
+
+In the web app, use the **Git Actions** menu to view commit history. Via MCP:
+- `documents` with `action: "log"` — list commits on a branch
+- `documents` with `action: "show"` — inspect the content at a specific commit
+- `documents` with `action: "revert"` — create a new commit that restores a previous state
+
+<Frame>
+  <img src="/images/kb-version-history.png" alt="Version history with commit selected and diff view" />
+</Frame>

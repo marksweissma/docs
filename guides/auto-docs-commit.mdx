@@ -10,7 +10,7 @@ The commit succeeds immediately — Claude runs in a detached background process
 ## Prerequisites
 
 - `@moxn/context-cli` installed globally (`npm install -g @moxn/context-cli`)
-- [Husky](https://typicode.github.io/husky/) set up in your project (or any git hooks manager)
+- A git hooks mechanism — [Husky](https://typicode.github.io/husky/) is one option, or use `.git/hooks/post-commit` directly
 - A Moxn API key set in your environment or `.env.local`
 - An [Anthropic API key](https://console.anthropic.com/) (`ANTHROPIC_API_KEY` env var)
 - An integration configured in Moxn for your repository
@@ -29,7 +29,6 @@ Add your Moxn API key to `.env.local` in your project root:
 
 ```bash .env.local
 MOXN_API_KEY=your-api-key
-MOXN_BASE_URL=https://moxn.dev
 ```
 
 The CLI loads `.env.local` automatically. You can also set `MOXN_API_KEY` as a shell environment variable.

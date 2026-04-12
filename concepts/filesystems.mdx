@@ -1,0 +1,86 @@
+---
+title: Filesystems
+description: How Moxn organizes content into isolated, permission-controlled spaces
+---
+
+A **filesystem** is the top-level organizational boundary in Moxn. Everything you store — documents, databases, and tags — lives inside a filesystem.
+
+Every workspace gets a default filesystem automatically — your whole team is added to it. Filesystems become relevant when you need hard boundaries between spaces: separate access controls, separate tag pools, separate document namespaces. Many teams add additional filesystems as they grow.
+
+## The Default Filesystem
+
+Every Moxn workspace has exactly one **default filesystem**, created automatically when your workspace is set up. All workspace members are automatically added to it.
+
+For most teams, the default filesystem is all you need: one shared space where your agents and teammates collaborate on docs.
+
+## Multiple Filesystems
+
+You can create additional filesystems when you need stricter boundaries — for example:
+
+- A **private** filesystem for sensitive playbooks that shouldn't be visible to all agents
+- A **product** filesystem for a specific team or project
+- An **engineering** filesystem separate from marketing or sales docs
+
+Each filesystem has its own:
+- Document namespace (paths like `/guides/api-reference` are unique per filesystem, not per workspace)
+- Tag pool
+- Databases
+- Member list and permission settings
+
+## Membership and Roles
+
+Users belong to filesystems with a **role** (`owner`, `edit`, `comment`, or `read`). See [Permissions](/concepts/permissions#filesystem-roles) for what each role can do.
+
+Each filesystem has exactly one `owner`. The default filesystem's owner is the workspace creator.
+
+You can also set a **tenant default role** — a fallback role granted to all workspace members who aren't explicitly added. Set it to `read` to make a filesystem visible-but-locked to everyone; set it to `null` to make the filesystem private (only explicit members can see it).
+
+## Scoping Agents to a Filesystem
+
+By default, MCP tools (`find`, `search`, `documents`, `databases`) operate across all filesystems you have access to. Use the `--filesystems` flag to set a default filesystem for the session:
+
+```json
+{
+  "mcpServers": {
+    "context": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "@moxn/mcp-kb",
+        "--workspace=your-workspace-slug",
+        "--filesystems=engineering"
+      ]
+    }
+  }
+}
+```
+
+Or set `MOXN_FILESYSTEMS=engineering,product` in your environment.
+
+When set, the filesystem slug is injected automatically into tool calls that accept a `filesystem` parameter — so the agent doesn't need to specify it on every call. Actual access is still governed by the user's filesystem membership and role.
+
+## Discovering Filesystems at Runtime
+
+Agents can call the [`filesystems` tool](/reference/mcp/filesystems) to list all accessible filesystems, then pass `filesystem: "slug"` to subsequent `find`, `search`, `documents`, or `databases` calls.
+
+```
+"List my filesystems and find all documents in the engineering one"
+```
+
+## Filesystem Structure
+
+```
+Workspace
+├── default filesystem          ← all members auto-added
+│   ├── /docs/api-guide         ← document (path-scoped to this filesystem)
+│   ├── /runbooks/deploy        ← document
+│   ├── Tags: /technology/ai    ← tag pool (global to filesystem)
+│   └── Databases: Sprint Board ← databases
+│
+└── engineering filesystem      ← explicit membership
+    ├── /architecture/overview
+    ├── /rfcs/auth-v2
+    └── Databases: RFC Tracker
+```
+
+Paths in different filesystems are independent — both can have `/guides/quickstart` without conflict.

@@ -1,0 +1,108 @@
+---
+title: databases
+description: Manage KB databases — collections of documents with typed column schemas
+---
+
+Databases are collections of documents with structured property columns. Think of a database as a spreadsheet view over your KB documents: each row is a document, each column is a typed property. Property values are backed by the tag system.
+
+<Note>
+New to databases? See [Databases](/concepts/databases) for the mental model — including the key distinction between tag-backed columns (select, multi_select, status, checkbox) and scalar properties (number, date, text, etc.).
+</Note>
+
+Databases are **not versioned** — they're stable collection definitions that act as a lens over versioned documents.
+
+## Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `action` | enum | Yes | The operation to perform |
+| `filesystem` | string | No | Filesystem slug for `create` |
+| `databaseId` | UUID | Conditional | Required for most actions except `create` |
+| `name` | string | Conditional | Database name — required for `create` |
+| `description` | string \| null | No | Database description |
+| `path` | string \| null | No | Path for folder organization (e.g., `"/engineering/trackers"`) |
+| `defaultBranchFilter` | string \| null | No | Default branch filter for views (pass `null` to clear) |
+| `columnId` | UUID | Conditional | Required for `update_column`, `delete_column` |
+| `columnName` | string | Conditional | Required for `add_column`; optional for `update_column` |
+| `columnType` | enum | Conditional | Required for `add_column` — see column types below |
+| `optionTagIds` | UUID[] | No | Tag IDs for select/multi_select/status column options |
+| `newOptionParentPath` | string \| null | No | Tag path prefix for auto-creating options inline |
+| `config` | object \| null | No | Column config JSON — checkbox and status group config |
+| `documentId` | UUID | Conditional | Required for `add_document`, `remove_document`, `set_property` |
+| `branchFilter` | string | No | Branch name filter for `list_documents` |
+| `value` | string \| number \| boolean \| null | Conditional | Property value for `set_property` |
+| `viewId` | UUID | No | View UUID for `update_view` |
+| `viewName` | string | No | View name for `create_view`, `update_view` |
+| `viewType` | `table` \| `board` | No | View type |
+| `viewConfig` | object | No | View configuration JSON |
+
+## Actions
+
+| Action | Notes |
+|--------|-------|
+| `create` | Create a new database |
+| `update` | Update name, description, or path |
+| `delete` | Soft-delete a database |
+| `list_columns` | Get column schema with tag options |
+| `add_column` | Add a new column (see types below) |
+| `update_column` | Rename, add/remove options, or update config |
+| `delete_column` | Soft-delete a column |
+| `list_documents` | List documents with resolved property values |
+| `add_document` | Add a KB document to the database |
+| `remove_document` | Remove a document from the database |
+| `list_views` | Get saved view configurations |
+| `create_view` | Create a table or board view |
+| `update_view` | Update view configuration |
+| `set_property` | Set a property value on a document |
+
+## Column Types
+
+**Tag-based** (options reference tag IDs):
+| Type | Behavior |
+|------|----------|
+| `select` | Single value — `set_property` replaces current value |
+| `multi_select` | Multiple values — `set_property` adds to existing values |
+| `status` | Single value with group metadata (e.g., Not Started / In Progress / Done) |
+| `checkbox` | Boolean-like — auto-creates checked/unchecked tags on `add_column` |
+
+**Scalar** (set directly via `set_property`):
+`number`, `date`, `text`, `url`, `email`, `page_ref`
+
+## set_property
+
+`set_property` is the most flexible action — it works with any column type:
+
+- **Scalar columns**: pass the value as-is (`string` for text/url/email, `number` for number, ISO string for `date`)
+- **Tag-based columns**: pass the option name as a string — Moxn auto-creates the option tag if it doesn't exist
+- **select/status**: replaces the current value
+- **multi_select**: adds the value to existing values
+- Pass `null` to clear any property
+
+```json
+{"action": "set_property", "databaseId": "...", "documentId": "...", "columnName": "Status", "value": "In Progress"}
+```
+
+## Branch Filter (list_documents)
+
+When `branchFilter` is set, documents are resolved on that branch if it exists, otherwise falls back to main. Useful for previewing "what the database looks like after merging the feature branch."
+
+## Examples
+
+```
+"Create a Sprint Tracker database"
+→ databases({action: "create", name: "Sprint Tracker", description: "Track sprint items"})
+
+"Add a Status column with options"
+→ databases({action: "add_column", databaseId: "...", columnName: "Status", columnType: "status", newOptionParentPath: "/sprint-tracker/status"})
+
+"Set the status of a document to 'Done'"
+→ databases({action: "set_property", databaseId: "...", documentId: "...", columnName: "Status", value: "Done"})
+
+"List all documents in the database with their properties"
+→ databases({action: "list_documents", databaseId: "..."})
+```
+
+## Related
+
+- [`tags`](/reference/mcp/tags) — manage the tag definitions backing column options
+- [`changesets`](/reference/mcp/changesets) — coordinate multi-document merges from a database

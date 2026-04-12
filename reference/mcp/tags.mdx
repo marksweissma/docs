@@ -1,0 +1,76 @@
+---
+title: tags
+description: Manage the tag catalog — create, list, update, and delete tag definitions
+---
+
+Manage tag definitions. Tags are hierarchical labels used to categorize documents (e.g., `/technology/ai/google`). This tool manages the **catalog** — the definitions themselves. To assign or remove tags on documents, use the [`documents` tool](/reference/mcp/documents).
+
+<Note>
+New to tags? See [Tags](/concepts/tags) for the mental model — what tags are, how hierarchy works, and how they differ from folders.
+</Note>
+
+## Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `action` | enum | Yes | `list`, `create`, `delete`, or `update` |
+| `tagId` | UUID | Conditional | Required for `delete` and `update` |
+| `tagPath` | string | Conditional | Required for `create` — e.g., `"/technology/ai/google"` |
+| `tagDescription` | string \| null | No | Description for `create` or `update` |
+| `tagColor` | string \| null | No | Hex color for `create` or `update` (e.g., `"#3B82F6"`) |
+| `tagDisplayName` | string \| null | No | Human-readable name — shown in UI instead of path segment. For `create` or `update` |
+| `filesystem` | string | No | Filesystem slug — optional for `create` when you have multiple filesystems |
+
+## Actions
+
+| Action | tagId | tagPath | Notes |
+|--------|-------|---------|-------|
+| `list` | — | — | Returns all tags in the workspace |
+| `create` | — | REQUIRED | Auto-creates ancestor tags that don't exist yet |
+| `delete` | REQUIRED | — | Cascades — deletes all descendants and removes all document assignments |
+| `update` | REQUIRED | — | Update color, description, or displayName |
+
+## Tag Hierarchy
+
+Tags are organized as paths using `/` separators. When you create `/technology/ai/google`, Moxn auto-creates `/technology` and `/technology/ai` if they don't exist.
+
+This hierarchy is used for:
+- Organizing the tag catalog visually
+- Backing database column options (select, multi-select, status, checkbox columns all reference tag IDs)
+- Filtering in `find` via `tagIds`
+
+## Response (list)
+
+```json
+[
+  {
+    "id": "uuid",
+    "path": "/technology/ai",
+    "displayName": "AI",
+    "description": "Artificial intelligence topics",
+    "color": "#3B82F6"
+  }
+]
+```
+
+## Examples
+
+```
+"Create a 'needs-review' tag"
+→ tags({action: "create", tagPath: "/status/needs-review", tagColor: "#F59E0B", tagDisplayName: "Needs Review"})
+
+"List all tags"
+→ tags({action: "list"})
+
+"Rename the display name of a tag"
+→ tags({action: "update", tagId: "...", tagDisplayName: "Under Review"})
+
+"Delete the /drafts tag and all its children"
+→ tags({action: "delete", tagId: "..."})
+```
+
+## Related
+
+- [`documents`](/reference/mcp/documents) — assign/remove tags on documents (`assign_tag`, `remove_tag`, `list_tags`, `create_tag` actions)
+- [`find`](/reference/mcp/find) — filter documents by tag IDs
+- [`databases`](/reference/mcp/databases) — tag-backed column types (select, multi_select, status, checkbox)

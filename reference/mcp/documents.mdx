@@ -1,0 +1,105 @@
+---
+title: documents
+description: Create, update, and delete documents; manage branches, tags, and commit history
+---
+
+The primary tool for managing documents and their lifecycle. Handles creation, metadata updates, branch operations, tag assignments, and commit history.
+
+## Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `action` | enum | Yes | The operation to perform (see actions below) |
+| `filesystem` | string | Conditional | Filesystem slug — required for `create` when you have multiple filesystems |
+| `documentId` | UUID | Conditional | Document UUID — required for most actions except `create` |
+| `path` | string | Conditional | Document path — required for `create` |
+| `name` | string | No | Display name (default: last path segment) |
+| `description` | string | No | Document description |
+| `branchName` | string | Conditional | Branch name — see per-action requirements |
+| `sourceBranch` | string | No | Source branch for `create_branch` (defaults to default branch) |
+| `newPath` | string | No | New path for `update` (renames/moves the document) |
+| `newDescription` | string \| null | No | New description for `update` |
+| `tagId` | UUID | Conditional | Tag UUID — required for `assign_tag`, `remove_tag` |
+| `tagPath` | string | Conditional | Tag path — required for `create_tag` |
+| `tagDescription` | string | No | Description for `create_tag` |
+| `tagColor` | string | No | Hex color for `create_tag` (e.g., `"#3B82F6"`) |
+| `tagDisplayName` | string | No | Human-readable name for `create_tag` |
+| `commitId` | UUID | Conditional | Commit UUID — required for `show` and `revert` |
+| `limit` | integer | No | Pagination limit for `log` |
+| `cursor` | string | No | Pagination cursor for `log` |
+
+## Actions
+
+### Document CRUD
+
+| Action | documentId | branchName | path | Notes |
+|--------|-----------|-----------|------|-------|
+| `create` | — | — | REQUIRED | Creates on `main`; pass `filesystem` if you have multiple |
+| `update` | REQUIRED | REQUIRED | — | `newPath` to rename/move; `newDescription` to update description |
+| `delete` | REQUIRED | REQUIRED | — | Cannot delete on default branch |
+| `discard` | REQUIRED | REQUIRED | — | Discard uncommitted working changes |
+
+### Commit History
+
+| Action | documentId | commitId | Notes |
+|--------|-----------|---------|-------|
+| `log` | REQUIRED | — | List commits; accepts `limit`, `cursor`, optional `branchName` |
+| `show` | REQUIRED | REQUIRED | Get content at a specific commit |
+| `revert` | REQUIRED | REQUIRED | Create new commit restoring a previous state; requires `branchName` |
+
+### Branch Management
+
+| Action | documentId | branchName | sourceBranch | Notes |
+|--------|-----------|-----------|-------------|-------|
+| `list_branches` | REQUIRED | — | — | List all branches |
+| `list_sections` | REQUIRED | optional | — | Defaults to document's default branch |
+| `create_branch` | REQUIRED | REQUIRED | optional | `branchName` = new branch name |
+| `delete_branch` | REQUIRED | REQUIRED | — | Cannot delete default branch |
+
+### Tag Operations
+
+Tag definitions are global to the tenant (not branch-scoped). Tag assignments are branch-scoped.
+
+| Action | documentId | branchName | tagId | tagPath | Notes |
+|--------|-----------|-----------|-------|---------|-------|
+| `list_tags` | — | — | — | — | List all tags in tenant |
+| `create_tag` | — | — | — | REQUIRED | Auto-creates ancestor tags |
+| `assign_tag` | REQUIRED | REQUIRED | REQUIRED | — | Assign tag to document on branch |
+| `remove_tag` | REQUIRED | REQUIRED | REQUIRED | — | Remove tag from document on branch |
+
+## Examples
+
+```
+"Create a new document at /runbooks/incident-response"
+→ documents({action: "create", path: "/runbooks/incident-response", name: "Incident Response"})
+
+"Create a feature branch on the API guide"
+→ documents({action: "create_branch", documentId: "...", branchName: "ai/add-auth-section"})
+
+"See the commit history for this document"
+→ documents({action: "log", documentId: "...", limit: 10})
+
+"Move the doc from /old/path to /new/path"
+→ documents({action: "update", documentId: "...", branchName: "main", newPath: "/new/path"})
+
+"Assign the 'needs-review' tag to this document"
+→ documents({action: "assign_tag", documentId: "...", branchName: "...", tagId: "..."})
+```
+
+## Branch Workflow for AI
+
+<Warning>
+Always create a feature branch before making AI-driven edits. Write directly to `main` only when the user explicitly requests it.
+</Warning>
+
+```
+1. documents({action: "create_branch", documentId, branchName: "ai/my-update"})
+2. sections({action: "update", documentId, branchName: "ai/my-update", ...})
+3. merge_requests({action: "create", documentId, sourceBranch: "ai/my-update", targetBranch: "main", title: "..."})
+```
+
+## Related
+
+- [`sections`](/reference/mcp/sections) — write section content
+- [`tags`](/reference/mcp/tags) — manage tag definitions
+- [`merge_requests`](/reference/mcp/merge-requests) — create and execute merges

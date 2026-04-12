@@ -1,0 +1,53 @@
+---
+title: find
+description: List KB documents, sections, folders, and databases — like unix find
+---
+
+List items in the knowledge base. This is typically the **first tool you call** — use it to discover what documents exist and get their IDs before reading or editing.
+
+## Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `filesystem` | string | No | Filesystem slug. Omit to search all accessible filesystems |
+| `path` | string | No | Starting path prefix (e.g., `"/guides/"`) |
+| `type` | enum | No | `document` (default), `section`, `folder`, `database`, or `all` |
+| `name` | string | No | Name filter — supports `*`, `?`, `[a-z]` glob patterns |
+| `branch` | string | No | Branch name (default: document default branch) |
+| `limit` | integer | No | Max results (default: 100, max: 500) |
+| `maxdepth` | integer | No | Maximum depth to descend (0 = starting path only, 1 = direct children) |
+| `mindepth` | integer | No | Minimum depth (1 = exclude the starting path itself) |
+| `tagIds` | string[] | No | Filter documents by tag IDs |
+| `tagFilterMode` | `any` \| `all` | No | How to combine tagIds: `any` (default) or `all` |
+
+## Response
+
+**Documents:** `{ id, path, name, description, defaultBranch }`
+
+**Sections:** `{ id, documentId, name, position }`
+
+**Folders:** `{ path, name, depth }` — virtual, derived from document paths
+
+**Databases:** `{ id, name, description, path }`
+
+## Examples
+
+```
+"List all documents in Moxn"
+→ find({type: "document"})
+
+"Show me what's under /engineering/"
+→ find({path: "/engineering/", type: "document"})
+
+"Find all folders at the top level"
+→ find({type: "folder", maxdepth: 1})
+
+"Find documents tagged with 'needs-review'"
+→ find({type: "document", tagIds: ["uuid-of-needs-review-tag"]})
+```
+
+## Related
+
+- [`search`](/reference/mcp/search) — full-text search on section content
+- [`read`](/reference/mcp/read) — fetch content by document/section ID
+- [`filesystems`](/reference/mcp/filesystems) — discover filesystem slugs to pass as `filesystem`

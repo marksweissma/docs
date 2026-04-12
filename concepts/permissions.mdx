@@ -1,0 +1,119 @@
+---
+title: Permissions
+description: How Moxn controls access at the filesystem, document, and section level
+---
+
+Moxn has a layered permission model that flows from filesystem membership down to individual sections. Most teams never need to configure anything beyond the defaults.
+
+## Permission Layers
+
+```
+Filesystem role                  ← base access for all content
+  └── Document override          ← optional, overrides filesystem for one doc
+        └── Section override     ← optional, overrides document for one section
+              └── AI access      ← additional restriction for MCP/agent access
+```
+
+Each layer can only be as permissive as the layer above it.
+
+## Filesystem Roles
+
+Every user's access starts with their **filesystem role**. See [Filesystems](/concepts/filesystems) for how membership works.
+
+| Role | Description |
+|------|-------------|
+| `read` | Can view all content in the filesystem |
+| `comment` | Can view and leave inline comments; cannot edit section content |
+| `edit` | Can create, edit, and delete documents and sections |
+| `owner` | Full control including managing members; always has `edit` access, cannot be restricted |
+
+The workspace has exactly one owner per filesystem. The `owner` role cannot be overridden by document or section permissions.
+
+## Document-Level Overrides
+
+By default, a document inherits permissions from its filesystem. You can **detach** a document and configure it independently:
+
+- Set a **default role** for the document (overrides the filesystem role for that document)
+- Grant specific users a higher or lower role on just that document
+
+This is useful for documents that should be more restricted than the rest of the filesystem — for example, an `/hr/compensation-bands` doc inside a generally-readable filesystem.
+
+Document-level permissions are configured in the web app under a document's settings.
+
+## Section-Level Overrides
+
+Individual sections within a document can have their own permission override:
+
+| Value | Effect |
+|-------|--------|
+| `null` | Inherit from document (default) |
+| `edit` | Users with edit access can modify this section |
+| `read` | Visible but not editable (locks the section) |
+| `none` | Hidden — not returned in reads or searches |
+
+Section permissions can only be set on **feature branches**, not on `main`. This ensures access control changes go through the normal review process before taking effect.
+
+## AI Access
+
+Every section also has an **AI access** level, separate from the team-facing permission. This controls what agents see when they read via MCP.
+
+The effective permission an agent gets is: `min(user_permission, ai_access)`.
+
+| Team permission | AI access | What the agent sees |
+|----------------|-----------|---------------------|
+| `edit` | `edit` | Full content |
+| `edit` | `read` | Full content (read only) |
+| `edit` | `none` | Section hidden |
+| `read` | `none` | Section hidden |
+
+**Common use case:** Set `AI access: none` on sections that contain API keys, internal metrics, or personal information. Your team can still see the content in the web UI, but it's filtered from all MCP responses.
+
+## Permission Resolution Order
+
+When Moxn resolves a user's effective permission for a section:
+
+1. **Owner** — always `edit`, cannot be overridden
+2. **Document user grant** — if the document has been detached and this user has an explicit grant
+3. **Document default role** — the document's configured default (if detached)
+4. **Section override** — if a section has `defaultPermission` set
+5. **Filesystem role** — the user's membership role in the filesystem
+
+The first matching rule wins.
+
+## Setting Permissions in the Web App
+
+### Filesystem Membership
+
+Go to **Settings** → **Filesystems** → select a filesystem → **Members** tab. From here you can add members, change their roles, and set the tenant default role (the fallback for workspace members not explicitly added).
+
+### Document-Level Overrides
+
+Open a document in the web editor and click the **Settings** icon (gear) in the top-right toolbar. The **Permissions** tab shows whether the document is inheriting from its filesystem or has been detached with its own defaults and per-user grants.
+
+### Section-Level Overrides
+
+Section permissions are only available on **feature branches** — you cannot set them on `main`. To configure section access:
+
+1. Switch to a feature branch (or create one)
+2. Open the section you want to restrict
+3. Click the **⋯** menu on the section → **Section Settings**
+4. Set **Permission** (team access) and **AI Access** independently
+
+Changes take effect on `main` after the branch is merged.
+
+## A Practical Example
+
+Suppose you have an engineering filesystem where most members have `edit` access:
+
+```
+Filesystem: engineering (team default: edit)
+  └── /runbooks/incident-response     ← everyone can edit
+  └── /runbooks/on-call-escalation    ← everyone can edit
+  └── /hr/performance-reviews         ← detached, only HR members can edit
+        └── "Compensation" section     ← AI access: none (hidden from agents)
+```
+
+In this setup:
+- Engineers can read and edit all runbooks
+- The performance reviews doc is only accessible to HR members
+- Even if an agent were granted access to that doc, the compensation section would never appear in MCP responses

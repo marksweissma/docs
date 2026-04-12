@@ -1,0 +1,110 @@
+---
+title: changesets
+description: Coordinate multi-document merges from a database source
+---
+
+Changesets coordinate merges across multiple documents in a single operation. Instead of creating one merge request per document, you create one changeset, analyze it, and execute all merges atomically.
+
+This is the recommended approach when a feature branch touches many documents, especially when those documents are tracked in a database.
+
+## Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `action` | enum | Yes | The operation to perform |
+| `changesetId` | UUID | Conditional | Required for `get`, `analyze`, `execute`, `close`, `add_items`, `remove_items` |
+| `databaseId` | UUID | No | For `create` — auto-discovers all docs in the DB that have the source branch |
+| `sourceBranchName` | string | Conditional | Required for `create` |
+| `targetBranchName` | string | No | Target branch — defaults to `"main"` |
+| `title` | string | Conditional | Required for `create` |
+| `description` | string | No | Optional description |
+| `documentIds` | UUID[] | No | Specific document IDs to include (overrides auto-discovery) |
+| `commitMessage` | string | No | Custom commit message for `execute` |
+| `itemResolutions` | Record\<UUID, object\> | Conditional | Per-item conflict resolutions for `execute` — keyed by changeset item ID |
+| `mergeRequestIds` | UUID[] | Conditional | Required for `add_items` and `remove_items` |
+| `closeMergeRequests` | boolean | No | For `close` — also close constituent MRs |
+| `status` | `open` \| `merged` \| `closed` | No | Filter for `list` |
+
+## Actions
+
+| Action | Notes |
+|--------|-------|
+| `list` | List changesets; filter by `status` |
+| `get` | Get changeset detail with all items and their statuses |
+| `create` | Create changeset (auto-commits pending changes, creates MRs) |
+| `analyze` | Analyze all items for merge readiness and conflicts |
+| `execute` | Merge all ready items; provide `itemResolutions` for conflicting items |
+| `close` | Close changeset (optionally closing its MRs) |
+| `add_items` | Add existing merge requests to an open changeset |
+| `remove_items` | Remove merge requests from an open changeset |
+
+## Workflows
+
+**Option A — Database-scoped (recommended):**
+```
+changesets({action:"create", databaseId:"...", sourceBranchName:"ai/sprint-update", title:"Sprint 42 update"})
+→ auto-discovers all docs in the database that have an "ai/sprint-update" branch
+→ auto-commits pending changes and creates merge requests for each
+
+changesets({action:"analyze", changesetId:"..."})
+→ returns per-item status: "ready" | "conflict" | "up_to_date"
+
+changesets({action:"execute", changesetId:"...", itemResolutions:{...}})
+→ merges all ready items atomically; skips conflicts unless resolutions provided
+```
+
+**Option B — Manual:**
+```
+changesets({action:"create", sourceBranchName:"ai/sprint-update", title:"Sprint 42 update"})
+→ creates empty changeset
+
+changesets({action:"add_items", changesetId:"...", mergeRequestIds:[...]})
+→ populate manually with existing MRs
+
+changesets({action:"analyze", changesetId:"..."})
+changesets({action:"execute", changesetId:"..."})
+```
+
+## Item Resolutions
+
+When `analyze` returns items with `status: "conflict"`, provide `itemResolutions` keyed by the changeset item ID (not the document ID):
+
+```json
+{
+  "action": "execute",
+  "changesetId": "uuid",
+  "itemResolutions": {
+    "changeset-item-uuid-1": {
+      "sectionResolutions": [
+        {"sectionId": "uuid", "resolution": "source"}
+      ],
+      "tagResolution": "source"
+    },
+    "changeset-item-uuid-2": {
+      "sectionResolutions": [],
+      "resolvedPath": "/new/path/for/doc"
+    }
+  }
+}
+```
+
+Per-item resolution fields:
+- `sectionResolutions` — array of `{sectionId, resolution: "source"|"target"}`
+- `tagResolution` — `"source"` or `"target"` for tag conflicts
+- `resolvedPath` — new path if there's a path collision
+- `documentDeletionResolution` — `"delete"` or `"keep"` if doc was deleted on one branch
+- `scalarPropertyResolutions` — `Record<columnId, "source"|"target">` for scalar property conflicts
+
+## Examples
+
+```
+"Merge all documents in the Sprint Tracker database from the 'ai/q4-update' branch"
+→ changesets({action: "create", databaseId: "...", sourceBranchName: "ai/q4-update", title: "Q4 documentation update"})
+→ changesets({action: "analyze", changesetId: "..."})
+→ changesets({action: "execute", changesetId: "..."})
+```
+
+## Related
+
+- [`merge_requests`](/reference/mcp/merge-requests) — single-document merges
+- [`databases`](/reference/mcp/databases) — the databases that power database-scoped changesets

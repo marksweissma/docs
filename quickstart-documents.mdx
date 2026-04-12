@@ -373,9 +373,12 @@ Your session persists across restarts — you only need to authenticate once.
 
 Once connected, try these prompts with your AI:
 
-**Read documents:**
+**Discover what's available:**
 > "What documents do I have in Moxn?"
 
+> "Search for anything about authentication"
+
+**Read documents:**
 > "Read the API documentation from Moxn"
 
 **Create content (on a branch):**
@@ -384,6 +387,10 @@ Once connected, try these prompts with your AI:
 > "Update the onboarding guide to include the new security requirements"
 
 Your AI will create a branch for any changes. You can review and merge in the Moxn web app.
+
+<Note>
+**Multiple filesystems:** If your workspace has more than one [filesystem](/concepts/filesystems), add `--filesystems=your-slug` to the MCP args (or set `MOXN_FILESYSTEMS=slug1,slug2`) to restrict the agent to specific filesystems. Most workspaces only have one — you can skip this.
+</Note>
 
 ## Troubleshooting
 

@@ -1,0 +1,115 @@
+---
+title: merge_requests
+description: Create, analyze, and execute merges between branches for a single document
+---
+
+Merge requests bring changes from a feature branch into a target branch (usually `main`) for a single document. For coordinating merges across multiple documents, see [`changesets`](/reference/mcp/changesets).
+
+## Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `action` | enum | Yes | `list`, `get`, `create`, `analyze`, `execute`, `close`, or `update` |
+| `mergeRequestId` | UUID | Conditional | Required for `get`, `analyze`, `execute`, `close`, `update` |
+| `documentId` | UUID | Conditional | Required for `create`; optional for `list` (filters by document) |
+| `sourceBranch` | string | Conditional | Source branch name — required for `create` |
+| `targetBranch` | string | Conditional | Target branch name — required for `create` |
+| `title` | string | Conditional | MR title — required for `create` |
+| `description` | string | No | MR description |
+| `reviewerIds` | UUID[] | No | User IDs to add as reviewers (find IDs with `members`) |
+| `resolutions` | object[] | Conditional | Required for `execute` when conflicts exist |
+| `tagResolution` | `source` \| `target` | Conditional | Required for `execute` when tag conflicts exist |
+| `scalarPropertyResolutions` | Record\<UUID, `source`\|`target`\> | Conditional | Per-column resolution for scalar property conflicts |
+| `resolvedPath` | string | Conditional | Required for `execute` when path collision exists |
+| `documentDeletionResolution` | `delete` \| `keep` | Conditional | Required when document was deleted on one branch |
+| `commitMessage` | string | No | Custom commit message (max 1000 chars) |
+| `newTitle` | string | No | New title for `update` |
+| `newDescription` | string \| null | No | New description for `update` |
+| `status` | `open` \| `merged` \| `closed` | No | Filter for `list` |
+
+## Actions
+
+| Action | Notes |
+|--------|-------|
+| `list` | List MRs; filter by `documentId` and/or `status` |
+| `get` | Get a single MR with reviewer details |
+| `create` | Create a new MR (uses branch names, not IDs) |
+| `analyze` | Get diffs, conflicts, and tag changes |
+| `execute` | Merge the branch (with resolutions if needed) |
+| `close` | Close without merging |
+| `update` | Update title or description |
+
+## Workflow
+
+```
+1. create → mergeRequestId
+2. analyze → inspect diffs and conflicts
+3. execute → merge (pass resolutions if hasConflicts is true)
+```
+
+## Analyze Response
+
+```json
+{
+  "mergeRequestId": "uuid",
+  "hasConflicts": false,
+  "hasTagConflicts": false,
+  "hasPathCollision": false,
+  "hasDocumentDeletionConflict": false,
+  "sections": [
+    {
+      "sectionId": "uuid",
+      "name": "Authentication",
+      "status": "modified",    // "added" | "deleted" | "modified" | "conflict" | "unchanged"
+      "sourceDiff": "...",
+      "targetDiff": "..."
+    }
+  ]
+}
+```
+
+## Resolving Conflicts
+
+For each conflicting section, choose `"source"` (incoming branch) or `"target"` (current main):
+
+```json
+{
+  "action": "execute",
+  "mergeRequestId": "uuid",
+  "resolutions": [
+    {"sectionId": "uuid", "resolution": "source"},
+    {"sectionId": "uuid2", "resolution": "target"}
+  ]
+}
+```
+
+## Fast-Forward Merge
+
+If the source branch contains all commits from the target (no divergence), Moxn merges automatically — no conflicts possible and no resolutions needed.
+
+## Commit Message
+
+Auto-generated from source-branch commits. For long-running branches with many commits, the auto-generated message may exceed the 1000-char limit — in that case, the merge will fail with a guidance error. Pass a custom `commitMessage` to resolve.
+
+## Examples
+
+```
+"Create a merge request to merge ai/add-auth into main"
+→ merge_requests({action: "create", documentId: "...", sourceBranch: "ai/add-auth", targetBranch: "main", title: "Add authentication section"})
+
+"Check if there are conflicts"
+→ merge_requests({action: "analyze", mergeRequestId: "..."})
+
+"Execute the merge"
+→ merge_requests({action: "execute", mergeRequestId: "..."})
+
+"Add a reviewer"
+→ First: members({action: "search", query: "alice"}) → get userId
+  Then: merge_requests({action: "update", mergeRequestId: "...", reviewerIds: ["user-uuid"]})
+```
+
+## Related
+
+- [`documents`](/reference/mcp/documents) — create branches (`create_branch`)
+- [`changesets`](/reference/mcp/changesets) — coordinate merges across multiple documents
+- [`members`](/reference/mcp/members) — find user IDs for reviewers

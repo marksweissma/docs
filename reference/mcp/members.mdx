@@ -1,0 +1,42 @@
+---
+title: members
+description: Search workspace members by name or email
+---
+
+Search for users in your workspace. Used for finding user IDs when adding reviewers to merge requests or mentioning users in comments.
+
+## Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `action` | `"search"` | Yes | Currently only `search` is supported |
+| `query` | string | Yes | Search query — matches against name or email |
+| `limit` | integer | No | Max results (default: 20, max: 50) |
+
+## Response
+
+```json
+[
+  {
+    "userId": "user_2abc123",
+    "displayName": "Alice Johnson",
+    "email": "alice@example.com",
+    "imageUrl": "https://..."
+  }
+]
+```
+
+## Examples
+
+```
+"Find Alice's user ID so I can add her as a reviewer"
+→ members({action: "search", query: "alice"})
+
+"Search for users at example.com"
+→ members({action: "search", query: "example.com"})
+```
+
+## Related
+
+- [`merge_requests`](/reference/mcp/merge-requests) — pass `reviewerIds` with user IDs from this tool
+- [`sections`](/reference/mcp/sections) — pass user IDs in `<moxn:comment-new mentions="...">` for comment mentions

@@ -1,0 +1,59 @@
+---
+title: search
+description: Full-text search across KB section content
+---
+
+Search section content by text. Returns matching sections with document context. Searches the **default branch (`main`)** of all documents.
+
+## Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `query` | string | Yes | Text to search for (case-insensitive) |
+| `filesystem` | string | No | Filesystem slug. Omit to search all accessible filesystems |
+| `path` | string | No | Scope search to a path prefix (e.g., `"/guides/"`) |
+| `limit` | integer | No | Max results (default: 20) |
+
+## Response
+
+Array of matching sections, each with:
+```json
+{
+  "sectionId": "uuid",
+  "sectionName": "Authentication",
+  "position": 2,
+  "documentId": "uuid",
+  "documentPath": "/engineering/api-guide",
+  "snippet": "...text around the match..."
+}
+```
+
+## Limitations
+
+- Only searches content **committed to main**
+- Does not include uncommitted working changes
+- Does not search feature branches
+- Use `find` + `read` to inspect branch content
+
+## Examples
+
+```
+"Find sections about authentication"
+→ search({query: "authentication"})
+
+"Search for OAuth in the engineering docs"
+→ search({query: "OAuth", path: "/engineering/"})
+```
+
+## Typical Workflow
+
+```
+1. search({query: "deployment"})      → find relevant sections
+2. read({items: [{type: "section", documentId, sectionId}]}) → read full content
+3. sections({action: "update", ...})  → edit if needed
+```
+
+## Related
+
+- [`find`](/reference/mcp/find) — discover documents and sections by path or tag
+- [`read`](/reference/mcp/read) — fetch full section content by ID

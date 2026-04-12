@@ -1,0 +1,129 @@
+---
+title: sections
+description: Create, update, delete, and reorder sections within documents
+---
+
+Manage the content blocks (sections) within a document. Every write operation auto-commits the change.
+
+## Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `action` | enum | Yes | The operation to perform |
+| `documentId` | UUID | Yes | Document UUID |
+| `branchName` | string | Conditional | Branch name — required for write operations |
+| `sectionId` | UUID | Conditional | Section UUID — required for `update`, `delete`, `add_reference` |
+| `name` | string | Conditional | Section name (H2 heading) — required for `create` |
+| `content` | block[] | Conditional | Content blocks — required for `create` and `update` |
+| `sections` | object[] | Conditional | Array of section specs — required for `batch_create` |
+| `sectionOrder` | UUID[] | Conditional | Ordered array of section IDs — required for `reorder` |
+| `newName` | string | No | Updated section name for `update` |
+| `newContent` | block[] | No | Updated content for `update` (replaces current content) |
+| `position` | integer | No | Position index for `create` (default: append at end) |
+| `expectedContentHash` | string | No | Optimistic lock — include `contentHash` from `read` to detect concurrent edits |
+| `commitMessage` | string | No | Commit message (auto-generated if omitted) |
+| `defaultPermission` | `edit` \| `read` \| `none` \| null | No | Section team permission override |
+| `aiAccess` | `edit` \| `read` \| `none` \| null | No | Section AI permission override |
+| `targetDocumentId` | UUID | Conditional | For `add_reference` — target document |
+| `targetSectionId` | UUID \| null | No | For `add_reference` — target section (null = link to document) |
+| `displayTitle` | string \| null | No | For `add_reference` — override link display text |
+| `referenceId` | UUID | Conditional | For `remove_reference` — reference UUID |
+
+## Actions
+
+| Action | Required params | Notes |
+|--------|-----------------|-------|
+| `create` | `documentId`, `branchName`, `name`, `content` | Appends unless `position` specified |
+| `batch_create` | `documentId`, `branchName`, `sections` | Atomic; preferred for multiple sections |
+| `update` | `documentId`, `branchName`, `sectionId`, `newContent` \| `newName` | Replaces content |
+| `delete` | `documentId`, `branchName`, `sectionId` | — |
+| `reorder` | `documentId`, `branchName`, `sectionOrder` | Full ordered list of all section IDs |
+| `add_reference` | `documentId`, `branchName`, `sectionId`, `targetDocumentId` | — |
+| `remove_reference` | `documentId`, `branchName`, `referenceId` | — |
+
+## Document Structure
+
+Each section has a `name` that is **automatically rendered as an H2 heading** in the UI. Do not start content with a duplicate heading.
+
+```
+name: "Authentication"
+content: [{"blockType": "text", "text": "Users authenticate via OAuth 2.0..."}]
+
+Renders as:
+## Authentication        ← from section.name
+Users authenticate...   ← from content
+```
+
+## Content Blocks
+
+```json
+{"blockType": "text", "text": "markdown content"}
+
+{"blockType": "image", "type": "url", "mediaType": "image/png", "url": "https://...", "alt": "optional"}
+{"blockType": "image", "type": "base64", "mediaType": "image/png", "data": "base64string"}
+{"blockType": "image", "type": "storage", "mediaType": "image/png", "key": "storage-path"}
+
+{"blockType": "document", "type": "url", "mediaType": "application/pdf", "url": "https://...", "filename": "doc.pdf"}
+
+{"blockType": "csv", "type": "storage", "mediaType": "text/csv", "key": "storage-path", "filename": "data.csv", "headers": ["col1","col2"], "rowCount": 100}
+
+{"blockType": "file", "type": "storage", "mediaType": "application/zip", "key": "storage-path", "filename": "archive.zip"}
+
+{"blockType": "database_embed", "databaseId": "uuid"}
+```
+
+**Local file uploads (stdio proxy only):**
+```json
+{"blockType": "image", "type": "file", "path": "/absolute/path/to/image.png"}
+```
+The proxy automatically uploads the file and transforms it to `type: "storage"`.
+
+## Batch Create
+
+When adding more than one section, **use `batch_create`** — it's atomic, guarantees order, and avoids duplicates from parallel agents.
+
+```json
+{
+  "action": "batch_create",
+  "documentId": "uuid",
+  "branchName": "ai/my-branch",
+  "sections": [
+    {"name": "Overview", "content": [{"blockType":"text","text":"..."}]},
+    {"name": "Setup",    "content": [{"blockType":"text","text":"..."}]},
+    {"name": "Usage",    "content": [{"blockType":"text","text":"..."}]}
+  ]
+}
+```
+
+## Permissions (Feature Branches Only)
+
+Section-level permissions can only be set on non-default branches:
+
+```json
+{
+  "action": "update",
+  "sectionId": "uuid",
+  "documentId": "uuid",
+  "branchName": "my-feature",
+  "newContent": [...],
+  "defaultPermission": "read",
+  "aiAccess": "none"
+}
+```
+
+`null` = inherit from document. See [Permissions](/concepts/permissions) for the full model.
+
+## Comments
+
+**Preserving existing comments:** When editing sections, keep `<moxn:comment id="uuid">text</moxn:comment>` tags intact.
+
+**Creating new comments:**
+```
+Some <moxn:comment-new body="Please verify this" mentions="user-uuid">important text</moxn:comment-new> here.
+```
+
+## Related
+
+- [`read`](/reference/mcp/read) — read section content and get `contentHash`
+- [`documents`](/reference/mcp/documents) — create documents and branches
+- [`upload_url`](/reference/mcp/upload-url) — upload files for use in storage content blocks

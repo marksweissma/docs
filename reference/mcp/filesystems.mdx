@@ -1,0 +1,70 @@
+---
+title: filesystems
+description: List the filesystems you have access to in this workspace
+---
+
+List all filesystems accessible to the authenticated user. Use this before creating documents (to know which filesystem to target) or to scope other tool calls.
+
+## Parameters
+
+No parameters.
+
+## Response
+
+Array of filesystem objects:
+
+```json
+[
+  {
+    "slug": "engineering",
+    "name": "Engineering",
+    "description": "Internal engineering docs",
+    "isDefault": false,
+    "role": "edit"
+  },
+  {
+    "slug": "hot-brown-anglerfish",
+    "name": "Default",
+    "description": null,
+    "isDefault": true,
+    "role": "edit"
+  }
+]
+```
+
+| Field | Description |
+|-------|-------------|
+| `slug` | Identifier to pass as `filesystem` in other tools |
+| `name` | Display name |
+| `isDefault` | Whether this is the workspace's default filesystem |
+| `role` | Your role in this filesystem: `owner`, `edit`, `comment`, or `read` |
+
+## When to Use
+
+- **Before creating a document** — if you have access to multiple filesystems, pass the correct `filesystem` slug to `documents` with `action: "create"`. Without it, creation may fail or land in the wrong filesystem.
+- **Before running find/search** — pass `filesystem` to scope results to the right space.
+
+## Examples
+
+```
+"List my filesystems"
+→ filesystems({})
+
+"Which filesystem should I create this doc in?"
+→ filesystems({})  → pick the slug with the right name → documents({action:"create", filesystem:"engineering", path:"/api/guide", ...})
+```
+
+## Filtering at Startup
+
+You can restrict an MCP session to specific filesystems at startup using the `--filesystems` flag or `MOXN_FILESYSTEMS` env var. This is injected automatically into all tool calls that accept a `filesystem` parameter:
+
+```json
+{
+  "args": ["@moxn/mcp-kb", "--workspace=my-slug", "--filesystems=engineering,product"]
+}
+```
+
+## Related
+
+- [Filesystems concept](/concepts/filesystems)
+- [`find`](/reference/mcp/find), [`search`](/reference/mcp/search), [`documents`](/reference/mcp/documents), [`databases`](/reference/mcp/databases) — all accept a `filesystem` parameter

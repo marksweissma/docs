@@ -1,0 +1,75 @@
+---
+title: upload_url
+description: Get a presigned URL for uploading a file to Moxn storage
+---
+
+Get a presigned upload URL for storing a file in Moxn's blob storage (Supabase). After uploading, use the returned `path` as a `key` in storage-type content blocks.
+
+<Note>
+**This tool is primarily used by the stdio proxy.** When using `@moxn/mcp-kb` locally, the proxy handles file uploads automatically — you just pass a local file path in content blocks (`"type": "file", "path": "/local/path"`). Call `upload_url` directly only if you need manual control over the upload.
+
+In **HTTP/remote mode**, `upload_url` may not work reliably because the upload requires a direct connection to the Moxn storage service.
+</Note>
+
+## Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `type` | string | Yes | MIME type of the file (e.g., `"image/png"`, `"application/pdf"`) |
+| `filename` | string | No | Optional filename for display in the UI |
+
+## Supported MIME Types
+
+- **Images:** `image/jpeg`, `image/png`, `image/gif`, `image/webp`, `image/svg+xml`
+- **Documents:** `application/pdf`, `application/vnd.openxmlformats-officedocument.wordprocessingml.document` (docx), xlsx, pptx, doc, xls, ppt, odt, ods, rtf
+- **Data:** `text/csv`
+- **Text/Code:** `text/plain`, `text/markdown`, `application/json`, `application/xml`, `text/yaml`, `text/html`
+- **Archives:** `application/zip`, `application/gzip`, `application/x-tar`
+- **Other:** `application/epub+zip`
+
+## Response
+
+```json
+{
+  "path": "uploads/workspace/uuid/filename.png",
+  "token": "https://storage.example.com/presigned-put-url..."
+}
+```
+
+- `path` — use this as the `key` field in `type: "storage"` content blocks
+- `token` — a presigned PUT URL, valid for **1 hour**
+
+## Manual Upload Workflow
+
+```bash
+# 1. Get upload URL
+# upload_url({type: "image/png", filename: "diagram.png"})
+# → {path: "uploads/...", token: "https://..."}
+
+# 2. Upload the file
+curl -X PUT \
+  -H "Content-Type: image/png" \
+  --data-binary @diagram.png \
+  "https://presigned-put-url..."
+
+# 3. Use in a content block
+# {"blockType": "image", "type": "storage", "mediaType": "image/png", "key": "uploads/..."}
+```
+
+## Stdio Proxy Automatic Upload
+
+When using `@moxn/mcp-kb` (stdio), you don't need to call `upload_url` directly. Pass a local path in content blocks and the proxy handles the rest:
+
+```json
+{"blockType": "image", "type": "file", "path": "/Users/me/screenshots/diagram.png"}
+```
+
+The proxy:
+1. Reads the file from disk
+2. Calls `upload_url` to get a presigned URL
+3. Uploads the file
+4. Transforms the block to `type: "storage"` before forwarding to the server
+
+## Related
+
+- [`sections`](/reference/mcp/sections) — use `type: "storage"` content blocks with the returned `path` as `key`

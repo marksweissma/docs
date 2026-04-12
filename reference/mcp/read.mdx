@@ -1,0 +1,91 @@
+---
+title: read
+description: Fetch content from KB documents and sections by ID
+---
+
+Fetch section content. Returns text as markdown and media as signed URLs. **Request multiple items in a single call** to minimize round trips.
+
+## Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `items` | object[] | Yes | Array of items to read (see below) |
+
+Each item in `items`:
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `type` | `"section"` | Yes | Currently only sections are supported |
+| `documentId` | string (UUID) | Yes | Document UUID |
+| `sectionId` | string (UUID) | Yes | Section UUID |
+| `branchName` | string | No | Branch to read from (default: document default branch) |
+
+## Response
+
+Array of content items, one per requested item. Each section returns:
+
+```json
+{
+  "type": "section",
+  "documentId": "uuid",
+  "sectionId": "uuid",
+  "name": "Authentication",
+  "position": 2,
+  "contentHash": "abc123",
+  "content": [
+    {"type": "text", "text": "markdown content..."},
+    {"type": "resource", "resource": {"uri": "https://signed-url...", "mimeType": "image/png"}}
+  ],
+  "comments": [...]
+}
+```
+
+- `contentHash` — include this when updating the section (for conflict detection)
+- `content` — array of text and resource blocks
+- Media (images, PDFs) are returned as resource blocks with **signed URLs valid for 1 hour**
+
+## Handling Media
+
+To view an image from a resource block:
+```bash
+curl -s "<signed-url>" -o /tmp/kb-image.png
+```
+Then use your client's file/image viewing capability.
+
+## Handling Comments
+
+Sections may contain inline comment markers:
+```
+Some text <moxn:comment id="uuid">highlighted text</moxn:comment> more text.
+```
+
+When editing a section with comments, preserve the `<moxn:comment>` tags around the original text. See [`sections`](/reference/mcp/sections) for how to create new comments.
+
+## Error Handling
+
+Invalid or missing items return an error entry:
+```json
+{"type": "section", "documentId": "uuid", "error": "Document not found"}
+```
+
+Always check for an `error` field in each response item.
+
+## Examples
+
+```
+"Read the API guide introduction"
+→ read({items: [{type: "section", documentId: "...", sectionId: "..."}]})
+
+"Read sections 1, 2, and 3 from the deployment doc on the 'staging' branch"
+→ read({items: [
+    {type: "section", documentId: "...", sectionId: "...", branchName: "staging"},
+    {type: "section", documentId: "...", sectionId: "...", branchName: "staging"},
+    {type: "section", documentId: "...", sectionId: "...", branchName: "staging"}
+  ]})
+```
+
+## Related
+
+- [`find`](/reference/mcp/find) — discover document and section IDs
+- [`search`](/reference/mcp/search) — find sections by text content
+- [`sections`](/reference/mcp/sections) — write/edit section content

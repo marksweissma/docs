@@ -1,0 +1,57 @@
+---
+title: MCP Tools
+description: Complete reference for all 13 Moxn MCP tools
+---
+
+Moxn exposes 13 tools over MCP. All tools are available in both stdio (local) and HTTP (remote) connection modes, with one exception: `upload_url` requires the stdio proxy for local file uploads.
+
+## Discovery & Reading
+
+| Tool | Description |
+|------|-------------|
+| [`find`](/reference/mcp/find) | List documents, sections, folders, and databases by path, name, or tag |
+| [`search`](/reference/mcp/search) | Full-text search across section content |
+| [`read`](/reference/mcp/read) | Fetch section content (text, images, PDFs) by ID |
+
+## Content Management
+
+| Tool | Description |
+|------|-------------|
+| [`documents`](/reference/mcp/documents) | Create/update/delete documents; manage branches, tags, and commit history |
+| [`sections`](/reference/mcp/sections) | Create, update, delete, and reorder sections within documents |
+
+## Organization
+
+| Tool | Description |
+|------|-------------|
+| [`filesystems`](/reference/mcp/filesystems) | List accessible filesystems in the workspace |
+| [`tags`](/reference/mcp/tags) | Manage the tag catalog (create, list, update, delete tag definitions) |
+| [`databases`](/reference/mcp/databases) | Manage databases — collections of documents with typed column schemas |
+
+## Collaboration & Merging
+
+| Tool | Description |
+|------|-------------|
+| [`merge_requests`](/reference/mcp/merge-requests) | Create, analyze, and execute merges between branches for a single document |
+| [`changesets`](/reference/mcp/changesets) | Coordinate multi-document merges from a database source |
+
+## Members & Files
+
+| Tool | Description |
+|------|-------------|
+| [`members`](/reference/mcp/members) | Search workspace members by name or email |
+| [`upload_url`](/reference/mcp/upload-url) | Get a presigned URL for uploading files to storage |
+| [`marketplace`](/reference/mcp/marketplace) | Manage plugin files in connected GitHub repositories |
+
+## Typical Agent Workflow
+
+```
+1. find({type:"document"})           → list documents and get IDs
+2. documents({action:"list_sections", documentId}) → get section IDs
+3. read({items:[{type:"section", documentId, sectionId}]}) → read content
+4. documents({action:"create_branch", documentId, branchName:"ai/update"})
+5. sections({action:"update", ...})  → edit content (auto-commits)
+6. merge_requests({action:"create", documentId, sourceBranch:"ai/update", targetBranch:"main", title:"..."})
+```
+
+If your workspace has multiple filesystems, call `filesystems({})` first and pass the resulting slug as `filesystem` to `find`, `search`, `documents`, or `databases`.

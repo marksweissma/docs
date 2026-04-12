@@ -1,12 +1,12 @@
 ---
 title: Moxn
-description: A context OS built for AI agents — connect via MCP or CLI
+description: The knowledge base for human & agent collaboration. Agents connect via MCP to search, read, and write your docs. Your team edits in a rich web editor. Branching and version control keep everything in sync.
 ---
 
-Moxn is a context OS designed for AI agents. Most teams keep docs in wikis, Google Drive, or Notion — and end up copy-pasting into prompts or building RAG pipelines just to give agents access. Moxn gives your agents direct, structured access to your docs over MCP or CLI. No exports, no embeddings, no custom integrations.
+Moxn is a knowledge base for human & agent collaboration. Agents connect via MCP or CLI to search, read, and write your docs. Your team edits in a modern web editor. Branching and version control keep everyone in sync — every AI change is reviewable before it lands on main.
 
 <Frame>
-  <img src="/images/kb-landing-page.png" alt="Moxn Context OS" />
+  <img src="/images/kb-landing-page.png" alt="Moxn knowledge base" />
 </Frame>
 
 ---
@@ -35,7 +35,15 @@ Pick the connection method that fits your workflow:
 
 ## Built for Agents
 
-Agents connect to Moxn and get structured access to your content through a standard tool interface: `find`, `read`, `search`, `documents`, and `sections`.
+Agents connect to Moxn and get structured access to your content through 13 MCP tools. See the [full MCP reference](/reference/mcp/index).
+
+| Category | Tools |
+|----------|-------|
+| Discovery | `find`, `search`, `read` |
+| Content management | `documents`, `sections` |
+| Organization | `filesystems`, `tags`, `databases` |
+| Collaboration | `merge_requests`, `changesets` |
+| Members & files | `members`, `upload_url`, `marketplace` |
 
 <CardGroup cols={2}>
   <Card title="Search and read" icon="magnifying-glass">
@@ -45,7 +53,7 @@ Agents connect to Moxn and get structured access to your content through a stand
     When you ask an agent to create or update content, it works on a branch. You review the diff and merge when ready.
   </Card>
   <Card title="Control visibility" icon="lock">
-    Section-level permissions let you hide sensitive content (API keys, credentials, internal metrics) from agents while keeping it visible to your team.
+    Filesystem roles and section-level AI access controls let you hide sensitive content from agents while keeping it visible to your team.
   </Card>
   <Card title="Any MCP host" icon="plug">
     Claude.ai, ChatGPT, Gemini, Claude Code, Cursor, Claude Desktop, and any other MCP-compatible client.
@@ -85,6 +93,3 @@ Import from Notion or local files with full fidelity. Work in Moxn with your tea
   </Card>
 </CardGroup>
 
-<Info>
-  **For AI tools:** This documentation is available as [llms.txt](/llms.txt) and [llms-full.txt](/llms-full.txt) for LLM consumption.
-</Info>

@@ -21,21 +21,21 @@
             ]
           },
           {
-            "group": "CLI Setup",
+            "group": "Setup",
             "pages": [
+              "quickstart-documents",
               "guides/context-cli"
-            ]
-          },
-          {
-            "group": "MCP Setup",
-            "pages": [
-              "quickstart-documents"
             ]
           },
           {
             "group": "Concepts",
             "pages": [
-              "guides/context"
+              "concepts/documents-and-sections",
+              "concepts/branching-and-merging",
+              "concepts/tags",
+              "concepts/databases",
+              "concepts/filesystems",
+              "concepts/permissions"
             ]
           },
           {
@@ -56,6 +56,30 @@
               "migration/notion",
               "migration/export-local",
               "migration/export-notion"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Reference",
+        "groups": [
+          {
+            "group": "MCP Tools",
+            "pages": [
+              "reference/mcp/index",
+              "reference/mcp/find",
+              "reference/mcp/search",
+              "reference/mcp/read",
+              "reference/mcp/documents",
+              "reference/mcp/sections",
+              "reference/mcp/filesystems",
+              "reference/mcp/tags",
+              "reference/mcp/databases",
+              "reference/mcp/merge-requests",
+              "reference/mcp/changesets",
+              "reference/mcp/members",
+              "reference/mcp/upload-url",
+              "reference/mcp/marketplace"
             ]
           }
         ]
