@@ -3,9 +3,11 @@ title: Filesystems
 description: How Moxn organizes content into isolated, permission-controlled spaces
 ---
 
-A **filesystem** is the top-level organizational boundary in Moxn. Everything you store — documents, databases, and tags — lives inside a filesystem.
+A **filesystem** is the top-level organizational boundary in Moxn — and a shared primitive for both humans and agents. Everything you store — documents, databases, and tags — lives inside a filesystem.
 
-Every workspace gets a default filesystem automatically — your whole team is added to it. Filesystems become relevant when you need hard boundaries between spaces: separate access controls, separate tag pools, separate document namespaces. Many teams add additional filesystems as they grow.
+Filesystems give agents the same advantage a well-organized repo gives a developer: you can navigate to the right neighborhood before you read. The hierarchy lets the agent control retrieval instead of delegating relevance entirely to an embedding; tags and databases layer on cross-cutting dimensions.
+
+They're also a strict isolation boundary. Users without access to a filesystem can't see that it exists or what's inside it. Every workspace gets a default filesystem with your whole team auto-added; many teams add more as they grow.
 
 ## The Default Filesystem
 

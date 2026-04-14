@@ -31,7 +31,9 @@ Via MCP, use the [`documents` tool](/reference/mcp/documents) with `action: "cre
 
 ## Sections
 
-Sections are the content blocks within a document. A document is made up of one or more sections, each with:
+Sections are the core structural unit for both humans and agents. A document is a collection of sections that manage their own content, references, and optionally permission overrides. Humans comment, reorder, and permission sections in the editor; agents read and write at section granularity via MCP — no doc-level replacements needed.
+
+Each section has:
 
 - **Name** — rendered automatically as an H2 heading in the UI
 - **Content** — rich content below the heading: text, code, tables, diagrams, images, PDFs, CSVs, and database embeds

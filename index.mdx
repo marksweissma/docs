@@ -3,11 +3,24 @@ title: Moxn
 description: Knowledge base for human & agent collaboration — connect via MCP or CLI
 ---
 
-Moxn is a knowledge base for human & agent collaboration. Agents connect via MCP or CLI to search, read, and write your docs. Your team edits in a modern web editor. Branching and version control keep everyone in sync — every AI change is reviewable before it lands on main.
+Moxn is a knowledge base for human & agent collaboration. Agents connect via MCP or CLI to search, read, and write your docs. Your team edits in a modern web editor. Branching and version control keep everyone in sync — so parallel agents don't clobber each other, and every change is reviewable.
 
 <Frame>
   <img src="/images/kb-landing-page.png" alt="Moxn knowledge base" />
 </Frame>
+
+---
+
+## The Problem
+
+Four pain points keep showing up when working with agents on documents:
+
+- **Parallel agents, no coordination.** Two agents edit the same doc; the second clobbers the first. No diff, no history, no merge path. Last-write-wins.
+- **Markdown in git works for agents, less so for humans.** Agents can navigate a repo, but collaborators lose real-time cursors, rich editing, and comments.
+- **MCP bolted onto Notion or Google Docs.** Agents call APIs that weren't designed for them. Writes burn tokens on format translation; search is flat.
+- **Permissions.** You want to guard specific content from agent updates or reads without locking it away from humans.
+
+Moxn's approach: a **filesystem** primitive that both humans and agents share, **Git-like branching** so parallel work doesn't deadlock, and **section-grain permissions** that apply independently to humans and agents.
 
 ---
 

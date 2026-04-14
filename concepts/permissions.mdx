@@ -3,7 +3,9 @@ title: Permissions
 description: How Moxn controls access at the filesystem, document, and section level
 ---
 
-Moxn has a layered permission model that flows from filesystem membership down to individual sections. Most teams never need to configure anything beyond the defaults.
+Moxn enforces permissions at the **section grain** — each section can carry its own override independent of the document, and AI access is a separate axis from team access. That means you can guard specific content from agent reads or writes without locking it away from humans.
+
+The model layers from filesystem membership down to individual sections. Most teams never need to configure anything beyond the defaults.
 
 ## Permission Layers
 
