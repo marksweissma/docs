@@ -88,9 +88,9 @@ Tag definitions are global to the tenant (not branch-scoped). Tag assignments ar
 
 ## Branch Workflow for AI
 
-<Warning>
-Always create a feature branch before making AI-driven edits. Write directly to `main` only when the user explicitly requests it.
-</Warning>
+<Tip>
+You can write directly to `main` for quick updates. For edits you'd like reviewed — or when multiple agents are working in parallel — create a feature branch and open a merge request so diffs are reviewable and experiments are discardable.
+</Tip>
 
 ```
 1. documents({action: "create_branch", documentId, branchName: "ai/my-update"})

@@ -3,16 +3,18 @@ title: Branching & Merging
 description: Git-like version control for documentation — branches, commits, merge requests, and changesets
 ---
 
-Moxn applies Git semantics to documentation. Every document has its own branch history, and changes flow through branches, commits, and merge requests before reaching `main`.
+Moxn applies Git semantics to documentation. Every document has its own branch history, with Git-like branching and common-ancestor-aware merges. Humans and agents can write directly to `main` for quick updates, or work on a branch when they want isolation or review.
+
+Two orthogonal consistency systems work together: **CRDTs** handle sub-second real-time collaboration within a branch; **Git semantics** handle isolation and merging across branches.
 
 ## Why Branching Matters for AI
 
-Without branching, giving an agent write access to your docs is risky — it can overwrite content and mistakes go straight to production with no review step.
+Direct writes to `main` are fine for quick updates. Branches unlock the patterns that matter once agents are in the loop:
 
-With branching:
-- **`main` is always protected** — agents cannot push directly to main
-- **Every AI change is reviewable** — open a branch in the web UI and see exactly what changed
-- **Bad changes are discardable** — one click to abandon a branch
+- **Parallel agents without deadlock** — agents can fan out multiple drafts on parallel branches instead of clobbering each other with last-write-wins
+- **Reviewable diffs** — open a branch or merge request and see exactly what changed, with rich content rendered
+- **Discardable experiments** — abandon a branch instead of reverting a landed change
+- **Human-in-the-loop iteration** — read the diffs in a merge request, or hop onto the branch and cherry-pick through committing and editing
 
 ## Branches
 
@@ -79,7 +81,9 @@ When source and target have diverged, `analyze` returns:
 
 ### Resolving Conflicts
 
-For each conflicting section, choose `"source"` (incoming) or `"target"` (current). Pass `resolutions` when calling `execute`.
+Conflicts are resolved at two grains:
+- **Content** conflicts are resolved at the **section grain** — for each section changed on both branches, choose `"source"` (incoming) or `"target"` (current). Pass `resolutions` when calling `execute`.
+- **Metadata** like tags and properties is resolved at the **document grain**.
 
 **Fast-forward merge:** If the source branch has all commits from the target (no divergence), Moxn merges automatically — no conflicts possible.
 
