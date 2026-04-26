@@ -1,9 +1,13 @@
 ---
-title: Import from Notion
-description: Migrate pages and databases from Notion into Moxn
+title: Import from Notion (CLI)
+description: Migrate pages and databases from Notion into Moxn from the command line
 ---
 
 Import your Notion workspace into Moxn using the `@moxn/kb-migrate` CLI. It extracts pages, converts blocks into sections, downloads images, and recreates Notion databases as KB databases with tag-backed columns.
+
+<Tip>
+**Prefer a UI?** The same import is available as the [in-app Notion integration](/migration/notion-integration) — connect once in **Settings > Integrations** and Moxn runs the job for you. Both routes use the same engine; pick the CLI if you want scripted runs, CI integration, or fine-grained flag control.
+</Tip>
 
 <Tip>
 If you have `@moxn/context-cli` installed, you can run `context import-notion` instead of `npx @moxn/kb-migrate notion`.

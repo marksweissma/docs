@@ -5,16 +5,35 @@ description: Move your docs in and out of Moxn — no lock-in
 
 Moxn supports round-trip migration: import your existing docs, work in Moxn with AI agents and your team, and export changes back when you need to.
 
+## Which Path Should I Use?
+
+There are several ways to get content into a Moxn knowledge base. Pick based on where it lives today and how much you're moving.
+
+| You want to… | Use this | Where it runs |
+|---|---|---|
+| **Add a few docs** at a time, drafted by an agent | [MCP write tools](/quickstart-documents) — your AI assistant calls `documents` / `sections` directly | Your AI host |
+| **Bulk import from Notion** with a UI, no command line | [Notion integration (in-app)](/migration/notion-integration) — connect once in **Settings > Integrations** and Moxn runs the job | Moxn's infrastructure |
+| **Import a OneNote notebook** | [OneNote integration (in-app)](/migration/onenote-integration) — sign in with Microsoft, pick what to import | Moxn's infrastructure |
+| **Bulk import from local files**, or run a Notion sync from CI / a script | The migration CLI — full flag control, scriptable | Your machine or CI |
+
+The in-app Notion integration and the CLI use the **same migration engine**, so the resulting documents, databases, tags, and cross-references are identical — they just differ in where the job runs and how you trigger it.
+
 ## Import
 
 Bring existing documentation into Moxn from external sources.
 
 <CardGroup cols={2}>
-  <Card title="Import from Local Files" icon="file-import" href="/migration/local">
-    Markdown, text, and CSV files from your filesystem
+  <Card title="Notion (in-app)" icon="bolt" href="/migration/notion-integration">
+    Connect once in Settings > Integrations — Moxn runs the import for you
   </Card>
-  <Card title="Import from Notion" icon="arrow-right-to-bracket" href="/migration/notion">
-    Pages, databases, properties, and cross-references
+  <Card title="OneNote (in-app)" icon="book-open" href="/migration/onenote-integration">
+    Sign in with Microsoft and bring a notebook into Moxn
+  </Card>
+  <Card title="Notion (CLI)" icon="terminal" href="/migration/notion">
+    Run the same import from your terminal or CI with full flag control
+  </Card>
+  <Card title="Local Files (CLI)" icon="file-import" href="/migration/local">
+    Markdown, text, and CSV files from your filesystem — CLI only
   </Card>
 </CardGroup>
 
@@ -23,28 +42,31 @@ Bring existing documentation into Moxn from external sources.
 Get your docs back out of Moxn in the format you need.
 
 <CardGroup cols={2}>
-  <Card title="Export to Local Files" icon="file-export" href="/migration/export-local">
-    Download as markdown with images, PDFs, and CSVs
+  <Card title="Notion (in-app)" icon="bolt" href="/migration/notion-integration#export-to-notion">
+    Push KB docs back to Notion from Settings > Integrations
   </Card>
-  <Card title="Export to Notion" icon="arrow-right-from-bracket" href="/migration/export-notion">
-    Push pages back to your Notion workspace
+  <Card title="Notion (CLI)" icon="arrow-right-from-bracket" href="/migration/export-notion">
+    Push pages back to Notion from the command line
+  </Card>
+  <Card title="Local Files (CLI)" icon="file-export" href="/migration/export-local">
+    Download as markdown with images, PDFs, and CSVs
   </Card>
 </CardGroup>
 
-## Two Ways to Run
+## CLI: Two Install Flavors
 
-All import and export commands are available through two tools:
+The CLI is published under two names. Both wrap the same migration engine — pick whichever is most convenient:
 
 | Tool | Install | Command prefix |
 |------|---------|----------------|
 | **`@moxn/context-cli`** | `npm install -g @moxn/context-cli` | `context import-notion`, `context export-local`, etc. |
 | **`@moxn/kb-migrate`** | No install needed | `npx @moxn/kb-migrate notion`, `npx @moxn/kb-migrate export`, etc. |
 
-Both use the same underlying migration engine. The CLI is convenient if you already have `@moxn/context-cli` installed for other commands. `npx @moxn/kb-migrate` works without any prior installation.
+Use `@moxn/context-cli` if you already have it installed for other Moxn commands. Use `npx @moxn/kb-migrate` for one-off runs without a global install.
 
 ## Date Filtering
 
-All commands support date filters to narrow the scope of your import or export:
+All CLI commands (and the in-app integration) support date filters to narrow the scope of your import or export:
 
 ```bash
 # Only import/export docs modified in the last week
@@ -54,4 +76,4 @@ All commands support date filters to narrow the scope of your import or export:
 --created-after=2026-01-01 --created-before=2026-02-01
 ```
 
-Dates use ISO 8601 format (`YYYY-MM-DD` or full datetime).
+Dates use ISO 8601 format (`YYYY-MM-DD` or full datetime). In the in-app integration, set the same range under **Date filter** in the Configure step.

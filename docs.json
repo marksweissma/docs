@@ -28,6 +28,16 @@
             ]
           },
           {
+            "group": "Tutorials",
+            "icon": "play",
+            "pages": [
+              "tutorials/index",
+              "tutorials/create-first-document",
+              "tutorials/agent-search-workflow",
+              "tutorials/branch-and-merge"
+            ]
+          },
+          {
             "group": "Concepts",
             "pages": [
               "concepts/documents-and-sections",
@@ -52,10 +62,12 @@
             "icon": "arrow-right-arrow-left",
             "pages": [
               "migration/index",
-              "migration/local",
+              "migration/notion-integration",
+              "migration/onenote-integration",
               "migration/notion",
-              "migration/export-local",
-              "migration/export-notion"
+              "migration/local",
+              "migration/export-notion",
+              "migration/export-local"
             ]
           }
         ]

@@ -91,18 +91,20 @@ Your team writes and edits documentation in the web app. Agents read and write t
 
 Import from Notion or local files with full fidelity. Work in Moxn with your team and AI agents. Export your changes back when you need to — no lock-in.
 
+For Notion, pick the **in-app integration** (Settings > Integrations — Moxn runs the job for you) or the **CLI** (run yourself, scriptable, CI-friendly). Local files use the CLI. See [Which Path Should I Use?](/migration/index#which-path-should-i-use) for the full breakdown.
+
 <CardGroup cols={2}>
-  <Card title="Import from Notion" icon="arrow-right-to-bracket" href="/migration/notion">
-    CLI import with full Notion fidelity — pages, databases, and cross-references
+  <Card title="Notion (in-app)" icon="bolt" href="/migration/notion-integration">
+    Connect once in Settings > Integrations — no command line needed
+  </Card>
+  <Card title="Notion (CLI)" icon="terminal" href="/migration/notion">
+    Same import, run from your terminal or CI
   </Card>
   <Card title="Import Local Files" icon="file-import" href="/migration/local">
     Markdown, text, and CSV from your filesystem
   </Card>
   <Card title="Export to Local Files" icon="file-export" href="/migration/export-local">
     Download as markdown with images, PDFs, and CSVs
-  </Card>
-  <Card title="Export to Notion" icon="arrow-right-from-bracket" href="/migration/export-notion">
-    Push pages back to your Notion workspace
   </Card>
 </CardGroup>
 

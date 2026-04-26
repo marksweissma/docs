@@ -1,0 +1,36 @@
+---
+title: "Agent search workflow"
+description: "Prompt an agent to find, search, and read across your knowledge base."
+---
+
+<Note>You'll drive the `find`, `search`, and `read` tools from an agent to answer a question grounded in your KB.</Note>
+
+## Watch
+
+{/* TODO: upload video to Cloudinary and replace filename below */}
+<video
+  controls
+  className="w-full aspect-video rounded-xl"
+  src="https://res.cloudinary.com/dd2qaxrnc/video/upload/tutorial-agent-search-workflow.mp4"
+/>
+
+## Try it yourself
+
+Paste one of these prompts into Claude, Cursor, or any MCP-enabled client connected to Moxn.
+
+<CodeGroup>
+```text Ground an answer in the KB
+Using the Moxn MCP tools, answer this question using only content from
+my knowledge base: "What is our deployment process?"
+
+Start by finding relevant documents, then search within them for specific
+details, and read the sections you need before answering. Cite the
+document titles you used.
+```
+</CodeGroup>
+
+## What this uses
+
+- [`find` MCP tool](/reference/mcp/find)
+- [`search` MCP tool](/reference/mcp/search)
+- [`read` MCP tool](/reference/mcp/read)
