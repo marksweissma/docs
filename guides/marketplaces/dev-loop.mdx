@@ -1,0 +1,161 @@
+---
+title: The Dev Loop
+description: Iterate on a plugin against your live Moxn content — no publish, no GitHub
+---
+
+Publishing a marketplace is a release step. When you're **building** a plugin you want a tight loop instead: change a skill, see the change, repeat. `context plugin dev` and `context plugin refresh` give you exactly that — they pull your plugin's live content straight from a Moxn branch into a local directory that Claude Code loads with `--plugin-dir`. **GitHub and publishing are never in this loop.**
+
+The loop is four beats:
+
+```
+edit in Moxn  →  context plugin refresh  →  /reload-plugins  →  invoke
+```
+
+<Note>
+Requires `@moxn/context-cli` **0.8.1 or newer** (`plugin refresh` was added there). Check with `context --version`; update with `npm install -g @moxn/context-cli`.
+</Note>
+
+## Step 1: Materialize the plugin
+
+Point `plugin dev` at a marketplace, a plugin, and (optionally) a branch:
+
+```bash
+context plugin dev \
+  --marketplace <marketplace-id-or-slug> \
+  --plugin <plugin-slug> \
+  --ref my-feature-branch
+```
+
+This fetches the plugin bundle from Moxn and writes a **plugin-shaped directory** at `./.moxn/dev/<plugin-slug>` — `.claude-plugin/plugin.json`, `skills/`, `commands/`, `agents/` — then prints the command to load it:
+
+```
+[moxn] plugin dev: 5 file(s) → /path/to/.moxn/dev/localization
+claude --plugin-dir /path/to/.moxn/dev/localization
+after further syncs, run /reload-plugins in the session
+```
+
+| Option | Meaning |
+| --- | --- |
+| `--marketplace <id\|slug>` | Which marketplace (required) |
+| `--plugin <slug>` | Which plugin (required) |
+| `--ref <ref>` | Which Moxn ref — a branch name, `commit:<id>`, or `version:<v>`. Omit for the server default (see [What comes from where](#what-comes-from-where)) |
+| `--out <dir>` | Output directory (default `./.moxn/dev/<plugin-slug>`) |
+| `--watch` | Poll and re-sync on change — see [Watch mode](#watch-mode-optional) |
+
+## Step 2: Load it in Claude Code
+
+Run the printed command in a new terminal:
+
+```bash
+claude --plugin-dir /path/to/.moxn/dev/localization
+```
+
+`--plugin-dir` **shadows** an installed plugin of the same name: while the flag is set, Claude Code loads your local dev copy instead of any published version, scoped to that session. Your installed plugins are untouched — nothing is overwritten. Invoke a skill (`/localization:translate-file`) and you're running your Moxn branch's content.
+
+## What comes from where
+
+This is the part worth being precise about.
+
+- **Source: Moxn, never GitHub.** `refresh` and `dev` call one endpoint — `GET /api/v1/marketplace/plugin` on your Moxn host. There is no git clone and no dependency on having published. The bundle is resolved from the Moxn KB and serves the branch's **live working state** — so even *uncommitted* edits on that branch show up.
+- **`MOXN_BASE_URL` selects the environment.** Defaults to `https://moxn.dev`. Set it to point the CLI at a different Moxn (e.g. a self-hosted or staging instance). This is *which Moxn*, not which branch.
+- **`--ref` selects the branch within that Moxn.** A Moxn marketplace branch — **not** a GitHub branch. Your dev branch can be live and unpublished; GitHub only ever sees what you `publish`.
+- **The sidecar remembers your choice.** Each dev directory holds a `.moxn-sync.json` recording its `{marketplace, plugin, ref}` and the last content etag. That's what makes `refresh` param-less — it re-pulls the *same* marketplace, plugin, and ref you started with.
+
+### Defaults vs. an explicit ref
+
+When you pass `--ref`, that wins. When you omit it, the server resolves a default in this order:
+
+1. Your **per-user active ref** for this marketplace, if you've set one (`marketplaces set_ref`).
+2. Otherwise, the marketplace's **default branch**.
+
+| `--ref` value | Serves | Mutable? |
+| --- | --- | --- |
+| `my-branch` (or `branch:my-branch`) | that branch's live working state | Yes — reflects every edit |
+| `commit:<id>` | a specific commit | No — pinned |
+| `version:<v>` | a published version | No — pinned |
+| *(omitted)* | your active ref, else the default branch | Depends on what it resolves to |
+
+<Tip>
+To change branches after the fact, re-run `plugin dev --ref <other-branch>` (it rewrites the sidecar), or edit the sidecar's `ref` and `refresh`.
+</Tip>
+
+## Step 3: Refresh after an edit
+
+Make a change in Moxn — in the web editor, via the `context` CLI, or by having an agent edit it through MCP. Then re-pull:
+
+```bash
+context plugin refresh
+```
+
+With no argument, `refresh` scans `./.moxn/dev/*` and re-pulls each tracked install using its own sidecar. It sends a conditional request, so an unchanged bundle is a cheap no-op:
+
+```
+✓ pulled localization@branch:my-feature-branch → a1b2c3d4 (5 files) — .../.moxn/dev/localization
+  run /reload-plugins in your session to load it
+```
+
+If nothing changed on the branch, you'll see `✓ already current` and no files are written. You can also pass an explicit directory: `context plugin refresh ./.moxn/dev/localization`.
+
+<Note>
+`refresh` needs the CLI authenticated — either `MOXN_API_KEY` in the environment (a `.env` file in the directory works) or a browser sign-in via `context login --workspace <slug>`. An API key wins when both are present. See [CLI Quick Start](/guides/context-cli).
+</Note>
+
+## Step 4: Reload the session
+
+`refresh` writes new bytes to disk, but a **running Claude Code session won't pick them up on its own.** A session loads a skill's body the first time that skill is invoked and does not re-read it on later invocations. To load the new content, run:
+
+```
+/reload-plugins
+```
+
+in your Claude Code session. This re-reads the plugin's files from disk. After it, the next invocation uses your latest content.
+
+<Warning>
+The failure mode to watch for: running `refresh` but **forgetting `/reload-plugins`**, then testing against a stale skill without realizing it. If a change doesn't seem to take, run `/reload-plugins` first; if it still doesn't, restart the session (a fresh session always loads the latest from disk).
+</Warning>
+
+## A full example
+
+```bash
+# 1. Materialize the localization plugin from a feature branch
+context plugin dev --marketplace my-marketplace --plugin localization --ref translations
+
+# 2. In a new terminal, load it
+claude --plugin-dir ./.moxn/dev/localization
+#    → invoke /localization:translate-file — it translates to German
+
+# 3. Edit the skill in Moxn (change the target language to Italian), then:
+context plugin refresh
+#    → ✓ pulled localization@branch:translations → <new-etag>
+
+# 4. Back in the session:
+/reload-plugins
+#    → invoke /localization:translate-file again — now it translates to Italian
+```
+
+## Watch mode (optional)
+
+`plugin dev --watch` polls the bundle on an interval and re-syncs the directory whenever the branch content changes:
+
+```bash
+context plugin dev --marketplace my-marketplace --plugin localization --ref translations --watch
+```
+
+It prints a one-line notice on each change. You still run `/reload-plugins` to load it — watch only keeps the *files* current. Because it polls continuously, prefer the manual `refresh` for most work and reserve `--watch` for active pairing sessions.
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="'refresh' is an unknown command">
+    Your CLI predates `plugin refresh`. Update: `npm install -g @moxn/context-cli` and confirm `context --version` is `0.8.1` or newer.
+  </Accordion>
+  <Accordion title="refresh says 'already current' but I just edited">
+    The edit landed on a different branch than the one this dev directory tracks. Check the sidecar's `ref` (`cat ./.moxn/dev/<plugin>/.moxn-sync.json`) and make sure your edit is on that branch.
+  </Accordion>
+  <Accordion title="The session still shows old content">
+    You haven't run `/reload-plugins` since the last `refresh`, or the reload didn't take — restart the session (a fresh session always loads the latest from disk).
+  </Accordion>
+  <Accordion title="'no dev plugins found under ./.moxn/dev'">
+    `refresh` with no argument scans `./.moxn/dev/*` relative to your current directory. Run it from the directory where you ran `plugin dev`, or pass the directory explicitly: `context plugin refresh /path/to/.moxn/dev/<plugin>`.
+  </Accordion>
+</AccordionGroup>

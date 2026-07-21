@@ -30,14 +30,14 @@ Pick the connection method that fits your workflow:
 
 | | CLI | MCP |
 |---|---|---|
-| **Auth** | API key (`MOXN_API_KEY`) | Browser-based OAuth |
+| **Auth** | Browser sign-in (`context login`) or API key | Browser-based OAuth |
 | **Setup** | `npm install` + `install-skill` | Config snippet in MCP settings |
 | **Best for** | Claude Code, Codex, Cursor, and other coding agents | Claude.ai, ChatGPT, Gemini, desktop apps |
 | **How it works** | Agent calls `context` commands directly | Agent uses MCP tools |
 
 <CardGroup cols={2}>
   <Card title="CLI Quick Start" icon="terminal" href="/guides/context-cli">
-    API key auth, no MCP needed — ideal for coding agents
+    Sign in with your browser or an API key, no MCP needed — ideal for coding agents
   </Card>
   <Card title="MCP Quick Start" icon="plug" href="/quickstart-documents">
     Connect any MCP host — Claude, ChatGPT, Cursor, Gemini, and more

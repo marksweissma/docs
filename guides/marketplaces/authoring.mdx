@@ -1,0 +1,124 @@
+---
+title: Create & Author
+description: Create a marketplace, add a plugin, and write your skills, commands, and agents in Moxn
+---
+
+You author plugin components the same way you author any Moxn content — with branches, versioning, and collaboration — organized under a **marketplace** and a **plugin**. The operations below are exposed as Moxn MCP tools (`marketplaces` and `components`), so an agent connected to Moxn can run them directly, and you can also do them in the Moxn web app.
+
+<Note>
+New to the model? Read [Plugin Marketplaces](/guides/marketplaces) first — it defines marketplace, plugin, and component, and the publish-vs-develop split this page builds on.
+</Note>
+
+## Step 1: Create a marketplace
+
+A marketplace is a git-versioned workspace with its own backing filesystem. Create one by name:
+
+```
+marketplaces.create { name: "My Plugins" }
+```
+
+This provisions the marketplace and makes you its owner. It returns the marketplace's id — you'll pass that (or its slug) to every other operation.
+
+## Step 2: Add a plugin and your first component
+
+You don't create a plugin separately — it's **minted the first time you create a component in it.** Create a skill, naming its plugin:
+
+```
+components.create {
+  marketplace: "<id>",
+  plugin: "localization",
+  component: "translate-file",
+  componentType: "skill",
+  frontmatter: { description: "Translate a source file into a target language" }
+}
+```
+
+This mints the `localization` plugin (if new), creates the `translate-file` skill, and lays down its backing document at the convention path (`plugins/localization/skills/translate-file/SKILL.md`).
+
+<Note>
+**Born ready.** When a component type has a required `name` (skills and agents) and you don't pass one, it's seeded from the component slug — so a skill is never silently created missing its name. You only need to supply the `description`.
+</Note>
+
+## Step 3: Write the body
+
+A component's frontmatter is its contract; its **body** is the actual instructions. Write the body with the standard `edit` tool against the returned `documentId`:
+
+```
+edit {
+  documentId: "<skill-doc-id>",
+  action: "replace",
+  target: { leadingContent: true },
+  content: { format: "markdown", markdown: "Translate the given source file into the target language. Preserve structure and formatting; only translate human-facing prose." }
+}
+```
+
+The body is plain Markdown — for a skill it's the `SKILL.md` content an agent loads when the skill is invoked.
+
+## Step 4: Frontmatter & readiness
+
+Every component type has a small set of **known frontmatter fields**, and some are required. A component is **ready** (publishable, and loadable by the harness) only when its required fields are set:
+
+| Component | Required | Optional |
+| --- | --- | --- |
+| **skill** | `name`, `description` | `allowed-tools` |
+| **agent** | `name`, `description` | `tools`, `model` |
+| **command** | — | `description`, `argument-hint`, `allowed-tools` |
+
+Patch frontmatter surgically with `set_frontmatter` (untouched keys stay byte-identical; unknown keys are rejected):
+
+```
+components.set_frontmatter {
+  marketplace: "<id>",
+  component: "translate-file",
+  fields: { "allowed-tools": ["Read", "Write"] }
+}
+```
+
+<Warning>
+An agent or skill missing `name` or `description` is **omitted from publish** until you set them — it isn't an error, it just won't ship. Writing `name` renames the component.
+</Warning>
+
+## Step 5: Commit for publish
+
+Two things share your Moxn branch, and they read it differently:
+
+- **The dev loop** ([dev-loop](/guides/marketplaces/dev-loop)) serves your **live working state** — uncommitted edits show up immediately. No commit needed to develop.
+- **Publish** ships the branch's **committed HEAD**. So before you publish, body edits must be committed.
+
+Metadata operations (`set_frontmatter`, `rename`, `delete`) **auto-commit**. Body edits made with `edit` do not — commit them explicitly:
+
+```
+components.commit {
+  marketplace: "<id>",
+  plugin: "localization",
+  component: "translate-file",
+  message: "Add translate-file skill body"
+}
+```
+
+<Note>
+Commits are **plugin-scoped**: committing one component snapshots only that document, even if plugin-siblings are also dirty. To include dirty siblings, pass `include_dirty: [gitPath, ...]` (same-plugin paths only). Discover dirty components with `marketplaces.dirty_status`.
+</Note>
+
+## Iterating on a branch
+
+For isolated or reviewable work, author on a feature branch instead of the default:
+
+```
+marketplaces.create_branch { marketplace: "<id>", branch: "translations" }
+```
+
+Then pass `branch: "translations"` to your `edit`/`commit` calls, and point the [dev loop](/guides/marketplaces/dev-loop) at it with `--ref translations`. Branches are how multiple people (and agents) iterate on a plugin without clobbering each other — see [Branching & Merging](/concepts/branching-and-merging).
+
+## Component types
+
+| Type | Convention path | Notes |
+| --- | --- | --- |
+| **skill** | `skills/<name>/SKILL.md` | Instructions loaded on demand |
+| **command** | `commands/<name>.md` | Slash command; name comes from the filename |
+| **agent** | `agents/<name>.md` | Subagent definition |
+| **mcp** / **lsp** | one config per plugin | Config components — addressed by `componentType` alone |
+
+<Note>
+Once your components are ready and committed, you can preview them locally with [the dev loop](/guides/marketplaces/dev-loop) or ship them with [Publish & install](/guides/marketplaces/publishing).
+</Note>

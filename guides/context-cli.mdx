@@ -3,13 +3,13 @@ title: CLI Quick Start
 description: Install the context CLI to give AI coding agents direct access to Moxn Documents
 ---
 
-The **context CLI** is the fastest setup for AI coding agents in the terminal. It uses API key authentication and works as a [Claude Code skill](https://docs.anthropic.com/en/docs/claude-code/skills) — no MCP configuration required. For web and desktop apps, see [MCP Quick Start](/quickstart-documents).
+The **context CLI** is the fastest setup for AI coding agents in the terminal. It authenticates with an API key or a browser sign-in, and works as a [Claude Code skill](https://docs.anthropic.com/en/docs/claude-code/skills) — no MCP configuration required. For web and desktop apps, see [MCP Quick Start](/quickstart-documents).
 
 ## Prerequisites
 
 - A Moxn account ([moxn.dev](https://moxn.dev))
 - Node.js 18+ installed
-- An API key (generate one in **Settings > API Keys** in the Moxn web app)
+- An API key (**Settings > API Keys** in the Moxn web app) — or skip it and sign in with your browser (Step 2)
 
 ## Step 1: Install the CLI
 
@@ -19,9 +19,11 @@ npm install -g @moxn/context-cli
 
 This installs the `context` command globally.
 
-## Step 2: Set Your API Key
+## Step 2: Authenticate
 
-The CLI reads `MOXN_API_KEY` from the environment. The recommended approach is a `.env` file in your project root:
+Two options — an API key or a browser sign-in. When both are configured, the API key wins.
+
+**Option A: API key.** The CLI reads `MOXN_API_KEY` from the environment. The recommended approach is a `.env` file in your project root:
 
 ```bash .env
 MOXN_API_KEY="your-api-key"
@@ -29,8 +31,18 @@ MOXN_API_KEY="your-api-key"
 
 The CLI automatically loads `.env` files from the current directory — no global export needed.
 
+**Option B: Browser sign-in (OAuth).** No key to manage — sign in once per workspace and the CLI caches your credentials (refreshing them automatically):
+
+```bash
+context login --workspace <your-workspace-slug>
+```
+
+Check how the CLI is currently authenticating with `context whoami`, and sign out with `context logout`.
+
+Sign-in credentials are shared with the [Moxn MCP server](/quickstart-documents): if you've already connected the MCP for a workspace, the CLI is authenticated for it with no extra step — and a `context login` also signs the MCP in.
+
 <Note>
-**Which approach should I use?** If your agent inherits your shell configuration when it spawns processes (e.g., sources `~/.zshrc`), you can put `export MOXN_API_KEY="..."` in your shell profile instead. If your agent runs each command in a fresh shell without your profile, use the `.env` file — the CLI picks it up regardless of shell config.
+**Which approach should I use?** For agents running headless commands, the `.env` API key is the most predictable — it works in any shell without cached state. The browser sign-in is ideal for your own terminal use. If your agent inherits your shell configuration, an `export MOXN_API_KEY="..."` in your shell profile also works.
 </Note>
 
 Verify the connection:

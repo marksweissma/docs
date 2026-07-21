@@ -28,6 +28,16 @@
             ]
           },
           {
+            "group": "Plugin Marketplaces",
+            "icon": "puzzle-piece",
+            "pages": [
+              "guides/marketplaces/index",
+              "guides/marketplaces/authoring",
+              "guides/marketplaces/dev-loop",
+              "guides/marketplaces/publishing"
+            ]
+          },
+          {
             "group": "Tutorials",
             "icon": "play",
             "pages": [

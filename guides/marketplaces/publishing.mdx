@@ -1,0 +1,124 @@
+---
+title: Publish & Install
+description: Connect a GitHub repo, publish your plugins to it, and install them in Claude Code
+---
+
+Publishing takes your marketplace's **committed** content and writes it into a GitHub repository, one-way. That repo *is* the installable marketplace — you and your users add it in Claude Code and install plugins from it. Publishing is a deliberate release step, distinct from [the dev loop](/guides/marketplaces/dev-loop), which never touches GitHub.
+
+## Step 1: Connect a GitHub repository
+
+A marketplace publishes to exactly one GitHub repo. Connecting is a **link** — it points your marketplace at the repo as a publish target. It does **not** import the repo's existing contents, so a fresh empty repo is the cleanest choice.
+
+In the Moxn web app, open your marketplace and choose **Connect GitHub Repository**:
+
+<Steps>
+  <Step title="Authorize the Moxn GitHub App">
+    A one-time authorization grants Moxn permission to write to repositories you select. You control exactly which repos it can access.
+  </Step>
+  <Step title="Pick the account and repository">
+    Choose the installation (personal or org) and the target repo.
+  </Step>
+</Steps>
+
+Once connected, the marketplace is linked as a publish target — nothing is written yet.
+
+<Note>
+Agents can connect via the `marketplaces.connect_repo { installationId, owner, repo }` tool after the one-time App install.
+</Note>
+
+## Step 2: Publish
+
+Publish projects the marketplace's **committed HEAD** into the connected repo:
+
+```
+marketplaces.publish { marketplace: "<id>" }
+```
+
+This computes the difference between your committed content and what's currently on GitHub, and pushes only the delta as a single commit. Ready components (frontmatter complete) are included; not-ready ones are skipped. The generated marketplace and plugin manifests are written alongside your component files, so the repo is immediately installable.
+
+<Warning>
+Publish ships **committed** content only — uncommitted working edits are never published (that's what keeps a half-finished change from leaking to your users). Commit first (see [Create & author](/guides/marketplaces/authoring#step-5-commit-for-publish)).
+</Warning>
+
+### Knowing what's published
+
+Two read-only checks tell you where things stand before (or instead of) publishing:
+
+- `marketplaces.drift { marketplace }` — the paths that *would* be pushed by a publish (your committed content vs. what's live on GitHub).
+- `marketplaces.status { marketplace }` — a summary of the marketplace's publish state.
+
+A clean `drift` means GitHub matches your committed HEAD — nothing to publish.
+
+## Step 3: Install in Claude Code
+
+Your published repo is a standard Claude Code plugin marketplace. Add it, then install a plugin from it:
+
+```
+/plugin marketplace add <owner>/<repo>
+/plugin install <plugin>@<marketplace>
+```
+
+For example, for the `localization` plugin in a marketplace published to `acme/plugins`:
+
+```
+/plugin marketplace add acme/plugins
+/plugin install localization@acme-plugins
+```
+
+The plugin's skills, commands, and agents are now available in the session (run `/reload-plugins` or restart if they don't appear immediately). This is the same repo anyone you share it with can install from.
+
+## Installing in Codex
+
+The same published repo installs in [Codex](https://developers.openai.com/codex/) — Moxn generates the Codex manifests (`.agents/plugins/marketplace.json` and per-plugin `.codex-plugin/plugin.json`) alongside the Claude Code ones on every publish:
+
+```bash
+codex plugin marketplace add <owner>/<repo>
+codex plugin add <plugin>@<marketplace>
+```
+
+Your plugin's **skills** load in Codex sessions just like any official plugin — the `SKILL.md` contract (name + description) is shared across both harnesses. Commands and agents are Claude Code concepts today; Codex ignores them.
+
+### Plugin version and description
+
+`codex plugin list` shows each plugin's **version**, read from its `.codex-plugin/plugin.json`. Set your plugin's version and description in Moxn — they're plugin-level metadata, distinct from any component's frontmatter:
+
+```
+components.set_plugin_metadata {
+  marketplace: "<id>",
+  plugin: "localization",
+  fields: { version: "0.1.0", description: "Translation and localization tools" }
+}
+```
+
+Metadata changes need no commit (they aren't document content) — the next `publish` carries them, and `drift` reflects them immediately. When unset, the generated manifests simply omit the fields — Moxn never fabricates a version.
+
+To ship an update to Codex users: publish, then they run `codex plugin marketplace upgrade <marketplace>`.
+
+## Installing in Cursor
+
+The same repo also installs in [Cursor](https://cursor.com) (2.5+), which has its own plugin marketplace system — Moxn generates the Cursor manifests (root `.cursor-plugin/marketplace.json` and per-plugin `.cursor-plugin/plugin.json`) on every publish:
+
+1. **Add the marketplace**: in the Cursor app, use `/add-plugin` (or **Settings → Customize → Plugins**) with your repo URL — or from the Cursor CLI: `cursor-agent plugin marketplace add https://github.com/<owner>/<repo>`.
+2. **Install the plugin**: pick it from the marketplace listing (in-app, or `cursor-agent` → `/plugin` → Marketplace tab). Cursor has no non-interactive install command yet, so this step is interactive.
+
+Your **skills** load and fire in Cursor sessions — the same shared `SKILL.md` contract. Your **agents** use Cursor's subagent format (markdown + `name`/`description` frontmatter), and the plugin's [version and description](#plugin-version-and-description) appear in Cursor's listing the same way they do in Codex.
+
+## Updating a published plugin
+
+Consumers install a **pinned** version — they don't drift as you keep working. To ship an update:
+
+<Steps>
+  <Step title="Edit and commit in Moxn">
+    Make your changes and commit them (metadata changes auto-commit; body edits need `components.commit`).
+  </Step>
+  <Step title="Publish again">
+    `marketplaces.publish` pushes the new delta to GitHub.
+  </Step>
+  <Step title="Consumers update">
+    Users run `/plugin marketplace update <marketplace>` then `/reload-plugins` to pick up the new version.
+  </Step>
+</Steps>
+
+<Note>
+Iterating on the plugin *yourself*? Don't publish for every change — use [the dev loop](/guides/marketplaces/dev-loop) to test against your live Moxn branch, and publish only when you're ready to release.
+</Note>
