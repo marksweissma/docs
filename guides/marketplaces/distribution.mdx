@@ -1,0 +1,102 @@
+---
+title: Distribute to your team — Claude Cowork & Enterprise
+description: Reach Claude Cowork users personally, or roll a plugin out to your whole org — and what actually triggers an update
+---
+
+The repo you publish to (see [Publish & install](/guides/marketplaces/publishing)) is a standard marketplace for **Claude Cowork** too, not just Claude Code. Cowork gives you two distinct channels to reach it — a self-serve personal install, and an admin-driven org-wide rollout — with different repo-visibility requirements and different update triggers. This page covers both, plus the one fact that matters most once you're shipping updates: **what makes an org fleet actually pick up a new version.**
+
+<Note>
+This page assumes you already have a marketplace publishing successfully — see [Publish & install](/guides/marketplaces/publishing) first. It does not re-document Anthropic's GitHub-integration screens (App install, token verification, admin console UI); those are linked out to Anthropic's own docs below.
+</Note>
+
+## Two channels
+
+| | Personal install | Org-wide rollout |
+| --- | --- | --- |
+| Who sets it up | Any individual paid Cowork user | An organization **Owner**, once |
+| Plan | Pro, Max, Team, or Enterprise | Team or Enterprise |
+| Repo visibility | **Public** | **Private or internal** — public repos are rejected |
+| Reaches | Just that person | Every member of the org (or a required subset) |
+| Update trigger | User clicks **Update** on the marketplace | Merging a version-bumped release to the repo's default branch — automatic once you set `publishMode: 'pull_request'` (below) |
+
+Use the personal channel to try a marketplace yourself or share it informally. Use the org channel when you want a plugin to show up for teammates without each of them doing anything — including, if you mark it required, whether they ask for it or not.
+
+## Personal install (public repo)
+
+Anyone on a paid Cowork plan can add your marketplace themselves — no admin involved.
+
+<Steps>
+  <Step title="Open Plugins in Customize">
+    In Cowork, go to **Customize → Plugins**.
+  </Step>
+  <Step title="Add marketplace">
+    Click **Add marketplace** and paste your repo — `owner/repo` shorthand or the full GitHub URL both work. Public repos are supported here.
+  </Step>
+  <Step title="Install the plugin">
+    Find your plugin in the marketplace listing and install it.
+  </Step>
+</Steps>
+
+Cowork background-checks the marketplace for new commits, but pulling them is a manual action: click **Update** on the marketplace when you want the latest. If you've locally edited the plugin's files, Cowork warns before it overwrites them.
+
+## Org-wide rollout (private repo)
+
+This is the channel that gets a plugin in front of your whole team with no per-person action — and, for required plugins, no way for members to opt out. It has one hard requirement Anthropic enforces at the platform level: **the repo must be private or internal.** Public repos are rejected outright for organization marketplaces.
+
+<Steps>
+  <Step title="Publish to a private repo">
+    Connect a **private** (or GitHub-Enterprise internal) repo as your marketplace's publish target — the same [Connect GitHub Repository](/guides/marketplaces/publishing#step-1-connect-a-github-repository) flow, just pick a private repo instead of a public one. If your marketplace is currently published somewhere public and you want org rollout too, connect a second, private repo for it — Moxn's GitHub App writes wherever it's installed, private included. Publish normally from there.
+  </Step>
+  <Step title="Switch the marketplace to pull_request publish mode">
+    ```
+    marketplaces.set_metadata { marketplace: "<id>", fields: { publishMode: "pull_request" } }
+    ```
+    A one-time switch per marketplace. From here on, `marketplaces.publish` no longer pushes straight to the default branch — it pushes to a `moxn/publish-*` side branch and opens a pull request instead. **Merging that PR is the release.** This is what turns the release step below into "publish, then merge" instead of "publish and hand-bump."
+  </Step>
+  <Step title="Get the Claude GitHub App installed on that repo">
+    This is a separate app from Moxn's — Anthropic's Claude GitHub App has to be installed on the same repo for org sync to work. Handled once by whoever administers the repo; see Anthropic's guide linked below.
+  </Step>
+  <Step title="An org Owner registers the marketplace, once">
+    In claude.ai admin settings: **Plugins → Add plugin → GitHub**, then enter `owner/repo`. This is a one-time setup step done by the organization Owner — not something each user or Moxn does per release.
+  </Step>
+</Steps>
+
+From here on, **you don't touch the admin console again to ship an update** — publish, then merge the PR it opens. See the next section.
+
+For the App-install and admin-console screens themselves, see Anthropic's docs — they own that surface, not Moxn:
+- [Manage Claude Cowork plugins for your organization](https://support.claude.com/en/articles/13837433-manage-claude-cowork-plugins-for-your-organization)
+- [Cowork plugins guide](https://claude.com/docs/cowork/guide/plugins)
+
+## Publish, then merge the PR — that's the release
+
+This is the one thing to internalize about the org channel: **auto-sync fires when a pull request that includes a plugin version bump is merged to the repo's default branch.** Not any push, not any publish — a version bump has to be part of what lands, and it has to land as a *merge*, not a direct push.
+
+In `pull_request` publish mode (set up [above](#org-wide-rollout-private-repo)), that's what publish already does for you:
+
+```
+marketplaces.publish { marketplace: "<id>" }
+```
+
+Moxn bumps the version of every changed, versioned plugin (patch by default — the full contract is in [Version bumps happen automatically](/guides/marketplaces/publishing#version-bumps-happen-automatically)), pushes the result to a `moxn/publish-*` side branch, and opens a PR whose body lists each plugin's version action (`bumped`, `manual`, `doc-owned`, …) so a reviewer can see the release at a glance. **Merging that PR is what triggers org auto-sync** — the bump-then-release pair is now one action, not two you have to remember to chain.
+
+<Warning>
+Auto-bump has two exceptions that stay yours to manage. A **doc-backed** (ingested) `.claude-plugin/plugin.json` owns its own version — publish reports it `doc-owned` and never bumps it, so edit the manifest doc yourself if that plugin's release needs a version bump. A **version-less** plugin never gets one fabricated — publish flags it in the response (and in the PR body) so you can set one with `components.set_plugin_metadata` before merging. The admin's manual **Update** button on the org marketplace remains the fallback for anything that lands without a bump.
+</Warning>
+
+While a publish PR is open, `marketplaces.publish` refuses to open a second one — the error names the open PR's number and URL, so merge or close it first. This also means org-channel releases are naturally serialized: one release in flight at a time.
+
+Once the merge lands, members pick up the change on their **next session or plugin refresh** — no further action from them. A plugin set to required or installed-by-default reaches everyone the same way, with no install step at all.
+
+## Where each surface stands
+
+| Surface | Install | Update |
+| --- | --- | --- |
+| Claude Code / Codex / Cursor | `/plugin marketplace add`, `codex plugin marketplace add`, or Cursor's `/add-plugin` — see [Publish & install](/guides/marketplaces/publishing) | Explicit command per harness (`/plugin marketplace update`, `codex plugin marketplace upgrade`, Cursor UI) — see [Updating a published plugin](/guides/marketplaces/publishing#updating-a-published-plugin) |
+| Cowork — personal | Add marketplace (public repo), then install | Click **Update** on the marketplace |
+| Cowork — org (Team/Enterprise) | Admin registers once (private/internal repo) | Automatic: version-bumped release merged to the default branch — `publishMode: 'pull_request'` + merge does this for you. Manual **Update** button is the fallback |
+| Chat modes (claude.ai Chat, ChatGPT Chat) | No plugin installs at all | N/A |
+| ChatGPT Work mode | Shares Codex's plugin directory — install via Codex | `codex plugin marketplace upgrade`, or the directory's Update button |
+
+<Note>
+**Chat modes are a dead end for plugin distribution, on both vendors** — Claude's claude.ai/desktop Chat tab and ChatGPT's Chat mode have no plugin or marketplace concept; skills only load there through each vendor's own zip-upload path, with no git story. If a Chat-mode user needs live content from your Moxn marketplace, the closest thing is a self-serve pull through Moxn's own MCP — the `pull_skill` tool fetches a skill's current content directly from Moxn, without going through a vendor plugin system at all.
+</Note>

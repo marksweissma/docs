@@ -14,10 +14,18 @@ New to the model? Read [Plugin Marketplaces](/guides/marketplaces) first — it 
 A marketplace is a git-versioned workspace with its own backing filesystem. Create one by name:
 
 ```
-marketplaces.create { name: "My Plugins" }
+marketplaces.create { name: "acme-tools" }
 ```
 
 This provisions the marketplace and makes you its owner. It returns the marketplace's id — you'll pass that (or its slug) to every other operation.
+
+<Warning>
+The install token is your marketplace's **slug**, derived from `name` at creation time (`Acme Tools` → `acme-tools`) — not the free-text name itself. Consumers run `/plugin install <plugin>@<slug>` (and `codex plugin add <plugin>@<slug>`). The slug is permanent even if you rename the marketplace later, so it's worth glancing at before you commit to a name.
+</Warning>
+
+<Note>
+**Renaming later.** `marketplaces.set_metadata { marketplace: "<id>", fields: { name: "New Display Name" } }` renames the marketplace's **display** name (and, with `description`/`owner`, its other identity fields) — the install-token slug above never moves. `owner` (`{name, email?}`) is what shows up as the published marketplace manifest's `owner` block; unset, it falls back to your display name or connected GitHub owner.
+</Note>
 
 ## Step 2: Add a plugin and your first component
 
@@ -109,6 +117,38 @@ marketplaces.create_branch { marketplace: "<id>", branch: "translations" }
 ```
 
 Then pass `branch: "translations"` to your `edit`/`commit` calls, and point the [dev loop](/guides/marketplaces/dev-loop) at it with `--ref translations`. Branches are how multiple people (and agents) iterate on a plugin without clobbering each other — see [Branching & Merging](/concepts/branching-and-merging).
+
+## Plugin identity and metadata
+
+A plugin has the same two-tier identity as a marketplace: a stable **slug** (the `plugin` you pass to `components.create` — the install-token half of `<plugin>@<marketplace>`) and a **display name**, which only diverges from the slug for a plugin whose `.claude-plugin/plugin.json` was ingested from an existing repo. For a plugin you author Moxn-first, the two match.
+
+Set the plugin's descriptive metadata — everything beyond the `description`/`version` you may already know — with `components.set_plugin_metadata`:
+
+```
+components.set_plugin_metadata {
+  marketplace: "<id>",
+  plugin: "localization",
+  fields: {
+    version: "0.1.0",
+    author: { name: "Acme Tools", email: "hello@acme.dev" },
+    homepage: "https://acme.dev/tools/localization",
+    repository: "https://github.com/acme/translation",
+    license: "MIT",
+    keywords: ["i18n", "translation"],
+    category: "productivity",
+    tags: ["translation", "i18n"],
+    logo: "https://acme.dev/logo.png"
+  }
+}
+```
+
+Pass `null` for any field to clear it — surgical, like `set_frontmatter`: only the keys you pass change. Metadata needs no commit (there's no KB document behind it) — the next `publish` picks it up, and unset fields are simply omitted from the generated manifests, never fabricated.
+
+Which fields reach which harness's manifest differs — Claude Code's `plugin.json` has no slot for `category`/`tags`/`logo`, Cursor's carries every field, and Cursor's own marketplace entries stay minimal by that schema's design. See the full per-harness table in [Publish & install](/guides/marketplaces/publishing#plugin-identity-and-metadata).
+
+<Warning>
+A **doc-backed** `plugin.json` — one ingested from an existing repo rather than authored Moxn-first — always wins verbatim over generated content. If yours is doc-backed, `set_plugin_metadata` values (and its auto-bumped `version` — see [Publish & install](/guides/marketplaces/publishing#version-bumps-happen-automatically)) never reach the emitted bytes; edit the manifest document itself instead.
+</Warning>
 
 ## Component types
 

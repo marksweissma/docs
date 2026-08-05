@@ -34,7 +34,8 @@
               "guides/marketplaces/index",
               "guides/marketplaces/authoring",
               "guides/marketplaces/dev-loop",
-              "guides/marketplaces/publishing"
+              "guides/marketplaces/publishing",
+              "guides/marketplaces/distribution"
             ]
           },
           {

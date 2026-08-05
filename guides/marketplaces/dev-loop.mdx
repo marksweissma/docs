@@ -15,6 +15,10 @@ edit in Moxn  →  context plugin refresh  →  /reload-plugins  →  invoke
 Requires `@moxn/context-cli` **0.8.1 or newer** (`plugin refresh` was added there). Check with `context --version`; update with `npm install -g @moxn/context-cli`.
 </Note>
 
+<Note>
+The dev loop targets **Claude Code** today (it loads the local directory with `--plugin-dir`). To test a plugin in Codex or Cursor, publish it and install from the repo — see [Publish & install](/guides/marketplaces/publishing).
+</Note>
+
 ## Step 1: Materialize the plugin
 
 Point `plugin dev` at a marketplace, a plugin, and (optionally) a branch:
@@ -26,10 +30,10 @@ context plugin dev \
   --ref my-feature-branch
 ```
 
-This fetches the plugin bundle from Moxn and writes a **plugin-shaped directory** at `./.moxn/dev/<plugin-slug>` — `.claude-plugin/plugin.json`, `skills/`, `commands/`, `agents/` — then prints the command to load it:
+This fetches the plugin bundle from Moxn and writes a **plugin-shaped directory** at `./.moxn/dev/<plugin-slug>` — `.claude-plugin/plugin.json` (plus the generated Codex/Cursor manifests, so the directory is a faithful preview of the published tree), `skills/`, `commands/`, `agents/` — then prints the command to load it:
 
 ```
-[moxn] plugin dev: 5 file(s) → /path/to/.moxn/dev/localization
+[moxn] plugin dev: 7 file(s) → /path/to/.moxn/dev/localization
 claude --plugin-dir /path/to/.moxn/dev/localization
 after further syncs, run /reload-plugins in the session
 ```
@@ -41,6 +45,7 @@ after further syncs, run /reload-plugins in the session
 | `--ref <ref>` | Which Moxn ref — a branch name, `commit:<id>`, or `version:<v>`. Omit for the server default (see [What comes from where](#what-comes-from-where)) |
 | `--out <dir>` | Output directory (default `./.moxn/dev/<plugin-slug>`) |
 | `--watch` | Poll and re-sync on change — see [Watch mode](#watch-mode-optional) |
+| `--interval <secs>` | Watch poll interval (default `2`); only meaningful with `--watch` |
 
 ## Step 2: Load it in Claude Code
 

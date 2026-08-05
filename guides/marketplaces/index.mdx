@@ -1,9 +1,13 @@
 ---
 title: Plugin Marketplaces
-description: Author Claude Code plugins in Moxn — git-versioned, published to GitHub, with a fast local dev loop
+description: Author and manage agent skills, commands, and agents in Moxn — git-versioned, published to GitHub, with a fast local dev loop
 ---
 
-Moxn is a **source of truth for AI coding-agent plugins**. You author your skills, commands, and agents in Moxn — with the same branches, versioning, and collaboration you get for documents — then publish them to GitHub as an installable plugin marketplace. A local **dev loop** lets you iterate against your Moxn content in seconds, without publishing.
+Moxn is a **source of truth for your agent skills** (and commands and agents). You author them in Moxn — with the same branches, versioning, and collaboration you get for documents — then publish them to GitHub as an installable marketplace that works across Claude Code, Codex, and Cursor. A local **dev loop** lets you iterate against your Moxn content in seconds, without publishing.
+
+<Note>
+**Looking for skills management?** You're in the right place. A **skill** (`SKILL.md`) is the core unit here; Moxn organizes skills into **plugins** and distributes them through a **marketplace**. If you just want to write and share skills, follow [Create & author](/guides/marketplaces/authoring) — a plugin can be as small as a single skill.
+</Note>
 
 <Note>
 One published repo installs in **all three harnesses**: **Claude Code** (skills, commands, and agents — verified end-to-end), **Codex** (skills — see [Installing in Codex](/guides/marketplaces/publishing#installing-in-codex)), and **Cursor** (skills and agents — see [Installing in Cursor](/guides/marketplaces/publishing#installing-in-cursor)). The authoring and dev-loop flows below are written for Claude Code.
@@ -68,6 +72,9 @@ Publish serves **committed** HEAD; the dev loop serves **live working state** (e
   </Step>
   <Step title="Install">
     You (and your users) `/plugin marketplace add` the repo and `/plugin install` the plugin. See [Publish & install](/guides/marketplaces/publishing).
+  </Step>
+  <Step title="Distribute (optional)">
+    Reach Claude Cowork users directly — a personal self-serve install, or an admin-driven org-wide rollout. See [Distribute to your team](/guides/marketplaces/distribution).
   </Step>
 </Steps>
 

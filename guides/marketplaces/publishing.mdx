@@ -23,8 +23,12 @@ In the Moxn web app, open your marketplace and choose **Connect GitHub Repositor
 Once connected, the marketplace is linked as a publish target — nothing is written yet.
 
 <Note>
-Agents can connect via the `marketplaces.connect_repo { installationId, owner, repo }` tool after the one-time App install.
+Agents can connect via the `marketplaces.connect_repo { marketplace, installationId, owner, repo }` tool after the one-time App install.
 </Note>
+
+<Warning>
+For **other people** to install your marketplace, the target GitHub repo must be **public** (or they need git read access to it). `/plugin marketplace add <owner>/<repo>` and `codex plugin marketplace add <owner>/<repo>` clone the repo with the consumer's own credentials — a private repo they can't read will fail to add. This applies to Claude Code, Codex, Cursor, and a personal Claude Cowork install. **Claude org-wide distribution is the opposite** — Team/Enterprise admin rollout requires a **private or internal** repo (public repos are rejected). See [Distribute to your team](/guides/marketplaces/distribution) if that's your target.
+</Warning>
 
 ## Step 2: Publish
 
@@ -39,6 +43,40 @@ This computes the difference between your committed content and what's currently
 <Warning>
 Publish ships **committed** content only — uncommitted working edits are never published (that's what keeps a half-finished change from leaking to your users). Commit first (see [Create & author](/guides/marketplaces/authoring#step-5-commit-for-publish)).
 </Warning>
+
+### Version bumps happen automatically
+
+When a publish carries a changed, versioned plugin, Moxn bumps its `version` for you — patch by default — so a routine release no longer needs a manual version edit:
+
+```
+marketplaces.publish { marketplace: "<id>" }
+```
+
+Override the level with `bump`, on the same call:
+
+```
+marketplaces.publish { marketplace: "<id>", bump: "minor" }
+```
+
+- **Which plugins bump** — only a plugin with ≥1 changed path under its directory in *this* publish, and only when it already has a `version` set.
+- **`bump`** — `'patch'` (default) | `'minor'` | `'major'` | `'none'` (suppress bumping for this publish).
+- **A version you moved by hand since the last publish is respected**, not re-bumped — Moxn compares against the version it last published at.
+- **First publish of a versioned plugin never bumps** — it publishes at whatever version you set.
+- **Version-less plugins stay version-less** — Moxn never fabricates one; a `pull_request`-mode publish that would release one unversioned gets a warning in the response instead.
+- **A doc-backed `.claude-plugin/plugin.json` is the one exception** — its version is owned by that document (whatever it says wins verbatim), so publish reports it `doc-owned` and never bumps the anchor. Edit the manifest doc to release a new version.
+
+Every publish response reports each plugin's version action:
+
+```json
+{
+  "published": true,
+  "pluginVersions": [
+    { "slug": "localization", "previous": "0.1.0", "version": "0.1.1", "action": "bumped" }
+  ]
+}
+```
+
+`action` is one of `first` / `manual` / `bumped` / `none` / `unversioned` / `doc-owned`. Every publish — bumped or not — also stamps each plugin's published version into Moxn's own publish ledger, the audit trail behind `marketplaces.status`.
 
 ### Knowing what's published
 
@@ -58,12 +96,16 @@ Your published repo is a standard Claude Code plugin marketplace. Add it, then i
 /plugin install <plugin>@<marketplace>
 ```
 
-For example, for the `localization` plugin in a marketplace published to `acme/plugins`:
+For example — a marketplace named `translation` (holding a `localization` plugin) published to the repo `acme/translation`:
 
 ```
-/plugin marketplace add acme/plugins
-/plugin install localization@acme-plugins
+/plugin marketplace add acme/translation
+/plugin install localization@translation
 ```
+
+<Note>
+`<owner>/<repo>` in `marketplace add` is the **git repo**. The `<marketplace>` in `install` is the marketplace's **slug** — the `name` field in the published `.claude-plugin/marketplace.json`, which Moxn always sets from your marketplace's install-token slug, never its free-text display name (see [Create & author](/guides/marketplaces/authoring#step-1-create-a-marketplace)). It's often the same word as the repo, but they're independent: install against the manifest name, not the `owner-repo` git path.
+</Note>
 
 The plugin's skills, commands, and agents are now available in the session (run `/reload-plugins` or restart if they don't appear immediately). This is the same repo anyone you share it with can install from.
 
@@ -78,21 +120,7 @@ codex plugin add <plugin>@<marketplace>
 
 Your plugin's **skills** load in Codex sessions just like any official plugin — the `SKILL.md` contract (name + description) is shared across both harnesses. Commands and agents are Claude Code concepts today; Codex ignores them.
 
-### Plugin version and description
-
-`codex plugin list` shows each plugin's **version**, read from its `.codex-plugin/plugin.json`. Set your plugin's version and description in Moxn — they're plugin-level metadata, distinct from any component's frontmatter:
-
-```
-components.set_plugin_metadata {
-  marketplace: "<id>",
-  plugin: "localization",
-  fields: { version: "0.1.0", description: "Translation and localization tools" }
-}
-```
-
-Metadata changes need no commit (they aren't document content) — the next `publish` carries them, and `drift` reflects them immediately. When unset, the generated manifests simply omit the fields — Moxn never fabricates a version.
-
-To ship an update to Codex users: publish, then they run `codex plugin marketplace upgrade <marketplace>`.
+`codex plugin list` shows each plugin's **version**, read from its `.codex-plugin/plugin.json` — set via [Plugin identity and metadata](#plugin-identity-and-metadata) below. To ship an update to Codex users: publish, then they run `codex plugin marketplace upgrade <marketplace>`.
 
 ## Installing in Cursor
 
@@ -101,7 +129,53 @@ The same repo also installs in [Cursor](https://cursor.com) (2.5+), which has it
 1. **Add the marketplace**: in the Cursor app, use `/add-plugin` (or **Settings → Customize → Plugins**) with your repo URL — or from the Cursor CLI: `cursor-agent plugin marketplace add https://github.com/<owner>/<repo>`.
 2. **Install the plugin**: pick it from the marketplace listing (in-app, or `cursor-agent` → `/plugin` → Marketplace tab). Cursor has no non-interactive install command yet, so this step is interactive.
 
-Your **skills** load and fire in Cursor sessions — the same shared `SKILL.md` contract. Your **agents** use Cursor's subagent format (markdown + `name`/`description` frontmatter), and the plugin's [version and description](#plugin-version-and-description) appear in Cursor's listing the same way they do in Codex.
+Your **skills** load and fire in Cursor sessions — the same shared `SKILL.md` contract. Your **agents** use Cursor's subagent format (markdown + `name`/`description` frontmatter), and the plugin's [identity and metadata](#plugin-identity-and-metadata) appear in Cursor's listing the same way they do in Codex.
+
+## Plugin identity and metadata
+
+Beyond `description` and `version`, a plugin carries a fuller identity — author, links, license, discovery keywords, and a couple of vendor-specific extras — all set the same way, with `components.set_plugin_metadata` (see [Create & author](/guides/marketplaces/authoring#plugin-identity-and-metadata)):
+
+```
+components.set_plugin_metadata {
+  marketplace: "<id>",
+  plugin: "localization",
+  fields: {
+    description: "Translation and localization tools",
+    version: "0.1.0",
+    author: { name: "Acme Tools", email: "hello@acme.dev", url: "https://acme.dev" },
+    homepage: "https://acme.dev/tools/localization",
+    repository: "https://github.com/acme/translation",
+    license: "MIT",
+    keywords: ["i18n", "translation"],
+    category: "productivity",
+    tags: ["translation", "i18n"],
+    logo: "https://acme.dev/logo.png"
+  }
+}
+```
+
+Pass `null` for any field to clear it — surgical, like `set_frontmatter`: only the keys you pass change. Metadata changes need no commit (they aren't document content) — the next `publish` carries them, and `drift` reflects them immediately. Unset fields are simply omitted from the generated manifests — Moxn never fabricates a value.
+
+Not every harness's manifest has a slot for every field:
+
+| Field | CC `plugin.json` | CC marketplace entry | Codex `plugin.json` | Cursor `plugin.json` | Cursor marketplace entry |
+| --- | --- | --- | --- | --- | --- |
+| `description` | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `version` | ✓ | – | ✓ | ✓ | – |
+| `author` | ✓ | – | ✓ | ✓ | – |
+| `homepage` | ✓ | – | ✓ | ✓ | – |
+| `repository` | ✓ | – | ✓ | ✓ | – |
+| `license` | ✓ | – | ✓ | ✓ | – |
+| `keywords` | ✓ | – | ✓ | ✓ | – |
+| `category` | – | ✓ | ✓ | ✓ | – |
+| `tags` | – | ✓ | – | ✓ | – |
+| `logo` | – | – | ✓ | ✓ | – |
+
+Cursor's `plugin.json` is the one manifest with a slot for every field. Codex's `plugin.json` carries most fields at the top level (derived verbatim from the effective Claude Code bytes) but nests `category`/`logo` inside an `interface` block alongside `displayName` — Codex has no top-level slot for either otherwise. Cursor's own **marketplace** entries stay to `name` / `source` / `description` by that schema's own design — no `category`/`tags`/`logo`/`author` there, unlike Claude Code's marketplace entries (which do carry `category`/`tags`). Codex's marketplace-listing entries carry no plugin metadata at all beyond `name`/`source` — its `plugin.json` is where every field lives.
+
+<Note>
+A **doc-backed** (ingested) `.claude-plugin/plugin.json` always wins verbatim over generated content — including its `version`. If your plugin.json is doc-backed, `set_plugin_metadata` values (and the [automatic version bump](#version-bumps-happen-automatically)) never reach the emitted bytes; edit the manifest document directly instead.
+</Note>
 
 ## Updating a published plugin
 
@@ -109,10 +183,10 @@ Consumers install a **pinned** version — they don't drift as you keep working.
 
 <Steps>
   <Step title="Edit and commit in Moxn">
-    Make your changes and commit them (metadata changes auto-commit; body edits need `components.commit`).
+    Make your changes and commit them (metadata changes auto-commit; body edits need `components.commit`). No need to hand-bump the version yourself for a routine release — publish does that for you (see [Version bumps happen automatically](#version-bumps-happen-automatically)) — unless your plugin.json is doc-backed, in which case bump it in the manifest doc.
   </Step>
   <Step title="Publish again">
-    `marketplaces.publish` pushes the new delta to GitHub.
+    `marketplaces.publish` pushes the new delta to GitHub, bumping any changed plugin's version along the way.
   </Step>
   <Step title="Consumers update">
     Users run `/plugin marketplace update <marketplace>` then `/reload-plugins` to pick up the new version.
