@@ -1,0 +1,106 @@
+---
+title: Distribute to your team — Claude Cowork & Enterprise
+description: Reach Claude Cowork users personally, or roll a plugin out to your whole org — and what actually triggers an update
+---
+
+The repo you publish to (see [Publish & install](/guides/marketplaces/publishing)) is a standard marketplace for **Claude Cowork** too, not just Claude Code. Cowork gives you two distinct channels to reach it — a self-serve personal install, and an admin-driven org-wide rollout — with different repo-visibility requirements and different update triggers. This page covers both, plus the one fact that matters most once you're shipping updates: **what makes an org fleet actually pick up a new version.**
+
+<Note>
+This page assumes you already have a marketplace publishing successfully — see [Publish & install](/guides/marketplaces/publishing) first. It does not re-document Anthropic's GitHub-integration screens (App install, token verification, admin console UI); those are linked out to Anthropic's own docs below.
+</Note>
+
+## Two channels
+
+| | Personal install | Org-wide rollout |
+| --- | --- | --- |
+| Who sets it up | Any individual paid Cowork user | An organization **Owner**, once |
+| Plan | Pro, Max, Team, or Enterprise | Team or Enterprise |
+| Repo visibility | **Public** | **Private or internal** — public repos are rejected |
+| Reaches | Just that person | Every member of the org (or a required subset) |
+| Update trigger | User clicks **Update** on the marketplace | Merging a version-bumped release to the repo's default branch (below) |
+
+Use the personal channel to try a marketplace yourself or share it informally. Use the org channel when you want a plugin to show up for teammates without each of them doing anything — including, if you mark it required, whether they ask for it or not.
+
+## Personal install (public repo)
+
+Anyone on a paid Cowork plan can add your marketplace themselves — no admin involved.
+
+<Steps>
+  <Step title="Open Plugins in Customize">
+    In Cowork, go to **Customize → Plugins**.
+  </Step>
+  <Step title="Add marketplace">
+    Click **Add marketplace** and paste your repo — `owner/repo` shorthand or the full GitHub URL both work. Public repos are supported here.
+  </Step>
+  <Step title="Install the plugin">
+    Find your plugin in the marketplace listing and install it.
+  </Step>
+</Steps>
+
+Cowork background-checks the marketplace for new commits, but pulling them is a manual action: click **Update** on the marketplace when you want the latest. If you've locally edited the plugin's files, Cowork warns before it overwrites them.
+
+## Org-wide rollout (private repo)
+
+This is the channel that gets a plugin in front of your whole team with no per-person action — and, for required plugins, no way for members to opt out. It has one hard requirement Anthropic enforces at the platform level: **the repo must be private or internal.** Public repos are rejected outright for organization marketplaces.
+
+<Steps>
+  <Step title="Publish to a private repo">
+    Connect a **private** (or GitHub-Enterprise internal) repo as your marketplace's publish target — the same [Connect GitHub Repository](/guides/marketplaces/publishing#step-1-connect-a-github-repository) flow, just pick a private repo instead of a public one. If your marketplace is currently published somewhere public and you want org rollout too, connect a second, private repo for it — Moxn's GitHub App writes wherever it's installed, private included. Publish normally from there.
+  </Step>
+  <Step title="Plan to release through a pull request">
+    Org auto-sync fires on a **merged pull request that includes a version bump** — so releases for this channel go through a branch, not a direct commit to the default branch. Moxn supports that end to end: commit to a branch, `open_pr`, `merge_pr`. See the release section below.
+  </Step>
+  <Step title="Get the Claude GitHub App installed on that repo">
+    This is a separate app from Moxn's — Anthropic's Claude GitHub App has to be installed on the same repo for org sync to work. Handled once by whoever administers the repo; see Anthropic's guide linked below.
+  </Step>
+  <Step title="An org Owner registers the marketplace, once">
+    In claude.ai admin settings: **Plugins → Add plugin → GitHub**, then enter `owner/repo`. This is a one-time setup step done by the organization Owner — not something each user or Moxn does per release.
+  </Step>
+</Steps>
+
+From here on, **you don't touch the admin console again to ship an update** — publish, then merge the PR it opens. See the next section.
+
+For the App-install and admin-console screens themselves, see Anthropic's docs — they own that surface, not Moxn:
+- [Manage Claude Cowork plugins for your organization](https://support.claude.com/en/articles/13837433-manage-claude-cowork-plugins-for-your-organization)
+- [Cowork plugins guide](https://claude.com/docs/cowork/guide/plugins)
+
+## Publish, then merge the PR — that's the release
+
+This is the one thing to internalize about the org channel: **auto-sync fires when a pull request that includes a plugin version bump is merged to the repo's default branch.** Not any push, not any publish — a version bump has to be part of what lands, and it has to land as a *merge*, not a direct push.
+
+Moxn does not bump versions for you, so a release for this channel is three deliberate steps on a branch:
+
+```
+# 1. bump the plugin's version — it is a file, so you edit it like any other
+marketplaces { action: "edit", marketplaceId: "<uuid>", ref: "release",
+  writes: [{ path: "plugins/<name>/.claude-plugin/plugin.json", contents: "…\"version\": \"0.2.0\"…" }] }
+
+# 2. commit to the branch, then open the PR
+marketplaces { action: "commit", marketplaceId: "<uuid>", ref: "release", message: "Release 0.2.0" }
+marketplaces { action: "open_pr", marketplaceId: "<uuid>", branch: "release", title: "Release 0.2.0" }
+
+# 3. merging is the release
+marketplaces { action: "merge_pr", marketplaceId: "<uuid>", branch: "release", pullNumber: 12 }
+```
+
+<Warning>
+**The version bump is yours to remember.** Moxn never fabricates or increments a version — a plugin with no `version` gets none, and a changed plugin whose version you did not touch ships unchanged. Since org auto-sync keys on a bump landing in the merge, a release without one merges cleanly and reaches nobody. The admin's manual **Update** button on the org marketplace is the fallback.
+
+Run `pre_merge_report` before merging: it flags stale vendor manifests and whether Codex consumers will see the change.
+</Warning>
+
+Once the merge lands, members pick up the change on their **next session or plugin refresh** — no further action from them. A plugin set to required or installed-by-default reaches everyone the same way, with no install step at all.
+
+## Where each surface stands
+
+| Surface | Install | Update |
+| --- | --- | --- |
+| Claude Code / Codex / Cursor | `/plugin marketplace add`, `codex plugin marketplace add`, or Cursor's `/add-plugin` — see [Publish & install](/guides/marketplaces/publishing) | Explicit command per harness (`/plugin marketplace update`, `codex plugin marketplace upgrade`, Cursor UI) — see [Updating a published plugin](/guides/marketplaces/publishing#updating-a-published-plugin) |
+| Cowork — personal | Add marketplace (public repo), then install | Click **Update** on the marketplace |
+| Cowork — org (Team/Enterprise) | Admin registers once (private/internal repo) | Automatic: version-bumped release merged to the default branch. Manual **Update** button is the fallback |
+| Chat modes (claude.ai Chat, ChatGPT Chat) | No plugin installs at all | N/A |
+| ChatGPT Work mode | Shares Codex's plugin directory — install via Codex | `codex plugin marketplace upgrade`, or the directory's Update button |
+
+<Note>
+**Chat modes are a dead end for plugin distribution, on both vendors** — Claude's claude.ai/desktop Chat tab and ChatGPT's Chat mode have no plugin or marketplace concept; skills only load there through each vendor's own zip-upload path, with no git story. If a Chat-mode user needs live content from your Moxn marketplace, the closest thing is reading it through Moxn's own MCP — `marketplaces { action: "read_file" }` returns a skill's current text directly, without going through a vendor plugin system at all.
+</Note>

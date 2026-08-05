@@ -23,31 +23,34 @@ In the Moxn web app, open your marketplace and choose **Connect GitHub Repositor
 Once connected, the marketplace is linked as a publish target — nothing is written yet.
 
 <Note>
-Agents can connect via the `marketplaces.connect_repo { installationId, owner, repo }` tool after the one-time App install.
+Agents can connect via `marketplaces { action: "connect", marketplaceId, installationId, owner, repo }` after the one-time App install. `marketplaces { action: "installations" }` lists what is reachable.
 </Note>
 
-## Step 2: Publish
+## Step 2: Commit — which is publishing
 
-Publish projects the marketplace's **committed HEAD** into the connected repo:
+There is no separate publish step. **Committing writes to GitHub**:
 
 ```
-marketplaces.publish { marketplace: "<id>" }
+marketplaces { action: "commit", marketplaceId: "<uuid>", ref: "main", message: "Ship the greet skill" }
 ```
 
-This computes the difference between your committed content and what's currently on GitHub, and pushes only the delta as a single commit. Ready components (frontmatter complete) are included; not-ready ones are skipped. The generated marketplace and plugin manifests are written alongside your component files, so the repo is immediately installable.
+With no `writes`, this publishes whatever is currently drafted — which is what you want after an `edit`. Drafts live only in Moxn until this point, so a half-finished change cannot leak to your users.
+
+Each commit also:
+
+- flattens pending suggestions to their accepted text and **strips every comment marker**, so published files never contain review markup;
+- regenerates the Codex and Cursor manifests from your Claude-layout content, so the repo stays installable on all three;
+- is compare-and-swapped against the branch head. If someone else pushed in the meantime, you get a conflict decision list (`keep_mine` / `take_theirs` / `supply_merged` / `commit_to_new_branch`) rather than an error — resubmit with a decision.
 
 <Warning>
-Publish ships **committed** content only — uncommitted working edits are never published (that's what keeps a half-finished change from leaking to your users). Commit first (see [Create & author](/guides/marketplaces/authoring#step-5-commit-for-publish)).
+Committing to the **default branch is publishing to everyone** who has the plugin installed. To get review first, commit to a branch and open a pull request — see [Create & author](/guides/marketplaces/authoring#working-on-a-branch).
 </Warning>
 
-### Knowing what's published
+### Knowing where things stand
 
-Two read-only checks tell you where things stand before (or instead of) publishing:
-
-- `marketplaces.drift { marketplace }` — the paths that *would* be pushed by a publish (your committed content vs. what's live on GitHub).
-- `marketplaces.status { marketplace }` — a summary of the marketplace's publish state.
-
-A clean `drift` means GitHub matches your committed HEAD — nothing to publish.
+- `marketplaces { action: "status", branch }` — how far a branch is ahead of / behind the default branch.
+- `marketplaces { action: "history", ref, paths }` — published commits, newest first, for a branch or a single file. Read live from GitHub, so a commit someone pushed from their laptop is in it. This is the only history there is: an uncommitted draft has never been a commit and never appears.
+- `marketplaces { action: "pre_merge_report", branch }` — advisory findings before a merge.
 
 ## Step 3: Install in Claude Code
 
@@ -82,15 +85,24 @@ Your plugin's **skills** load in Codex sessions just like any official plugin �
 
 `codex plugin list` shows each plugin's **version**, read from its `.codex-plugin/plugin.json`. Set your plugin's version and description in Moxn — they're plugin-level metadata, distinct from any component's frontmatter:
 
+The plugin manifest is a file like any other, so you edit it the way you edit a skill:
+
 ```
-components.set_plugin_metadata {
-  marketplace: "<id>",
-  plugin: "localization",
-  fields: { version: "0.1.0", description: "Translation and localization tools" }
+marketplaces {
+  action: "edit",
+  marketplaceId: "<uuid>",
+  writes: [{
+    path: "plugins/localization/.claude-plugin/plugin.json",
+    contents: "{\n  \"name\": \"localization\",\n  \"version\": \"0.1.0\",\n  \"description\": \"Translation and localization tools\"\n}\n"
+  }]
 }
 ```
 
-Metadata changes need no commit (they aren't document content) — the next `publish` carries them, and `drift` reflects them immediately. When unset, the generated manifests simply omit the fields — Moxn never fabricates a version.
+Edit the **Claude** manifest only. `.codex-plugin/plugin.json` is regenerated from it on every commit — hand-edit it and your next commit overwrites you.
+
+<Note>
+Codex decides staleness from the **version string alone**, so a content change without a bump would be invisible to Codex users forever. Moxn defends against that by stamping a content-derived cachebuster into the generated Codex manifest — `0.1.0+codex.<sha7>` — which changes whenever your content does, whether or not you bump.
+</Note>
 
 To ship an update to Codex users: publish, then they run `codex plugin marketplace upgrade <marketplace>`.
 
@@ -109,13 +121,21 @@ Consumers install a **pinned** version — they don't drift as you keep working.
 
 <Steps>
   <Step title="Edit and commit in Moxn">
-    Make your changes and commit them (metadata changes auto-commit; body edits need `components.commit`).
+    Make your changes and commit them. The commit *is* the publish.
   </Step>
-  <Step title="Publish again">
-    `marketplaces.publish` pushes the new delta to GitHub.
-  </Step>
-  <Step title="Consumers update">
-    Users run `/plugin marketplace update <marketplace>` then `/reload-plugins` to pick up the new version.
+  <Step title="Consumers update — BOTH steps">
+    ```bash
+    claude plugin marketplace update <marketplace>
+    claude plugin update <plugin>@<marketplace>
+    ```
+
+    Then `/reload-plugins` in an open session, or start a new one.
+
+    <Warning>
+    The first command alone is not enough, and it looks like it worked. It advances the marketplace clone and writes the new commit's files to disk, printing success — but the **install pointer** still names the previous commit, so sessions keep loading the old skill body while the files on disk show the new one.
+
+    `context marketplaces refresh --marketplace <name> --plugin <name>` runs both.
+    </Warning>
   </Step>
 </Steps>
 

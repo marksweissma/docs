@@ -34,12 +34,12 @@ flowchart LR
   end
   A -->|"publish (committed HEAD)"| G["GitHub repo<br/>(the marketplace)"]
   G -->|"/plugin install"| C["Claude Code<br/>(consumers)"]
-  A -.->|"context plugin dev / refresh<br/>(live working state)"| L["Local dir<br/>claude --plugin-dir"]
+  A -.->|"context marketplaces dev<br/>(live working state)"| L["Local dir<br/>.moxn/dev/&lt;slug&gt;"]
   L -.->|"/reload-plugins"| D["Claude Code<br/>(you, developing)"]
 ```
 
 - **The publish plane (solid)** is how content reaches *users*. You **publish** a marketplace, which projects its **committed HEAD** into the GitHub repo, one-way. Consumers `/plugin install` from that repo. This is a deliberate release step.
-- **The dev plane (dotted)** is how *you* iterate. `context plugin dev` / `plugin refresh` pull a plugin's **live branch content straight from Moxn** into a local directory — **no GitHub, no publish involved** — and `claude --plugin-dir` loads it. This is the fast loop, covered in [The dev loop](/guides/marketplaces/dev-loop).
+- **The dev plane (dotted)** is how *you* iterate. `context marketplaces dev` pulls a marketplace's **live branch content straight from Moxn** into a local directory — **no GitHub, no publish involved** — and wires it into Claude Code, Codex or Cursor. This is the fast loop, covered in [The dev loop](/guides/marketplaces/dev-loop).
 
 <Note>
 Publish serves **committed** HEAD; the dev loop serves **live working state** (even uncommitted edits on the branch). That difference is intentional — publishing is a release, developing is a preview.
@@ -51,7 +51,7 @@ Publish serves **committed** HEAD; the dev loop serves **live working state** (e
 | --- | --- | --- |
 | Your authored components | **Moxn** | Git-versioned; edit on `main` or a feature branch |
 | The published plugin | **GitHub** | One repo per marketplace; only what you explicitly `publish` |
-| Your local dev copy | **Your machine** (`./.moxn/dev/<plugin>`) | Materialized by `plugin dev`; never published |
+| Your local dev copy | **Your machine** (`./.moxn/dev/<marketplace-slug>`) | Materialized by `marketplaces dev`; never published |
 | The installed plugin | **`~/.claude/plugins`** | What consumers run; pinned to a published commit |
 
 ## The lifecycle at a glance
@@ -61,7 +61,7 @@ Publish serves **committed** HEAD; the dev loop serves **live working state** (e
     Create a marketplace, add a plugin, and write your skills / commands / agents in Moxn. See [Create & author](/guides/marketplaces/authoring).
   </Step>
   <Step title="Develop">
-    Iterate with the local dev loop — edit in Moxn, `plugin refresh`, `/reload-plugins`, test in Claude Code. See [The dev loop](/guides/marketplaces/dev-loop).
+    Iterate with the local dev loop — edit in Moxn, re-run `marketplaces dev`, `/reload-plugins`, test in your agent. See [The dev loop](/guides/marketplaces/dev-loop).
   </Step>
   <Step title="Publish">
     Connect a GitHub repo and publish your committed content to it. See [Publish & install](/guides/marketplaces/publishing).
