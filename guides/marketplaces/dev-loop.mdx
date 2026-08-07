@@ -12,6 +12,17 @@ There are two loops, and they solve different problems. Use the first while you'
 | **Local** — `context marketplaces dev` | Materializes a Moxn ref into a directory and wires it into your agent | No |
 | **Published** — install at a branch | Your agent tracks a GitHub branch that Moxn publishes to | Yes |
 
+<Note>
+**Requires `@moxn/context-cli` 0.12.0 or newer.**
+
+```bash
+npm install -g @moxn/context-cli@latest
+context --version
+```
+
+Earlier versions do not have `marketplaces` at all, and 0.11.x reports `unknown command`. Versions before 0.9 shipped a different `context plugin` / `context skill` dev loop against an API that no longer exists — those commands fail with `404 Not Found` regardless of the marketplace you point them at. If you see either symptom, upgrade first; nothing else on this page will work until you do.
+</Note>
+
 ---
 
 ## Loop 1: local, no publishing
@@ -43,6 +54,16 @@ So you can try a change in a real agent **without committing or publishing it**.
 <Note>
 `--check` compares the committed head the tree was built from. It answers "has the branch moved under me?", not "has someone edited a draft since?" — different questions, and the first is the one that silently invalidates a test.
 </Note>
+
+<Warning>
+**Installing the published plugin replaces your local dev copy, silently.**
+
+A local dev install and a published install compete for the same `<plugin>@<marketplace>` name, and the last one wins with no warning. So if you install the real published plugin to compare against what you are building — a reasonable thing to do before publishing — your agent stops resolving that name to the dev tree. Uncommitted skills vanish from the listing and edited ones revert to the published text; `/plugin install` still just reports success.
+
+Nothing on disk is lost — `.moxn/dev/<slug>/` is untouched. Re-run `context marketplaces dev` to point the name back at it.
+
+To avoid the collision entirely, do the comparison from a marketplace under a different name, or read the published bytes with `marketplaces read_file` at the committed ref instead of installing them.
+</Warning>
 
 ### Each agent is wired the way that agent actually works
 
@@ -106,6 +127,12 @@ claude plugin update my-plugin@my-marketplace
 ```
 
 Then `/reload-plugins` in an open session, or start a new one.
+</Warning>
+
+<Warning>
+**These are terminal commands, not slash commands.** `claude plugin update x@y` runs in your shell. The similarly-named `/plugin` *inside* a Claude Code session is a different, interactive surface: it takes no arguments, so typing `/plugin update x@y` there silently opens the plugin menu and updates nothing.
+
+If you would rather stay in the session, the equivalent is `/plugin` → **Installed** → select the plugin → **Update**. Note that bare `/plugin` opens **Discover**, which lists plugins available to install — an already-installed plugin does not appear there.
 </Warning>
 
 ### Why a branch install stays fresh

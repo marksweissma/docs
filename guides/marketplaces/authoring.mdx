@@ -52,6 +52,16 @@ This publishes a starting tree: a marketplace manifest, one plugin, and one skil
 
 It refuses a repo that already has plugins, and it refuses one whose `.claude-plugin/marketplace.json` cannot be parsed — a manifest we cannot read might list plugins, and scaffolding would overwrite it.
 
+<Warning>
+Scaffold **commits immediately** — there is no `ref`/`branch` parameter to target anything else, so it always writes straight to the connected repo's default branch. Unlike `edit` (a draft) or `commit` to a feature branch, there is no review step here.
+</Warning>
+
+The example plugin's directory defaults to `example` — pass `pluginSlug` to name it something else:
+
+```
+marketplaces { action: "scaffold", marketplaceId: "<uuid>", pluginSlug: "hello" }
+```
+
 In the web app this is the **Add starter files** button on a connected repo with nothing in it.
 
 ## 4. Read what's there
@@ -106,6 +116,19 @@ marketplaces {
 ```
 
 With no `writes`, commit publishes **whatever is currently drafted** — which is what you want after `edit`.
+
+<Warning>
+"Whatever is currently drafted" means every drafted file on that branch, not just the ones you touched. A draft left by an earlier session — yours or a colleague's — is published too, under *your* commit message.
+
+`tree` lists them in `draftPaths`. Check it before any `commit` that omits `writes`:
+
+```
+marketplaces { action: "tree", marketplaceId: "<uuid>", ref: "my-feature-branch" }
+→ draftPaths: ["plugins/hello/skills/greet/SKILL.md", "plugins/hello/skills/translate/SKILL.md"]
+```
+
+If that list has more in it than you expect, pass explicit `writes` naming only the files you mean. Nothing else is published.
+</Warning>
 
 Every commit flattens pending suggestions to their accepted text and strips comment markers, so published files never contain review markup. The Codex and Cursor manifests are regenerated in the same commit.
 

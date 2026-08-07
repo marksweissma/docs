@@ -36,6 +36,8 @@ marketplaces { action: "commit", marketplaceId: "<uuid>", ref: "main", message: 
 
 With no `writes`, this publishes whatever is currently drafted — which is what you want after an `edit`. Drafts live only in Moxn until this point, so a half-finished change cannot leak to your users.
 
+That "whatever" is branch-wide: it includes drafts other sessions left behind. Read `draftPaths` from `tree` on the same ref before committing without `writes`, or name the files explicitly — see [Create & Author](/guides/marketplaces/authoring#6-commit--which-is-publishing).
+
 Each commit also:
 
 - flattens pending suggestions to their accepted text and **strips every comment marker**, so published files never contain review markup;
