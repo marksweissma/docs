@@ -1,0 +1,226 @@
+---
+title: Backlinks
+description: Inline, clickable links between Knowledge Base documents — and the reference graph they build
+---
+
+A **backlink** is a clickable reference to another Knowledge Base document, embedded directly in content. In a markdown body it renders as an inline chip in the middle of a sentence. In a report or slide deck it is any element you mark as clickable — a card, a table row, a name.
+
+A backlink points at a document by **ID**, never by URL. Moxn resolves navigation from that ID, which is why the link keeps working when the target is renamed or moved.
+
+Backlinks also write through to Moxn's **reference graph**. After the commit that carries the link, it appears in the source document's outgoing references and in the target document's incoming backlinks — no separate bookkeeping call.
+
+## Why Backlinks Matter for AI
+
+- **The ID an agent already has is the link.** `find` and `search` hand back document IDs; embedding one in the prose is the whole authoring step. There is no URL to construct and no path to keep in sync.
+- **Reading a document reveals its neighbors.** A `read` with `references` or `backlinks` turns any document into a starting point for traversal, so an agent can follow the graph instead of re-searching the workspace.
+- **The graph cannot drift from the prose.** Rows are derived from committed content, so a link that no longer appears in the text no longer appears in the graph.
+
+## Two Ways to Link, One Graph
+
+An inline link and a **sidecar reference** (`add_reference`) are the same concept at different grains. They both produce rows in the same reference graph and both show up in the same panels — they differ in whether the link lives *in* the content.
+
+| | Inline link | Sidecar reference |
+| --- | --- | --- |
+| **Where it lives** | Inside the body content | Attached to the document, beside the body |
+| **Anchor text** | Yes — you write the display text | None |
+| **Created by** | Typing `@` in the editor, or embedding the tag via `edit` | `documents` with `action: "add_reference"` |
+| **Works for `file`-kind documents** | No — they have no body | Yes |
+| **Removed by** | Deleting the tag from the content | `action: "remove_reference"` |
+
+Reach for an inline link when the link belongs in a sentence — that is the default. Reach for a sidecar when you want to relate two documents without touching the body, which is also the only option for `file`-kind documents (a PDF or an image has no prose to embed a tag in).
+
+## The Syntax
+
+### Markdown bodies
+
+```
+<moxn:ref doc="<documentUuid>">display text</moxn:ref>
+<moxn:ref doc="<documentUuid>" section="<sectionUuid>">display text</moxn:ref>
+```
+
+The optional `section` attribute pins the link to one section of the target. The display text between the tags is ordinary content that you choose — it is stored, searchable, and yours to edit.
+
+### Report and slide HTML
+
+```html
+<div class="card" data-moxn-doc="3f9c2e1a-1234-4a5b-8c9d-abcdef123456">
+  <h3>Jane Doe</h3>
+  <p class="muted">Engineering</p>
+</div>
+```
+
+Any element can carry `data-moxn-doc` (plus optional `data-moxn-section`). No `href` is needed and no client JS — Moxn paints the click affordance and opens the target in a new tab. Put the attribute on the element a reader should click rather than wrapping it in extra markup.
+
+## Where the IDs Come From
+
+`find` and `search` are where link targets come from. This is the pipeline: **discover the document, take its ID, embed the ID.**
+
+[`find`](/reference/mcp/find) returns `{ id, path, name, description, defaultBranch }` per document and `{ id, documentId, name, position }` per section.
+
+[`search`](/reference/mcp/search) matches on content and returns items that each carry a `documentId` (section matches also carry a `sectionId`).
+
+```
+1. find({type: "document", name: "Jane Doe"})
+   → { id: "3f9c2e1a-...", path: "/people/jane-doe", name: "Jane Doe" }
+
+2. Embed that id:
+   <moxn:ref doc="3f9c2e1a-...">Jane Doe</moxn:ref>
+```
+
+To pin a **section**, you need that section's ID. Two sources: `find({type: "section", ...})`, or a [`read`](/reference/mcp/read) with `forEdit: true`, which keeps the `{#id}` anchor suffix on each H2 line of the returned markdown.
+
+<Note>
+`find` is anchor-based — names and paths always reflect the document's **default branch**. That is fine for grabbing an ID (the ID is branch-independent), but use `read` with `branchName` when you need branch-correct metadata.
+</Note>
+
+## Worked Example: A Team Directory Report
+
+A report where every person's card links to that person's document — the motivating case for `data-moxn-doc`.
+
+<Steps>
+<Step title="Find the documents you want to link">
+```
+find({type: "document", path: "/people/"})
+```
+
+Each result carries the `id` you need:
+
+```json
+[
+  { "id": "3f9c2e1a-...", "path": "/people/jane-doe",  "name": "Jane Doe" },
+  { "id": "7b21d840-...", "path": "/people/amir-khan", "name": "Amir Khan" }
+]
+```
+</Step>
+
+<Step title="Put the ID on the element you want clickable">
+```html
+<div class="grid">
+  <div class="card" data-moxn-doc="3f9c2e1a-...">
+    <h3>Jane Doe</h3>
+    <p class="muted">Engineering · Platform</p>
+  </div>
+  <div class="card" data-moxn-doc="7b21d840-...">
+    <h3>Amir Khan</h3>
+    <p class="muted">Engineering · Data</p>
+  </div>
+</div>
+```
+
+Write it with the [`documents` tool](/reference/mcp/documents) — `action: "create"` or `action: "update"` with `kind: "report"` and the `html` field. Every write auto-commits.
+</Step>
+
+<Step title="Verify the links landed">
+```
+documents({action: "list_references", documentId: "<the report>"})
+```
+
+You should see one row per card, each with `derived: true`. Reading Jane Doe's document with `backlinks: true` now shows the report's path among her incoming links.
+</Step>
+</Steps>
+
+The markdown equivalent is the same three moves — find the ID, embed the tag, commit:
+
+```
+Escalations route through <moxn:ref doc="3f9c2e1a-...">Jane Doe</moxn:ref> during
+the platform freeze.
+```
+
+Write it with the `edit` tool like any other content. There is no separate "create link" call.
+
+## Reading Links Back
+
+A [`read`](/reference/mcp/read) carries the graph in its front-matter when you ask for it:
+
+- `references: true` — **outgoing**: the documents and sections this one links to.
+- `backlinks: true` — **incoming**: the documents that link to this one, as a deduped list of source paths.
+
+```yaml
+---
+name: Jane Doe
+path: /people/jane-doe
+backlinks:
+  - /reports/team-directory
+  - /runbooks/escalation-policy
+---
+```
+
+From the CLI, the same two flags:
+
+```bash
+context read --document-id <uuid> --references --backlinks
+```
+
+<Note>
+**Backlinks are current-state only.** They reflect who links here right now, and they are **omitted entirely on historical (`commitId`) reads**. Outgoing `references` do work point-in-time — a historical read returns the references as of that commit.
+</Note>
+
+The `<moxn:ref>` tags themselves also come back verbatim in the markdown body of a read, so an agent editing prose sees the links it is editing around.
+
+## Managing Links
+
+[`documents`](/reference/mcp/documents) with `action: "list_references"` is the **only** source of a `referenceId`:
+
+```
+documents({action: "list_references", documentId: "<uuid>", direction: "both"})
+```
+
+`direction` is `outgoing` (the default), `incoming`, or `both`. Each row carries:
+
+| Field | Meaning |
+| --- | --- |
+| `referenceId` | The ID `remove_reference` takes |
+| `direction` | `outgoing` or `incoming` |
+| `grain` | `document` or `section` — which end of the source owns the row |
+| `derived` | `true` = the content asserts this link; `false` = a hand-authored sidecar |
+| `removeWith` | `edit_content` or `remove_reference` — how to unlink this row |
+| `source` / `target` | IDs plus resolved `path` / `name` (a null path means that end was deleted) |
+
+From the CLI:
+
+```bash
+context documents list-references --document-id <uuid> --direction both
+```
+
+<Warning>
+**`remove_reference` refuses derived rows.** A row the content asserts — an inline `<moxn:ref>` tag or a `data-moxn-doc` attribute — is owned by that content, so removing the row by ID is rejected with `INVALID_OPERATION`; the next commit would just recreate it. Unlink it by **deleting the tag or attribute from the content**. The row goes with it on the next commit.
+
+`remove_reference` works normally on sidecar rows (`derived: false`).
+</Warning>
+
+## How to Reason About Backlinks
+
+<Note>
+These five rules cover almost every question people have about link behavior.
+</Note>
+
+**The link survives renames; your display text does not follow them.** `doc` names the document *anchor*, so renaming or moving the target leaves the link working. The display text is content you wrote, and deliberately stays as written — hovering the chip in the editor reveals the target's current name when it has since changed.
+
+**Rows appear only after commit.** Until the commit that carries the tag lands, the link is in no panel, no `list_references` listing, and no `read`. An uncommitted link is not yet part of the graph.
+
+**A dead section pin degrades; only a deleted document breaks.** If a `section` pin names a section that no longer exists, the link still opens the target document — the fragment is simply ignored. Only a **deleted target document** is genuinely broken: the chip renders in an amber degraded state and stops being clickable, and the listing shows a null path for that end.
+
+**Grain is not provenance.** A link in a document's preamble derives a *document*-grain row; a section can equally own a hand-authored *section*-grain sidecar. So "can I remove this row?" is answered by `derived`, never by `grain`.
+
+**Links are branch-scoped, because content is.** A link is asserted by content, and content belongs to a branch. A link committed on a feature branch is visible on that branch, and reaches the default branch when the branch merges — the same lifecycle as the words around it. See [Branching & Merging](/concepts/branching-and-merging).
+
+## In the Web Editor
+
+Two ways to insert a link while writing:
+
+- **Type `@`** — a picker opens, searching documents by name and path. Choose one and Moxn inserts the chip with the document's name as the display text, which you can then edit like any other text.
+- **Paste a document URL** — pasting a `…/knowledge-base/<uuid>` link converts it into a chip. If the ID names nothing you can read, the paste stays an ordinary link rather than guessing.
+
+A backlink chip opens its target in a **new tab**, leaving your place in the document you were reading.
+
+<Note>
+A link to a document you don't have permission to read renders as plain text — no chip, no title, no navigation. Access is checked when the link is resolved, so a document you cannot see never leaks its name through someone else's prose.
+</Note>
+
+## Related
+
+- [`documents`](/reference/mcp/documents) — `list_references`, `add_reference`, `remove_reference`
+- [`find`](/reference/mcp/find) — discover documents and sections, and their IDs
+- [`search`](/reference/mcp/search) — full-text search returning document IDs
+- [`read`](/reference/mcp/read) — `references`, `backlinks`, and `forEdit` section anchors
+- [Documents & Sections](/concepts/documents-and-sections) — the structure links point into
