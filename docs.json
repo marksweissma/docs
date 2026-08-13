@@ -14,15 +14,9 @@
         "tab": "Guides",
         "groups": [
           {
-            "group": "Overview",
+            "group": "Get Started",
             "pages": [
               "index",
-              "videos/documents"
-            ]
-          },
-          {
-            "group": "Setup",
-            "pages": [
               "quickstart-documents",
               "guides/context-cli"
             ]
