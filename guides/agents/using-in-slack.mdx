@@ -1,0 +1,58 @@
+---
+title: Working with the Agent in Slack
+description: When the agent replies, how threads work, and the task and fork commands
+---
+
+Talking to the agent feels like talking to a teammate in the channel. The one thing worth learning is how you address it, because that decides what context the agent brings to your request.
+
+## When the agent replies
+
+The agent sees messages in every channel the app has been invited to. It replies:
+
+- When you **@mention** it.
+- When you **reply in a thread** the agent started or was addressed in. No new mention is needed.
+- When it judges a reply **useful** for any other channel message. The agent batches these ambient messages for a couple of seconds, then decides whether to answer or stay quiet.
+
+## Three ways to start a conversation
+
+At the top level of the channel, the word right after the mention picks the context mode.
+
+| You write | What happens | Use it for |
+|---|---|---|
+| `@Agent <request>` | Continues the channel's **main session**, the shared running context for the channel. | Everyday questions that build on what the channel has discussed. |
+| `@Agent task <request>` | Starts a **fresh session** in a new thread, with no prior conversation context. | Independent work that the channel's history would only clutter. |
+| `@Agent fork <request>` | Starts a new thread session seeded with a **snapshot** of the channel's context so far. Later channel messages stay out of the fork. | A side investigation that needs what the channel already knows. |
+
+```text
+@Agent what did we decide about the retry policy?
+@Agent task draft a migration plan for the billing webhooks
+@Agent fork dig into why yesterday's import failed
+```
+
+The command word must come right after the mention, at the start of a top-level message. A colon after the mention works too, as in `@Agent: fork …`.
+
+<Tip>
+Reach for `task` when the request stands alone, and `fork` when it depends on the conversation so far. Both keep the channel's main session focused.
+</Tip>
+
+## Threads
+
+Each thread has its own session, so work in one thread stays separate from the channel and from other threads.
+
+- **Agent threads.** Replies inside a thread the agent owns continue that thread's session.
+- **Implicit forks.** Replying in a thread under one of the agent's channel-level messages forks the channel's context into that thread.
+- **Thread context wins.** Inside a thread, `task` and `fork` are ordinary words. The agent continues the thread's session.
+
+## Sessions over time
+
+Every session, whether the channel's main session or a thread session, keeps its own context and its own sandbox.
+
+- **Idle sessions sleep** and wake when someone writes to them again.
+- **Long conversations are compacted.** When a session approaches its compaction threshold, the agent summarizes older conversation to make room. The default threshold is 64,000 tokens. See [Models and cost](/guides/agents/models-and-cost#compaction-threshold).
+- **Closing a session** discards its resumable context and its sandbox files. Slack history and anything the agent saved to Moxn remain. You close thread sessions from the agent page. See [Operations](/guides/agents/operations#sessions).
+
+Because sessions are temporary, ask the agent to record anything worth keeping in Moxn. With the default memory instruction on, it records decisions and findings on its own. See [Knowledge and memory](/guides/agents/knowledge-and-memory).
+
+<Note>
+Agents work in public channels and in private channels the app is invited to. Shared channels (Slack Connect), direct messages, and group DMs are not supported yet.
+</Note>

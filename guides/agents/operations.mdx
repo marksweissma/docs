@@ -1,0 +1,75 @@
+---
+title: Sessions, Delivery, Recovery, and Retiring an Agent
+description: Monitor an agent's replies and sessions, recover paused requests, and archive an agent you no longer need
+---
+
+Once an agent is running, its page in the web app is where you keep an eye on it. The **Activity** section shows whether replies reached Slack, which sessions are open, which requests need your attention, and which tool writes need a check.
+
+## Agent states
+
+| State | What it means |
+|---|---|
+| Enabled | The agent receives channel messages and replies. Settings are locked. |
+| Paused | New requests stop. History and configuration are kept, and settings can be edited. |
+| Archived | Permanent. The channel is released and history is read-only. |
+
+Use **Enable** and **Pause** at the top of the agent page. Enabling re-checks Slack access and the agent runtime's health each time.
+
+## Reply delivery
+
+The reply delivery list shows each reply the agent sent and whether Slack acknowledged it. Use it when someone in the channel expected an answer and saw none.
+
+## Sessions
+
+The sessions list shows the channel's main session and every thread session, with the number of turns each has completed.
+
+You can close a thread session. Closing discards its resumable context and its sandbox files. Slack history and anything the agent saved to Moxn remain.
+
+Idle sessions sleep on their own, so you only need to close a session when you want its context gone.
+
+## Runtime recovery
+
+When a request can't be routed or run safely, the agent pauses it instead of dropping it. The messages are kept, and the request waits in the runtime recovery list until you act.
+
+A request pauses for one of these reasons:
+
+- The agent's inbox of pending requests was full.
+- The request needed a fork of the channel's context that wasn't available yet.
+- The agent couldn't verify the thread's history.
+- A message exceeded the runtime's input limit.
+- Routing failed after an admission or runtime-state failure.
+
+For each paused request, choose:
+
+- **Retry** to run the request again.
+- **Skip** to move past it.
+
+Recovery works within the agent's current state. A paused agent stays paused until you enable it.
+
+<Tip>
+For an oversized message, skip it and ask the sender to split the request or attach the long content to a Moxn document instead.
+</Tip>
+
+## Connector writes
+
+Writes to GitHub, Linear, or Notion that ended with an unknown outcome appear under **Connector writes**. Check each one in the external tool. Refreshing re-checks status and never repeats a write. See [Tools and permissions](/guides/agents/tools-and-permissions#connector-writes-review).
+
+## Routine maintenance
+
+- **Rotate the model key** under **Settings > Connections > Models**. Agents using that connection pick up the new key.
+- **Repair Slack** with **Reconnect** on the Slack setup page. **Disconnect** removes the stored credential and pauses every attached agent.
+- **Replace the Moxn access credential** only if it is lost or compromised. See [Tools and permissions](/guides/agents/tools-and-permissions#moxn-access-credential).
+- **Review the identity's permissions** from the agent page's Access section, which links to **Settings > Members**.
+
+## Retiring an agent
+
+Pause the agent first, then archive it from the agent page's Retire section.
+
+- Archiving is permanent.
+- The Slack channel is released, so you can create a new agent for it.
+- The agent's history stays available, read-only.
+- Everything the agent wrote to Moxn stays in your knowledge base.
+
+<Note>
+Archiving can't be undone. If you might bring the agent back, pause it instead.
+</Note>

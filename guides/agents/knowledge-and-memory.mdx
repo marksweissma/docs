@@ -1,0 +1,56 @@
+---
+title: Knowledge Base and Memory
+description: How the agent reads your knowledge base and writes durable memory back to Moxn
+---
+
+Slack conversations scroll away, and agent sessions are temporary. A Moxn agent treats your knowledge base as its long-term memory. It searches Moxn before it answers, and it writes decisions, findings, and sources back so the next conversation, and the next teammate, can start from them.
+
+## The knowledge base
+
+Each agent is bound to one Moxn [filesystem](/concepts/filesystems), chosen when you create the agent. The agent reads and writes it as its own identity, so the identity's [permissions](/concepts/permissions) decide what it can see and change. See [Tools and permissions](/guides/agents/tools-and-permissions#agent-identity).
+
+Everything the agent writes is ordinary Moxn content. Your team can read it, edit it, and search it in the web app, and other agents can reach it over MCP or the CLI.
+
+## The memory folder
+
+The memory folder is where the agent keeps channel-specific working knowledge, such as the state of an ongoing investigation or notes on how this channel likes things done. It defaults to `/agents/<agent-name>`.
+
+The memory folder is a location, not a boundary. The agent can use any content its identity can access. General knowledge, like a runbook or an architecture note, belongs where your team already keeps it, and the agent updates it there.
+
+<Tip>
+To limit what the agent can reach, scope its identity's permissions, for example by making it a member of one filesystem only. The identity appears under **Settings > Members**, and filesystem access is set in each filesystem's members list.
+</Tip>
+
+## Durable memory instruction
+
+Every agent starts with a system instruction maintained by Moxn, **Use Moxn as durable memory**. It tells the agent to:
+
+- Search Moxn before answering, and read a document before updating it.
+- Keep general knowledge in place and channel-specific working knowledge in the memory folder.
+- Record decisions, findings, sources, and open questions, rather than transcripts.
+- Distinguish established facts from hypotheses.
+- Avoid duplicates by updating existing documents.
+- Read back what it writes to confirm the change.
+- Keep secrets out of Moxn.
+
+Moxn maintains this instruction's text. You can turn it off for an agent, for example when your own instructions define a different memory practice.
+
+## Your own instructions
+
+Two fields let you shape the agent's behavior. They differ in when the agent sees them.
+
+| Field | When it applies | Use it for |
+|---|---|---|
+| **Agent instructions** | Every turn, and kept across compaction | Standing rules: tone, scope, which documents to treat as canonical, when to stay quiet |
+| **Starting context** | Fresh sessions only, and not re-injected after compaction | Background a new conversation should begin with, such as a project summary or current priorities |
+
+Put anything the agent must always follow in **Agent instructions**. Starting context fades once a long conversation compacts.
+
+## What lives where
+
+| Kept in | Lifetime |
+|---|---|
+| **Slack** | The full message history, as Slack retains it |
+| **Session context** | Resumable until the session is closed; compacted as it grows |
+| **Sandbox files** | Until the session is closed |
+| **Moxn** | Durable, versioned, and searchable by your team and other agents |

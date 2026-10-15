@@ -1,0 +1,113 @@
+---
+title: Set Up an Agent
+description: Connect a model account and Slack, create the agent, and enable it in a channel
+---
+
+Setting up an agent takes a few minutes in the Moxn web app plus one step in Slack. You connect a model account and your Slack workspace once, then create one agent per channel.
+
+Everything below starts from the **Agents** page in your workspace sidebar.
+
+## Prerequisites
+
+- An OpenRouter or OpenAI API key.
+- Permission to install apps in your Slack workspace.
+- A Moxn filesystem you can access, to use as the agent's knowledge base. See [Filesystems](/concepts/filesystems).
+
+## Walkthrough
+
+<Steps>
+  <Step title="Connect a model account">
+    Go to **Settings > Connections > Models** and click **Add model connection**. Choose the provider (OpenRouter or OpenAI), give the connection a name, and paste your API key.
+
+    Moxn encrypts the key and uses it only on the server. Agents never see it. Your provider account is billed for the agent's usage.
+
+    You can add several accounts per provider, for example one per team. You can also replace (rotate) or revoke a key later from the same page.
+  </Step>
+
+  <Step title="Connect Slack">
+    On the **Agents** page, open **Slack setup** and click **Connect workspace**. This runs a standard Slack OAuth install of the Moxn app.
+
+    The install requests these bot scopes:
+
+    | Scope | Used for |
+    |---|---|
+    | `app_mentions:read` | Receiving @mentions of the agent |
+    | `chat:write` | Posting replies |
+    | `channels:read`, `groups:read` | Listing the public and private channels the app is in |
+    | `channels:history`, `groups:history` | Reading messages in those channels |
+
+    These are channel-level bot scopes only. Your personal Slack identity and your DMs stay out of scope.
+
+    A Slack workspace belongs to one Moxn workspace. Use **Reconnect** to repair an existing connection.
+  </Step>
+
+  <Step title="Invite the app to the channel">
+    In Slack, open the channel the agent will live in and invite the app, either with `/invite @Moxn` or from the channel details. The app joins only the channels you invite it to.
+
+    Private channels work the same way once the app is invited.
+  </Step>
+
+  <Step title="Create the agent">
+    On the **Agents** page, click **Create agent** and fill in the form:
+
+    | Field | What to enter |
+    |---|---|
+    | **Name** | How the agent is known in Moxn. |
+    | **Slack channel** | Pick a channel the app has been invited to, or paste the channel link (`https://app.slack.com/client/T…/C…`). |
+    | **Model connection** | The model account from step 1. |
+    | **Primary model** | **Astra** for complex reasoning and coordination, **Terra** for balanced execution, or **Luna** for lightweight, focused tasks. See [Models and cost](/guides/agents/models-and-cost). |
+    | **Reasoning effort** | Low, Medium, High, or Extra high. |
+    | **Knowledge base** | A Moxn filesystem you can access. |
+    | **Memory folder** | Where the agent keeps its working notes. Defaults to `/agents/<agent-name>`. |
+    | **Instructions** | Optional guidance for how the agent should behave in this channel. |
+
+    Then choose the agent's identity:
+
+    - **A new dedicated identity (default).** Moxn creates a bot member for this agent and gives it edit access to the chosen knowledge base.
+    - **An existing bot identity.** The agent reuses that bot and its current permissions.
+
+    Tick **Review access** to confirm the identity's access, then create the agent. See [Tools and permissions](/guides/agents/tools-and-permissions) for how identity shapes what the agent can do.
+  </Step>
+
+  <Step title="Verify the channel">
+    On the new agent's page, find the Slack channel section and click **Verify channel access**. Moxn checks that the app can see the channel.
+
+    The agent page shows a setup checklist. Every item should be complete before you enable the agent:
+
+    - Model connected
+    - Knowledge base connected
+    - Slack workspace connected
+    - App invited and channel verified
+    - Agent enabled
+  </Step>
+
+  <Step title="Enable the agent">
+    Click **Enable** at the top of the agent page. Moxn re-checks Slack access and the agent runtime's health, then starts routing channel messages to the agent.
+
+    To stop new requests, click **Pause**. Pausing keeps the agent's history and configuration. Settings are locked while an agent is active, so pause it whenever you want to edit them.
+  </Step>
+
+  <Step title="Connect tools (optional)">
+    To let the agent work in GitHub, Linear, or Notion, first connect those accounts under **Settings > Connections > Tools**. Then open **Tools & connections** on the agent page, bind the accounts, and choose exactly which repositories, teams, or pages the agent may use and which write operations it may perform.
+
+    See [Tools and permissions](/guides/agents/tools-and-permissions) for the details.
+  </Step>
+</Steps>
+
+<Note>
+During the current pilot, enabling an agent is available to pilot-approved workspaces. Other workspaces see a message asking them to contact Moxn.
+</Note>
+
+## Try it
+
+Post a message in the channel that mentions the agent:
+
+```text
+@Agent what do we have in the knowledge base about our release process?
+```
+
+The agent replies in the channel. Next, learn how threads and the `task` and `fork` commands shape its context in [Working with the agent in Slack](/guides/agents/using-in-slack).
+
+## Disconnecting Slack
+
+**Disconnect** on the Slack setup page removes Moxn's stored Slack credential and pauses every agent attached to that workspace. The Moxn app stays installed in Slack. Remove it from your Slack workspace's app settings if you want it gone entirely.
