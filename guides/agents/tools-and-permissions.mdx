@@ -24,7 +24,7 @@ Every agent runs as a bot member of your Moxn workspace. When you create an agen
 
 Bot identities follow the same permission model as people. Manage them under **Settings > Members**, and see [Permissions](/concepts/permissions) for how filesystem, document, and section access combine.
 
-### Moxn access credential
+### Moxn identity credential
 
 The agent page's Access section shows the managed credential the agent uses to reach Moxn. Moxn creates and stores it for you. Replace it only if it is lost or compromised. Replacing it revokes the old credential and keeps the identity's permissions as they are.
 
@@ -33,7 +33,7 @@ The agent page's Access section shows the managed credential the agent uses to r
 Tool access is set up in two places: the account connection, then the agent's binding.
 
 1. **Connect the account.** Under **Settings > Connections > Tools**, connect a GitHub, Linear, or Notion account.
-2. **Bind it to the agent.** On the agent page, open **Tools & connections** and bind the account.
+2. **Bind it to the agent.** On the agent page, open **Tools** (under the agent's **Access** tab) and bind the account.
 3. **Choose resources.** Select exactly which repositories, teams, or pages the agent may use.
 4. **Choose write operations.** Allow only the writes the agent needs.
 
@@ -46,7 +46,7 @@ A GitHub binding can also grant native Git access for work inside the agent's sa
 | Read | Clone and read the selected repositories in its sandbox |
 | Read & write | Also push changes back to the selected repositories |
 
-### Connector writes review
+### Tool writes to review review
 
 Sometimes a write to an external tool ends with an unknown outcome, for example when the network fails mid-request. Moxn lists those writes under **Connector writes** on the agent page so you can check the result in the tool itself. Refreshing the list only re-checks status. It never repeats a write.
 

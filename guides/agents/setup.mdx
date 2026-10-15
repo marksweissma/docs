@@ -25,7 +25,7 @@ Everything below starts from the **Agents** page in your workspace sidebar.
   </Step>
 
   <Step title="Connect Slack">
-    On the **Agents** page, open **Slack setup** and click **Connect workspace**. This runs a standard Slack OAuth install of the Moxn app.
+    On the **Agents** page, open **Slack workspace** and click **Connect workspace**. This runs a standard Slack OAuth install of the Moxn app.
 
     The install requests these bot scopes:
 
@@ -70,7 +70,7 @@ Everything below starts from the **Agents** page in your workspace sidebar.
   </Step>
 
   <Step title="Verify the channel">
-    On the new agent's page, find the Slack channel section and click **Verify channel access**. Moxn checks that the app can see the channel.
+    If you picked the channel from the list, Moxn verifies it as soon as the agent is created. If you pasted a channel link, open the agent's page, find the Slack channel section, and click **Verify channel**. Either way, Moxn checks that the app can see the channel.
 
     The agent page shows a setup checklist. Every item should be complete before you enable the agent:
 
@@ -82,13 +82,13 @@ Everything below starts from the **Agents** page in your workspace sidebar.
   </Step>
 
   <Step title="Enable the agent">
-    Click **Enable** at the top of the agent page. Moxn re-checks Slack access and the agent runtime's health, then starts routing channel messages to the agent.
+    Click **Enable agent** at the top of the agent page. Moxn re-checks Slack access and the agent runtime's health, then starts routing channel messages to the agent.
 
-    To stop new requests, click **Pause**. Pausing keeps the agent's history and configuration. Settings are locked while an agent is active, so pause it whenever you want to edit them.
+    To stop new requests, click **Pause agent**. Pausing keeps the agent's history and configuration. Settings are locked while an agent is active, so pause it whenever you want to edit them.
   </Step>
 
   <Step title="Connect tools (optional)">
-    To let the agent work in GitHub, Linear, or Notion, first connect those accounts under **Settings > Connections > Tools**. Then open **Tools & connections** on the agent page, bind the accounts, and choose exactly which repositories, teams, or pages the agent may use and which write operations it may perform.
+    To let the agent work in GitHub, Linear, or Notion, first connect those accounts under **Settings > Connections > Tools**. Then open **Tools** (under the agent's **Access** tab) on the agent page, bind the accounts, and choose exactly which repositories, teams, or pages the agent may use and which write operations it may perform.
 
     See [Tools and permissions](/guides/agents/tools-and-permissions) for the details.
   </Step>
@@ -110,4 +110,4 @@ The agent replies in the channel. Next, learn how threads and the `task` and `fo
 
 ## Disconnecting Slack
 
-**Disconnect** on the Slack setup page removes Moxn's stored Slack credential and pauses every agent attached to that workspace. The Moxn app stays installed in Slack. Remove it from your Slack workspace's app settings if you want it gone entirely.
+**Disconnect** on the Slack workspace page removes Moxn's stored Slack credential and pauses every agent attached to that workspace. The Moxn app stays installed in Slack. Remove it from your Slack workspace's app settings if you want it gone entirely.
