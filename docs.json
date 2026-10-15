@@ -22,6 +22,19 @@
             ]
           },
           {
+            "group": "Slack Agents",
+            "icon": "slack",
+            "pages": [
+              "guides/agents/index",
+              "guides/agents/setup",
+              "guides/agents/using-in-slack",
+              "guides/agents/models-and-cost",
+              "guides/agents/knowledge-and-memory",
+              "guides/agents/tools-and-permissions",
+              "guides/agents/operations"
+            ]
+          },
+          {
             "group": "Plugin Marketplaces",
             "icon": "puzzle-piece",
             "pages": [

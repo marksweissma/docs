@@ -1,0 +1,70 @@
+---
+title: Models, Reasoning Effort, and Cost
+description: Choose a model connection, primary model, and reasoning effort, and understand what drives usage
+---
+
+An agent runs on your own model provider account. You pick a model tier and a reasoning effort per agent, and those choices, together with how long conversations run, shape both quality and cost.
+
+## Model connections
+
+A model connection is an API key for your provider account. Add one under **Settings > Connections > Models**.
+
+| | |
+|---|---|
+| **Providers** | OpenRouter and OpenAI |
+| **Billing** | Your provider account is billed for all agent usage |
+| **Key handling** | Encrypted and used only on the server. Agents never see the key. |
+| **Multiple accounts** | Add several connections per provider, for example one per team or budget |
+| **Rotation** | Replace a key to rotate it, or revoke it to cut off access |
+
+Each agent uses one model connection. Subagents share their parent's connection.
+
+## Primary model
+
+| Model | Best for |
+|---|---|
+| **Astra** | Complex reasoning and coordination |
+| **Terra** | Balanced execution |
+| **Luna** | Lightweight, focused tasks |
+
+Start with Terra for most channels. Choose Astra for channels that handle open-ended investigation or coordinate subagents. Choose Luna for narrow, high-volume work such as answering routine questions from the knowledge base.
+
+## Reasoning effort
+
+Reasoning effort sets how much the model thinks before it answers: **Low**, **Medium**, **High**, or **Extra high**. Higher effort generally gives better answers on hard problems and uses more tokens and time per reply. Lower effort keeps simple exchanges fast and inexpensive.
+
+## Compaction threshold
+
+The compaction threshold is the conversation size at which the agent summarizes older messages to make room. It applies to each session separately.
+
+| | |
+|---|---|
+| **Default** | 64,000 tokens |
+| **Range** | 8,192 to 200,000 tokens |
+
+A lower threshold keeps each request smaller and compacts sooner. A higher threshold keeps more of the conversation verbatim before summarizing. The threshold is about conversation size; it is separate from the model's maximum context window and from spending limits.
+
+## Subagents
+
+With **Allow subagents** on, the agent can delegate parts of a request to helper agents. A typical setup is Astra coordinating several Terra helpers.
+
+| Setting | What it controls |
+|---|---|
+| **Helper models** | Which models helpers may use |
+| **Default helper model and effort** | What a helper uses unless the agent picks otherwise |
+| **Max concurrent helpers** | 1 to 3 helpers running at once |
+| **Model-request budget** | 4 to 128 model requests per turn |
+
+Helpers share the parent's model connection, Moxn identity, connector grants, and files. One request budget and one four-minute execution deadline cover the parent and all of its helpers together.
+
+## Keeping usage predictable
+
+- **Match the model to the channel.** A Luna or Terra agent at Low or Medium effort is enough for most question-answering channels.
+- **Use `task` for independent work.** A fresh session starts small instead of carrying the channel's full history. See [Working with the agent in Slack](/guides/agents/using-in-slack).
+- **Tune the compaction threshold.** Lower it for busy channels where old conversation matters less.
+- **Bound subagents.** Keep concurrency and the request budget low until you see the agent needs more.
+- **Use a dedicated connection.** A separate key per agent or team makes usage easy to attribute in your provider's dashboard.
+
+<Note>
+Spending limits live in your provider account. The compaction threshold and the subagent limits shape how much work a turn does, but they are safety limits, not a dollar cap.
+</Note>
