@@ -37,14 +37,32 @@ Moxn maintains this instruction's text. You can turn it off for an agent, for ex
 
 ## Your own instructions
 
-Two fields let you shape the agent's behavior. They differ in when the agent sees them.
+Your instructions live in a knowledge-base document, not in a settings field. When you create an agent, Moxn seeds an **Instructions** document in its memory folder from a short template. The agent reads that document before every reply.
 
-| Field | When it applies | Use it for |
+Edit it like any other document: in the editor, or with Claude Code or Codex through the `edit` tool. A change merged to the document's main branch applies on the agent's next message. There is nothing to deploy or restart.
+
+Only two sections of the document are sent to the agent. Anything else, including the text above the first heading, is a note for people.
+
+| Section | When it applies | Use it for |
 |---|---|---|
-| **Agent instructions** | Every turn, and kept across compaction | Standing rules: tone, scope, which documents to treat as canonical, when to stay quiet |
-| **Starting context** | Fresh sessions only, and not re-injected after compaction | Background a new conversation should begin with, such as a project summary or current priorities |
+| `## Instructions` | Every reply | Standing rules: tone, scope, which documents to treat as canonical, when to stay quiet |
+| `## Starting context` | Fresh conversations only, such as a new `task` thread | Background a new conversation should begin with, such as a project summary or current priorities |
 
-Put anything the agent must always follow in **Agent instructions**. Starting context fades once a long conversation compacts.
+If the document has no `## Instructions` heading, the whole body (minus `## Starting context`) is treated as instructions. The Instructions section is limited to 32,000 characters and Starting context to 64,000; an over-limit document is refused rather than cut.
+
+### Reviewing a change before it goes live
+
+Because instructions are a document, the usual review flow works. Edit on a branch, open a merge request, have a teammate approve, merge. Merging is what makes the change live.
+
+For teams that want a release gate, the agent page's **Instructions version** setting can **pin** the agent to the current main commit. A pinned agent keeps running that commit until someone pins a newer one; the agent page shows when main has moved ahead.
+
+### What the agent cannot do
+
+The agent reads its instructions with its own identity, and Moxn caps that identity to read-only on the document. The agent cannot rewrite its own rules, even if someone in the channel asks it to. The agent page shows this cap and offers a one-click fix if it is ever removed.
+
+<Note>
+If the document is deleted, moved out of the agent's knowledge base, or becomes unreadable, the agent keeps using the last version it successfully read and the agent page flags the problem. An agent that has never read its document cannot run until it is fixed.
+</Note>
 
 ## What lives where
 
