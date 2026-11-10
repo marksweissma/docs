@@ -235,7 +235,7 @@ The Notion integration sees only the pages you share with it. A page it cannot s
 </Steps>
 
 <Frame>
-  <img src="/images/agents/notion-share-connection.png" alt="A Notion page's Connections menu listing Moxn Agents as an active connection, with the Add connection option highlighted. Other connections are hidden." />
+  <img src="/images/agents/notion-share-connection.png" alt="A Notion page's Connections menu listing Moxn Agents as an active connection, with the Add connection option highlighted. Other connections are removed from the image." />
 </Frame>
 
 To stop sharing a page, remove the connection from the same menu.
@@ -265,7 +265,7 @@ To remove a connection for good, click **Revoke** and confirm. Every agent using
 
 These limits apply today and may change.
 
-- Agents can't permanently delete items, merge pull requests, or comment in Notion.
+- Agents can't merge pull requests, review pull requests, delete Linear comments or attachments, or comment in Notion. Every write they can make goes through the approval settings above.
 - Agents can push to GitHub only on branches whose names start with `moxn/`, and never to a repository you did not tick.
 - Agents see only what you gave them: the ticked GitHub repositories and the Notion pages shared with **Moxn Agents**.
 - An agent has one GitHub, one Linear, and one Notion connection.
