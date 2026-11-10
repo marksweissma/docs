@@ -17,7 +17,7 @@ Everything below starts from the **Agents** page in your workspace sidebar.
 
 <Steps>
   <Step title="Connect a model account">
-    Go to **Settings > Connections > Models** and click **Add model connection**. Choose the provider (OpenRouter or OpenAI), give the connection a name, and paste your API key.
+    Go to **Settings > Connections**, find **Model accounts**, and click **Add model connection**. Choose the provider (OpenRouter or OpenAI), give the connection a name, and paste your API key.
 
     Moxn encrypts the key and uses it only on the server. Agents never see it. Your provider account is billed for the agent's usage.
 
@@ -88,9 +88,9 @@ Everything below starts from the **Agents** page in your workspace sidebar.
   </Step>
 
   <Step title="Connect tools (optional)">
-    To let the agent work in GitHub, Linear, or Notion, first connect those accounts under **Settings > Connections > Tools**. Then open **Tools** (under the agent's **Access** tab) on the agent page, bind the accounts, and choose exactly which repositories, teams, or pages the agent may use and which write operations it may perform.
+    To let the agent work in GitHub, Linear, or Notion, first connect those accounts under **Settings > Connections**, in the **Tools** section. Then open the agent's **Access** tab, tick the connections under **Connectors**, and choose an access level for each. For GitHub you also choose which repositories the agent may use.
 
-    See [Tools and permissions](/guides/agents/tools-and-permissions) for the details.
+    See [Connect GitHub, Linear, and Notion](/guides/agents/connect-tools) for the full walkthrough, and [Tools and permissions](/guides/agents/tools-and-permissions) for how the agent's access fits together.
   </Step>
 </Steps>
 

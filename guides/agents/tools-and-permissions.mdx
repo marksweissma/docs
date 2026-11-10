@@ -10,8 +10,8 @@ An agent acts as itself. It has its own Moxn identity, its own grants to externa
 | Resource | Governed by |
 |---|---|
 | Moxn content | The agent identity's filesystem, document, and section permissions |
-| GitHub, Linear, Notion | The accounts, resources, and write operations bound on the agent page |
-| Git in the sandbox | The native Git access granted on a GitHub binding |
+| GitHub, Linear, Notion | The connections attached on the agent's **Access** tab, their access level, and the tool approvals |
+| Git in the sandbox | The access level on the GitHub attachment |
 | Your model provider | The model connection. The agent uses it through Moxn and never sees the key. |
 | Files | Its session's isolated sandbox |
 
@@ -26,30 +26,46 @@ Bot identities follow the same permission model as people. Manage them under **S
 
 ### Moxn identity credential
 
-The agent page's Access section shows the managed credential the agent uses to reach Moxn. Moxn creates and stores it for you. Replace it only if it is lost or compromised. Replacing it revokes the old credential and keeps the identity's permissions as they are.
+The agent page's **Access** tab shows the managed credential the agent uses to reach Moxn. Moxn creates and stores it for you. Replace it only if it is lost or compromised. Replacing it revokes the old credential and keeps the identity's permissions as they are.
 
 ## Connecting tools
 
-Tool access is set up in two places: the account connection, then the agent's binding.
+Tool access is set up in two places: the account connection, then the agent's attachment.
 
-1. **Connect the account.** Under **Settings > Connections > Tools**, connect a GitHub, Linear, or Notion account.
-2. **Bind it to the agent.** On the agent page, open **Tools** (under the agent's **Access** tab) and bind the account.
-3. **Choose resources.** Select exactly which repositories, teams, or pages the agent may use.
-4. **Choose write operations.** Allow only the writes the agent needs.
+1. **Connect the account.** Under **Settings > Connections**, use **Connect** in the **Tools** section to connect a GitHub, Linear, or Notion account.
+2. **Attach it to the agent.** On the agent page, open the **Access** tab. In **Connectors**, tick the connection.
+3. **Choose access.** Pick **Read only** or the higher level for that tool. For GitHub, tick exactly which repositories the agent may use.
+4. **Save.** Click **Save connectors**.
+
+The agent acts as the connected app, never as you: GitHub changes come from the Moxn GitHub App bot, and Linear and Notion changes come from **Moxn Agents**. For the full walkthrough with screenshots, see [Connect GitHub, Linear, and Notion](/guides/agents/connect-tools).
+
+### Tool approvals
+
+The **Tool approvals** section of the **Access** tab sets, per tool, what the agent does on its own in its channel:
+
+| Setting | What happens |
+|---|---|
+| **Allow** | The call runs. |
+| **Ask** | The agent posts an approval card in the Slack thread, and the call runs only after someone in the channel approves it. An approver can choose **Allow for this session** to let the same tool and action run without asking for the rest of that conversation. |
+| **Deny** | The call is refused. |
+
+Reads default to **Allow** and writes to external tools default to **Ask**. A tool's row applies to all of its actions except one with its own `tool:action` row.
 
 ### GitHub and native Git
 
-A GitHub binding can also grant native Git access for work inside the agent's sandbox:
+A GitHub attachment also gives the agent Git access to the selected repositories inside its sandbox, matching the access level:
 
-| Git access | Lets the agent |
+| GitHub access | Lets the agent |
 |---|---|
-| Read | Clone and read the selected repositories in its sandbox |
-| Read & write | Also push changes back to the selected repositories |
+| **Read only** | Clone and read the selected repositories in its sandbox |
+| **Can open PRs** | Also push branches whose names start with `moxn/`, and open pull requests |
 
-### Tool writes to review review
+The agent can never push to a repository you did not select or to a branch outside `moxn/`.
 
-Sometimes a write to an external tool ends with an unknown outcome, for example when the network fails mid-request. Moxn lists those writes under **Connector writes** on the agent page so you can check the result in the tool itself. Refreshing the list only re-checks status. It never repeats a write.
+### Reviewing tool writes
+
+Sometimes a write to an external tool ends with an unknown outcome, for example when the agent stops mid-request. The approval card in Slack says so: "Approved by @name, but the agent stopped while running it". Check the result in the tool itself before asking the agent to try again. See [Approve a write](/guides/agents/connect-tools#approve-a-write).
 
 <Note>
-Each agent's grants are its own. Two agents that share a GitHub account connection can still have different repositories and write operations bound. Subagents use their parent's identity and grants, so they cannot exceed them.
+Each agent's attachments are its own. Two agents that share a GitHub connection can still have different repositories and access levels. Subagents use their parent's identity and attachments, so they cannot exceed them.
 </Note>
