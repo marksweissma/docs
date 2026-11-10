@@ -52,11 +52,11 @@ For an oversized message, skip it and ask the sender to split the request or att
 
 ## Tool writes to review
 
-Writes to GitHub, Linear, or Notion that ended with an unknown outcome appear under **Tool writes to review** on the agent's **Activity** tab. Check each one in the external tool. Refreshing re-checks status and never repeats a write. See [Tools and permissions](/guides/agents/tools-and-permissions#reviewing-tool-writes).
+A write to GitHub, Linear, or Notion that ended with an unknown outcome is flagged on its approval card in Slack ("Approved by @name, but the agent stopped while running it"). Check each one in the external tool before asking the agent to try again. See [Tools and permissions](/guides/agents/tools-and-permissions#reviewing-tool-writes).
 
 ## Routine maintenance
 
-- **Rotate the model key** under **Settings > Connections > Models**. Agents using that connection pick up the new key.
+- **Rotate the model key** with **Replace key** under **Model accounts** in **Settings > Connections**. Agents using that connection pick up the new key.
 - **Repair Slack** with **Reconnect** on the Slack workspace page. **Disconnect** removes the stored credential and pauses every attached agent.
 - **Replace the Moxn identity credential** only if it is lost or compromised. See [Tools and permissions](/guides/agents/tools-and-permissions#moxn-access-credential).
 - **Review the identity's permissions** from the agent page's Access section, which links to **Settings > Members**.

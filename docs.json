@@ -27,6 +27,7 @@
             "pages": [
               "guides/agents/index",
               "guides/agents/setup",
+              "guides/agents/connect-tools",
               "guides/agents/using-in-slack",
               "guides/agents/models-and-cost",
               "guides/agents/knowledge-and-memory",
