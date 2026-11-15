@@ -30,9 +30,9 @@ flowchart LR
 
 ## How it works in a channel
 
-The agent reads the channels it has been invited to. It replies when you @mention it and when you reply in a thread it is part of. For other channel messages, it decides whether a reply is useful.
+The agent reads the channels it has been invited to and keeps one running conversation for each channel's top level, including messages that don't mention it. It replies when you @mention it and when you reply in a thread it is part of. With **Act without being tagged** on, it can also answer or act on its own, the way a teammate would.
 
-How you address it controls what it remembers. A plain mention continues the channel's shared conversation. `task` starts a clean thread, and `fork` starts a thread that carries the channel's context with it. See [Working with the agent in Slack](/guides/agents/using-in-slack).
+How you address it controls what it remembers. A plain mention is answered from the channel's shared conversation. `new` starts a thread with a clean context, `fork` starts a thread that carries the channel's context with it, and `clear` and `stop` empty the context or interrupt an answer. See [Working with the agent in Slack](/guides/agents/using-in-slack).
 
 ## What you need
 
@@ -52,7 +52,7 @@ Agents work in public channels and in private channels the app is invited to. Sh
     Connect a model, connect Slack, and enable your first agent
   </Card>
   <Card title="Working in Slack" icon="slack" href="/guides/agents/using-in-slack">
-    Mentions, threads, and the `task` and `fork` commands
+    Mentions, threads, and the `fork`, `new`, `clear` and `stop` commands
   </Card>
   <Card title="Models and cost" icon="gauge" href="/guides/agents/models-and-cost">
     Pick a model and reasoning effort, and keep usage predictable

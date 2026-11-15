@@ -59,6 +59,7 @@ Everything below starts from the **Agents** page in your workspace sidebar.
     | **Reasoning effort** | Low, Medium, High, or Extra high. |
     | **Knowledge base** | A Moxn filesystem you can access. |
     | **Memory folder** | Where the agent keeps its working notes. Defaults to `/agents/<agent-name>`. |
+    | **Behavior** | Durable memory, **Learn from conversations**, **Act without being tagged**, and the compaction threshold. The two learning and acting settings are off by default; see [Working in Slack](/guides/agents/using-in-slack#let-the-agent-act-without-being-tagged). |
     | **Instructions** | Created for you as a document in the memory folder. Edit it after setup; see [Knowledge and memory](/guides/agents/knowledge-and-memory). |
 
     Then choose the agent's identity:
@@ -106,7 +107,7 @@ Post a message in the channel that mentions the agent:
 @Agent what do we have in the knowledge base about our release process?
 ```
 
-The agent replies in the channel. Next, learn how threads and the `task` and `fork` commands shape its context in [Working with the agent in Slack](/guides/agents/using-in-slack).
+The agent replies in the channel. Next, learn how the channel conversation, threads, and the `fork`, `new`, `clear` and `stop` commands shape its context in [Working with the agent in Slack](/guides/agents/using-in-slack).
 
 ## Disconnecting Slack
 
