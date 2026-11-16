@@ -35,14 +35,14 @@ Reasoning effort sets how much the model thinks before it answers: **Low**, **Me
 
 ## Compaction threshold
 
-The compaction threshold is the conversation size at which the agent summarizes older messages to make room. It applies to each session separately.
+The compaction threshold is the size at which the agent summarizes older conversation to make room. In the agent's settings it is **Compact context at (tokens)**. When Moxn's context passes this size, older conversation is summarized. It applies to the channel conversation and to each thread separately.
 
 | | |
 |---|---|
 | **Default** | 64,000 tokens |
 | **Range** | 8,192 to 200,000 tokens |
 
-A lower threshold keeps each request smaller and compacts sooner. A higher threshold keeps more of the conversation verbatim before summarizing. The threshold is about conversation size; it is separate from the model's maximum context window and from spending limits.
+The size counts the agent's fixed instructions and tool definitions together with the conversation. The channel conversation is compacted automatically even when nobody tags the agent. A lower threshold keeps each request smaller and compacts sooner. A higher threshold keeps more of the conversation verbatim before summarizing. The threshold is about conversation size; it is separate from the model's maximum context window and from spending limits.
 
 ## Subagents
 
@@ -60,7 +60,7 @@ Helpers share the parent's model connection, Moxn identity, connector grants, an
 ## Keeping usage predictable
 
 - **Match the model to the channel.** A Luna or Terra agent at Low or Medium effort is enough for most question-answering channels.
-- **Use `task` for independent work.** A fresh session starts small instead of carrying the channel's full history. See [Working with the agent in Slack](/guides/agents/using-in-slack).
+- **Use `new` for independent work.** A fresh thread starts small instead of carrying the channel's full conversation. See [Working with the agent in Slack](/guides/agents/using-in-slack).
 - **Tune the compaction threshold.** Lower it for busy channels where old conversation matters less.
 - **Bound subagents.** Keep concurrency and the request budget low until you see the agent needs more.
 - **Use a dedicated connection.** A separate key per agent or team makes usage easy to attribute in your provider's dashboard.

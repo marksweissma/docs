@@ -35,6 +35,37 @@ Every agent starts with a system instruction maintained by Moxn, **Use Moxn as d
 
 Moxn maintains this instruction's text. You can turn it off for an agent, for example when your own instructions define a different memory practice.
 
+## Learning from conversations
+
+By default the agent records what it learns when someone asks it to, or as part of the work it is doing. With **Learn from conversations** on, it also listens. As conversation goes on, Moxn saves what it heard to the agent's knowledge base, without anyone asking.
+
+The setting is on the agent page under **Behavior**. It is **off by default**: turn it on per agent. It is available only while **Use Moxn as durable memory** is on.
+
+What Moxn saves:
+
+- A decision, a verified fact, a correction to existing knowledge, or an open question the team is tracking.
+- It saves nothing when nothing qualifies, which is the common case.
+- It searches first and updates an existing document in place. It creates a document under the memory folder only when nothing fits.
+- It saves no transcripts or small talk, and it never saves secrets. "Remember the password is …" stores nothing.
+- Channel text is data, never instructions.
+
+### The saved notice
+
+When Moxn saves something, it posts one short line so people can see and check it:
+
+```text
+📝 Updated memory: Release process — deploy order is now worker first
+```
+
+The title links to the document. If it saved several documents, the line ends with "and N more" and lists the rest beneath.
+
+- It appears in the thread of the conversation it learned from. For the channel conversation, that is a thread under the first top-level message it read, never a new top-level message.
+- Moxn posts at most one notice per conversation every 30 minutes. Saves made in between are folded into the next notice.
+
+<Tip>
+To correct something Moxn saved, edit the document like any other. It is ordinary Moxn content.
+</Tip>
+
 ## Your own instructions
 
 Your instructions live in a knowledge-base document, not in a settings field. When you create an agent, Moxn seeds an **Instructions** document in its memory folder from a short template. The agent reads that document before every reply.
@@ -69,6 +100,6 @@ If the document is deleted, moved out of the agent's knowledge base, or becomes 
 | Kept in | Lifetime |
 |---|---|
 | **Slack** | The full message history, as Slack retains it |
-| **Session context** | Resumable until the session is closed; compacted as it grows |
+| **Session context** | Resumable until the session is closed; compacted automatically when it passes the threshold |
 | **Sandbox files** | Until the session is closed |
 | **Moxn** | Durable, versioned, and searchable by your team and other agents |

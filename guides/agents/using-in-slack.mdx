@@ -1,57 +1,113 @@
 ---
 title: Working with the Agent in Slack
-description: When the agent replies, how threads work, and the task and fork commands
+description: How the channel conversation works, what fork, new, clear and stop do, and how the agent can act without being tagged
 ---
 
-Talking to the agent feels like talking to a teammate in the channel. The one thing worth learning is how you address it, because that decides what context the agent brings to your request.
+Talking to the agent feels like talking to a teammate in the channel. The agent keeps up with the channel's top-level conversation, and you steer what context it brings to a request by how you address it.
 
-## When the agent replies
+## The channel conversation
 
-The agent sees messages in every channel the app has been invited to. It replies:
+At the top level of the channel, the agent keeps **one channel conversation**. It holds:
 
-- When you **@mention** it.
-- When you **reply in a thread** the agent started or was addressed in. No new mention is needed.
-- When it judges a reply **useful** for any other channel message. The agent batches these ambient messages for a couple of seconds, then decides whether to answer or stay quiet.
+- Every top-level message in the channel, whether or not it mentions the agent.
+- The agent's own top-level replies.
 
-## Three ways to start a conversation
+Untagged messages are context. They never start a reply on their own, and the agent never treats them as instructions. So when you tag the agent about something the channel discussed an hour ago, it already knows.
 
-At the top level of the channel, the word right after the mention picks the context mode.
+Threads are a different matter. A thread that never involves the agent is not read, the way a teammate catching up on a channel reads the top level and opens a thread only when it matters. Work done inside a thread stays out of the channel conversation. Its conclusions reach the channel through the knowledge base.
 
-| You write | What happens | Use it for |
-|---|---|---|
-| `@Agent <request>` | Continues the channel's **main session**, the shared running context for the channel. | Everyday questions that build on what the channel has discussed. |
-| `@Agent task <request>` | Starts a **fresh session** in a new thread, with no prior conversation context. | Independent work that the channel's history would only clutter. |
-| `@Agent fork <request>` | Starts a new thread session seeded with a **snapshot** of the channel's context so far. Later channel messages stay out of the fork. | A side investigation that needs what the channel already knows. |
+## Asking the agent something
+
+Mention the agent at the top level and it answers from the channel conversation.
 
 ```text
 @Agent what did we decide about the retry policy?
-@Agent task draft a migration plan for the billing webhooks
-@Agent fork dig into why yesterday's import failed
 ```
 
-The command word must come right after the mention, at the start of a top-level message. A colon after the mention works too, as in `@Agent: fork …`.
+- The answer is a new message in the channel. It does not quote you or mention you.
+- A short working line appears first, then is edited in place into the answer.
+- Approval cards, long-answer overflow, and error lines go in the thread under the answer, so the channel stays readable.
+- Approval cards on a channel answer offer **Approve** and **Deny**. They have no **Allow for this session**, because the channel conversation never ends. Thread sessions do offer it.
+- Each mention gets its own answer. If you mention the agent again while it is working, the second question waits and is answered after the first.
+
+## Commands
+
+Four command words work when they come **right after the mention**, in any capitalization. Anywhere else they are ordinary words: `@Agent can you fork the repo` is a question.
+
+| You write | What happens |
+|---|---|
+| `@Agent fork <request>` | Starts a thread session seeded with a **snapshot** of the channel conversation so far. The agent answers in that thread. |
+| `@Agent new <request>` | Starts a thread session with a **fresh context**: the agent's instructions and knowledge base, and nothing from the channel. The agent answers in that thread. |
+| `@Agent clear` | Empties the context of the conversation you say it in, the channel's or a thread's. The agent reacts with a ✅ instead of replying. |
+| `@Agent stop` | Interrupts the answer the agent is working on. |
+
+```text
+@Agent fork dig into why yesterday's import failed
+@Agent new draft a migration plan for the billing webhooks
+@Agent clear
+@Agent stop
+```
+
+- **`fork` and `new` with no request** start the thread and the agent asks what to work on.
+- **`clear` and `stop` must be the whole message** after the mention, with at most one trailing `.`, `!` or `?`. `@Agent clear the cache` is a question, not a command.
+- **`clear` needs the mention.** A bare "clear" in a thread is ordinary conversation. The agent keeps only a one-line note that the context was cleared.
+- **If the agent is busy,** it replies "Say stop first, then clear." Send `@Agent stop`, then clear.
+- **In a thread,** `clear` is the only command word, and `stop` or `cancel` (with or without a mention) interrupts a running answer. `fork` and `new` are ordinary words there.
 
 <Tip>
-Reach for `task` when the request stands alone, and `fork` when it depends on the conversation so far. Both keep the channel's main session focused.
+Reach for `new` when the request stands alone, and `fork` when it depends on the conversation so far. Both keep the channel conversation focused.
 </Tip>
 
 ## Threads
 
 Each thread has its own session, so work in one thread stays separate from the channel and from other threads.
 
-- **Agent threads.** Replies inside a thread the agent owns continue that thread's session.
-- **Implicit forks.** Replying in a thread under one of the agent's channel-level messages forks the channel's context into that thread.
-- **Thread context wins.** Inside a thread, `task` and `fork` are ordinary words. The agent continues the thread's session.
+- **Mention the agent in a thread** that has no session yet and it forks the channel conversation, plus what the thread has said so far, into that thread.
+- **Reply under the agent's answer** and the thread forks from the channel conversation, including that answer. This works once the answer is finished. While the agent is still working on it, including while an approval is pending, untagged replies there are ignored, and a tagged one gets "I'm still on this one; reply again when I've finished."
+- **Replies in a thread that has a session** continue that session. The agent treats a reply as meant for it when you mention it, when the agent spoke last, or when you are the person it was last talking to. Other replies are kept as context.
+- **A fork is a one-time copy.** Later channel messages do not flow into the thread, and nothing in the thread flows back. Ask the agent to record anything the channel should keep in Moxn.
+- **A fork carries no approval grants** from the channel.
 
 ## Sessions over time
 
-Every session, whether the channel's main session or a thread session, keeps its own context and its own sandbox.
+Every session, whether the channel conversation or a thread, keeps its own context and its own sandbox.
 
 - **Idle sessions sleep** and wake when someone writes to them again.
-- **Long conversations are compacted.** When a session approaches its compaction threshold, the agent summarizes older conversation to make room. The default threshold is 64,000 tokens. See [Models and cost](/guides/agents/models-and-cost#compaction-threshold).
+- **Long conversations are compacted automatically.** When a conversation passes the compaction threshold, the agent summarizes the older part to make room. This applies to the channel and to each thread. The default threshold is 64,000 tokens. See [Models and cost](/guides/agents/models-and-cost#compaction-threshold).
+- **The channel is compacted from listening alone.** The agent does not need to be tagged. A channel that is busy but never addresses the agent still has its conversation summarized as it grows.
 - **Closing a session** discards its resumable context and its sandbox files. Slack history and anything the agent saved to Moxn remain. You close thread sessions from the agent page. See [Operations](/guides/agents/operations#sessions).
 
-Because sessions are temporary, ask the agent to record anything worth keeping in Moxn. With the default memory instruction on, it records decisions and findings on its own. See [Knowledge and memory](/guides/agents/knowledge-and-memory).
+Because sessions are temporary, ask the agent to record anything worth keeping in Moxn. With the default memory instruction on, the agent records decisions and findings as it works. With **Learn from conversations** on, it also does so from conversations it was never tagged in. See [Knowledge and memory](/guides/agents/knowledge-and-memory).
+
+## Let the agent act without being tagged
+
+Two settings under **Behavior** on the agent page control how much the agent does on its own. Both are **off by default**; turn them on per agent.
+
+| Setting | What it does |
+|---|---|
+| **Learn from conversations** | Moxn saves what it learns from channel conversations to its memory. See [Knowledge and memory](/guides/agents/knowledge-and-memory#learning-from-conversations). |
+| **Act without being tagged** | Moxn may answer, act and start threads when nobody tagged it. Approvals work as usual. |
+
+With **Act without being tagged** on, the agent asks itself what a helpful teammate would do about the latest messages. It may:
+
+- Answer a question nobody answered.
+- Correct something that matters.
+- Follow up on something it was asked to track.
+- Act on what the conversation asks for, such as "someone should file an issue for this".
+- Update a document, or start a thread.
+
+It stays quiet for small talk, agreement, recaps of what was just said, and "let me know if you need anything".
+
+When it does speak:
+
+- **It replies in a thread** under the message it is answering, by default. It answers at the top level of the channel only when that fits better. A reply in that thread is answered as after a tagged answer.
+- **It has the same tools and permissions as a tagged request,** and shows a working message and progress as one does.
+- **Approvals still apply.** Anything that needs approval gets the same card, and nothing runs until a person decides. With nobody to credit, the card reads **Requested by the agent** instead of naming who asked.
+- **It names nobody.** The reply does not mention anyone.
+
+<Warning>
+Channel messages are context, never instructions. The agent acts only on what it was asked, or on what a helpful teammate would clearly do, and anything that needs approval still waits for a person.
+</Warning>
 
 <Note>
 Agents work in public channels and in private channels the app is invited to. Shared channels (Slack Connect), direct messages, and group DMs are not supported yet.
