@@ -1,6 +1,6 @@
 ---
 title: Working with the Agent in Slack
-description: How the channel conversation works, what fork, new, clear and stop do, the Fork with Moxn shortcut, channel instructions, and how the agent can act without being tagged
+description: How the channel conversation works, what fork, new, clear and stop do, channel instructions, and how the agent can act without being tagged
 ---
 
 Talking to the agent feels like talking to a teammate in the channel. The agent keeps up with the channel's top-level conversation, and you steer what context it brings to a request by how you address it.
@@ -52,29 +52,11 @@ Four command words work when they come **right after the mention**, in any capit
 - **`clear` and `stop` must be the whole message** after the mention, with at most one trailing `.`, `!` or `?`. `@Agent clear the cache` is a question, not a command.
 - **`clear` needs the mention.** A bare "clear" in a thread is ordinary conversation. The agent keeps only a one-line note that the context was cleared.
 - **If the agent is busy,** it replies "Say stop first, then clear." Send `@Agent stop`, then clear.
-- **In a thread,** `clear` is the only command word, and `stop` or `cancel` (with or without a mention) interrupts a running answer. `fork` and `new` are ordinary words there.
+- **In a thread,** `fork` and `clear` are command words, and `stop` or `cancel` (with or without a mention) interrupts a running answer. `new` is an ordinary word there. See [Threads](#threads) for `fork` in a thread.
 
 <Tip>
 Reach for `new` when the request stands alone, and `fork` when it depends on the conversation so far. Both keep the channel conversation focused.
 </Tip>
-
-## Fork with Moxn
-
-**Fork with Moxn** is a Slack message shortcut. It does what `@Agent fork` would, without typing anything: the message you choose is the request.
-
-1. Hover over a message in the channel and open **More actions** (⋮).
-2. Choose **Fork with Moxn**.
-
-- **On a top-level message,** the agent answers in the thread under it. **On a reply in a thread,** it answers in that thread.
-- **The thread session starts like a mention in a thread:** from the channel conversation plus what the thread has said so far.
-- **The message stays its author's.** The agent answers it as that person's request, and records you as the one who asked for the fork. There is nothing to fill in.
-- **If the thread already has a session,** the message goes to that session as a normal message, and no second session starts.
-- **On the agent's own message,** or another app's, the agent follows up on that message, as your question about it.
-- **In a channel the agent isn't on,** Slack still lists the shortcut. Choosing it there shows a note, visible only to you, that Moxn isn't on in that channel.
-
-<Note>
-The shortcut needs the Slack app's `commands` scope. A workspace connected before the shortcut was available gets it after someone chooses **Add to Slack** on the agent page again and approves the install.
-</Note>
 
 ## Threads
 
@@ -82,10 +64,11 @@ Each thread has its own session, so work in one thread stays separate from the c
 
 - **Mention the agent in a thread** that has no session yet and it forks the channel conversation, plus what the thread has said so far, into that thread.
 - **Reply under the agent's answer** and the thread forks from the channel conversation, including that answer. This works once the answer is finished. While the agent is still working on it, including while an approval is pending, untagged replies there are ignored, and a tagged one gets "I'm still on this one; reply again when I've finished."
+- **`@Agent fork <request>` in a thread** forks too, and leaves a visible note of who asked. In a thread with no session, it starts one as a mention would, with the text after `fork` as the request. In a thread that already has a session, it ends that session and starts a new one from the channel conversation as it is now, plus everything the thread has said. The old session stays readable on the agent page. If the agent is busy there, it replies "Say stop first, then fork."
 - **Replies in a thread that has a session** continue that session. The agent treats a reply as meant for it when you mention it, when the agent spoke last, or when you are the person it was last talking to. Other replies are kept as context.
 - **A fork is a one-time copy.** Later channel messages do not flow into the thread, and nothing in the thread flows back. Ask the agent to record anything the channel should keep in Moxn.
 - **A fork carries no approval grants** from the channel.
-- **A thread closes after 14 days** with no message from a person. After that, untagged replies in it are ignored. Mentioning the agent there, or using **Fork with Moxn**, starts a new session in the thread from the current channel conversation plus the thread's history. The old session stays readable on the agent page. The channel conversation never closes.
+- **A thread closes after 14 days** with no message from a person. After that, untagged replies in it are ignored. Mentioning the agent there starts a new session in the thread from the current channel conversation plus the thread's history. The old session stays readable on the agent page. The channel conversation never closes.
 
 ## Sessions over time
 
@@ -110,7 +93,7 @@ On the agent page's **Setup** tab, each channel's row under **Slack** shows **Ch
 
 How the agent uses them:
 
-- **On every reply in that channel,** after its own instructions: at the top level, in `fork` and `new` threads, and in threads started with **Fork with Moxn**. Other channels never see them.
+- **On every reply in that channel,** after its own instructions: at the top level and in every thread. Other channels never see them.
 - **The `## Instructions` section is what counts.** It is limited to 32,000 characters, as for the agent's own document. A `## Starting context` section is not used for channels. See [Your own instructions](/guides/agents/knowledge-and-memory#your-own-instructions).
 - **Choosing a document checks it first.** A document over the limit, or one that would push the agent past its context limit, is refused, and nothing changes.
 - **The agent reads the document and never edits it.** If the agent's identity can edit the document, the row says so: set it to **Can view** in the document's Share dialog.
