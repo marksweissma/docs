@@ -31,10 +31,13 @@ Everything below starts from the **Agents** page in your workspace sidebar.
 
     | Scope | Used for |
     |---|---|
-    | `app_mentions:read` | Receiving @mentions of the agent |
-    | `chat:write` | Posting replies |
     | `channels:read`, `groups:read` | Listing the public and private channels the app is in |
     | `channels:history`, `groups:history` | Reading messages in those channels |
+    | `chat:write` | Posting replies |
+    | `reactions:write` | Reacting to messages, such as the ✅ after `clear` |
+    | `users:read`, `users:read.email` | Showing who said what, and linking a Slack person to their Moxn member |
+    | `files:read`, `files:write` | Reading files shared in the channel and sharing files back |
+    | `commands` | The **Fork with Moxn** message shortcut |
 
     These are channel-level bot scopes only. Your personal Slack identity and your DMs stay out of scope.
 

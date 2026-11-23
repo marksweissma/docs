@@ -1,6 +1,6 @@
 ---
 title: Working with the Agent in Slack
-description: How the channel conversation works, what fork, new, clear and stop do, and how the agent can act without being tagged
+description: How the channel conversation works, what fork, new, clear and stop do, the Fork with Moxn shortcut, channel instructions, and how the agent can act without being tagged
 ---
 
 Talking to the agent feels like talking to a teammate in the channel. The agent keeps up with the channel's top-level conversation, and you steer what context it brings to a request by how you address it.
@@ -58,6 +58,24 @@ Four command words work when they come **right after the mention**, in any capit
 Reach for `new` when the request stands alone, and `fork` when it depends on the conversation so far. Both keep the channel conversation focused.
 </Tip>
 
+## Fork with Moxn
+
+**Fork with Moxn** is a Slack message shortcut. It does what `@Agent fork` would, without typing anything: the message you choose is the request.
+
+1. Hover over a message in the channel and open **More actions** (⋮).
+2. Choose **Fork with Moxn**.
+
+- **On a top-level message,** the agent answers in the thread under it. **On a reply in a thread,** it answers in that thread.
+- **The thread session starts like a mention in a thread:** from the channel conversation plus what the thread has said so far.
+- **The message stays its author's.** The agent answers it as that person's request, and records you as the one who asked for the fork. There is nothing to fill in.
+- **If the thread already has a session,** the message goes to that session as a normal message, and no second session starts.
+- **On the agent's own message,** or another app's, the agent follows up on that message, as your question about it.
+- **In a channel the agent isn't on,** Slack still lists the shortcut. Choosing it there shows a note, visible only to you, that Moxn isn't on in that channel.
+
+<Note>
+The shortcut needs the Slack app's `commands` scope. A workspace connected before the shortcut was available gets it after someone chooses **Add to Slack** on the agent page again and approves the install.
+</Note>
+
 ## Threads
 
 Each thread has its own session, so work in one thread stays separate from the channel and from other threads.
@@ -67,6 +85,7 @@ Each thread has its own session, so work in one thread stays separate from the c
 - **Replies in a thread that has a session** continue that session. The agent treats a reply as meant for it when you mention it, when the agent spoke last, or when you are the person it was last talking to. Other replies are kept as context.
 - **A fork is a one-time copy.** Later channel messages do not flow into the thread, and nothing in the thread flows back. Ask the agent to record anything the channel should keep in Moxn.
 - **A fork carries no approval grants** from the channel.
+- **A thread closes after 14 days** with no message from a person. After that, untagged replies in it are ignored. Mentioning the agent there, or using **Fork with Moxn**, starts a new session in the thread from the current channel conversation plus the thread's history. The old session stays readable on the agent page. The channel conversation never closes.
 
 ## Sessions over time
 
@@ -75,9 +94,27 @@ Every session, whether the channel conversation or a thread, keeps its own conte
 - **Idle sessions sleep** and wake when someone writes to them again.
 - **Long conversations are compacted automatically.** When a conversation passes the compaction threshold, the agent summarizes the older part to make room. This applies to the channel and to each thread. The default threshold is 64,000 tokens. See [Models and cost](/guides/agents/models-and-cost#compaction-threshold).
 - **The channel is compacted from listening alone.** The agent does not need to be tagged. A channel that is busy but never addresses the agent still has its conversation summarized as it grows.
-- **Closing a session** discards its resumable context and its sandbox files. Slack history and anything the agent saved to Moxn remain. You close thread sessions from the agent page. See [Operations](/guides/agents/operations#sessions).
+- **Archiving a thread session** from the agent page ends it for good: the agent ignores every later message in that thread, so a new conversation needs a new thread. Its sandbox files are discarded. Slack history and anything the agent saved to Moxn remain. See [Operations](/guides/agents/operations#sessions).
 
 Because sessions are temporary, ask the agent to record anything worth keeping in Moxn. With the default memory instruction on, the agent records decisions and findings as it works. With **Learn from conversations** on, it also does so from conversations it was never tagged in. See [Knowledge and memory](/guides/agents/knowledge-and-memory).
+
+## Channel instructions
+
+Each channel can have its own instructions on top of the agent's: what the channel is for, who is in it, its conventions, and what the agent should care about there. Like the agent's own instructions, they live in a knowledge-base document, so you edit them in the document editor.
+
+On the agent page's **Setup** tab, each channel's row under **Slack** shows **Channel instructions: None · Choose document · Create**. Workspace owners and admins can set them.
+
+- **Create** makes a document for the channel in the agent's folder, under `channels/`, and opens it in the editor. It starts with a short note and an empty `## Instructions` heading. Write the channel's instructions under that heading. While the section is empty, nothing is sent.
+- **Choose document** points the channel at an existing document in the agent's knowledge base.
+- **Once a document is set,** the row links to it and offers **Follow main**, where changes on main apply on the next reply, or **Pin to the current main commit**, where the channel keeps that commit until someone chooses **Update pin to latest**. **Change** picks another document and **Remove** clears it.
+
+How the agent uses them:
+
+- **On every reply in that channel,** after its own instructions: at the top level, in `fork` and `new` threads, and in threads started with **Fork with Moxn**. Other channels never see them.
+- **The `## Instructions` section is what counts.** It is limited to 32,000 characters, as for the agent's own document. A `## Starting context` section is not used for channels. See [Your own instructions](/guides/agents/knowledge-and-memory#your-own-instructions).
+- **Choosing a document checks it first.** A document over the limit, or one that would push the agent past its context limit, is refused, and nothing changes.
+- **The agent reads the document and never edits it.** If the agent's identity can edit the document, the row says so: set it to **Can view** in the document's Share dialog.
+- **If the document can't be read when a reply starts,** for example because it was deleted, the agent's access was removed, or it grew over the limit, the agent doesn't answer. It posts why instead, so someone can fix the document or choose another one.
 
 ## Let the agent act without being tagged
 
