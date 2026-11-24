@@ -23,9 +23,9 @@ The **Replies** list, under the agent's **Activity** tab, shows each reply the a
 
 The sessions list shows the channel's main session and every thread session, with the number of turns each has completed.
 
-You can close a thread session. Closing discards its resumable context and its sandbox files. Slack history and anything the agent saved to Moxn remain.
+You can **Archive** a thread session. Archiving ends that thread for good: the agent ignores every later message in it, so a new conversation needs a new thread. Its waiting requests are cancelled and its sandbox files are discarded. A session with a running answer can't be archived until the answer ends. Slack history and anything the agent saved to Moxn remain. Archiving can't be undone.
 
-Idle sessions sleep on their own, so you only need to close a session when you want its context gone.
+Idle sessions sleep on their own. A thread nobody writes in for 14 days also **closes** on its own: the list shows it as `closed`, and its log stays readable. Untagged replies in a closed thread are ignored, and mentioning the agent there starts a new session in the same thread. The channel's main session never closes.
 
 ## Paused requests
 
