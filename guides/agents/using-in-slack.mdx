@@ -52,7 +52,7 @@ Four command words work when they come **right after the mention**, in any capit
 - **`clear` and `stop` must be the whole message** after the mention, with at most one trailing `.`, `!` or `?`. `@Agent clear the cache` is a question, not a command.
 - **`clear` needs the mention.** A bare "clear" in a thread is ordinary conversation. The agent keeps only a one-line note that the context was cleared.
 - **If the agent is busy,** it replies "Say stop first, then clear." Send `@Agent stop`, then clear.
-- **In a thread,** `fork` and `clear` are command words, and `stop` or `cancel` (with or without a mention) interrupts a running answer. `new` is an ordinary word there. See [Threads](#threads) for `fork` in a thread.
+- **In a thread,** `fork` and `clear` are command words, and `stop` or `cancel` (with or without a mention) interrupts a running answer. `new` is an ordinary word there: `@Agent new draft a plan` in a thread is read like any other mention. To start fresh, send `@Agent new` in the channel instead. See [Threads](#threads) for `fork` in a thread.
 
 <Tip>
 Reach for `new` when the request stands alone, and `fork` when it depends on the conversation so far. Both keep the channel conversation focused.
